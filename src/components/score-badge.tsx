@@ -16,7 +16,7 @@ export function ScoreBadge({ score, className }: ScoreBadgeProps) {
   }
 
   const variant =
-    score >= 90 ? "success" : score >= 50 ? "warning" : "destructive";
+    score >= 90 ? "success" : score >= 50 ? "warning" : "poor";
 
   return (
     <Badge variant={variant} className={className}>
@@ -54,7 +54,7 @@ export function MetricBadge({
     );
   }
 
-  let variant: "success" | "warning" | "destructive" | "outline" = "outline";
+  let variant: "success" | "warning" | "poor" | "outline" = "outline";
 
   if (thresholds) {
     if (lowerIsBetter) {
@@ -63,14 +63,14 @@ export function MetricBadge({
           ? "success"
           : value <= thresholds.needsImprovement
           ? "warning"
-          : "destructive";
+          : "poor";
     } else {
       variant =
         value >= thresholds.good
           ? "success"
           : value >= thresholds.needsImprovement
           ? "warning"
-          : "destructive";
+          : "poor";
     }
   }
 
