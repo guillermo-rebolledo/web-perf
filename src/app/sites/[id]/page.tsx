@@ -184,7 +184,7 @@ export default async function SitePage({
                           {recentRuns.map((run, index) => (
                             <TableRow 
                               key={run.id}
-                              className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                              className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
                             >
                               <TableCell>
                                 <Badge

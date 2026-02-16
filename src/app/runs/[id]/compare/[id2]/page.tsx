@@ -132,7 +132,7 @@ export default async function CompareRunsPage({
               {comparison.scores.map((score, index) => (
                 <TableRow 
                   key={score.name}
-                  className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
                 >
                   <TableCell className="font-medium">{score.name}</TableCell>
                   <TableCell>
@@ -193,7 +193,7 @@ export default async function CompareRunsPage({
               {comparison.metrics.map((metric, index) => (
                 <TableRow 
                   key={metric.name}
-                  className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
                 >
                   <TableCell className="font-medium">{metric.name}</TableCell>
                   <TableCell>
@@ -257,7 +257,7 @@ export default async function CompareRunsPage({
                 {comparison.audits.map((audit, index) => (
                   <TableRow 
                     key={audit.auditId}
-                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
                   >
                     <TableCell className="font-medium">{audit.title}</TableCell>
                     <TableCell>

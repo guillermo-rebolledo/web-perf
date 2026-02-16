@@ -27,9 +27,9 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>)
     const strategyLabel = strategy === "mobile" ? "Mobile" : "Desktop";
 
     return (
-      <div className="rounded-lg border bg-white p-3 shadow-lg">
+      <div className="rounded-lg border bg-popover p-3 shadow-lg">
         <p className="mb-2 font-semibold">{label}</p>
-        <p className="mb-2 text-sm text-gray-600">
+        <p className="mb-2 text-sm text-muted-foreground">
           {strategyIcon} {strategyLabel}
         </p>
         {payload.map((entry, index) => (
@@ -77,14 +77,14 @@ export function MetricsChart({
 
   const metricConfig = {
     performanceScore: {
-      color: "#10b981",
+      color: "var(--color-chart-1)",
       name: "Performance Score",
       yAxisId: "score",
     },
-    lcp: { color: "#3b82f6", name: "LCP (ms)", yAxisId: "time" },
-    cls: { color: "#f59e0b", name: "CLS (×1000)", yAxisId: "time" },
-    fcp: { color: "#8b5cf6", name: "FCP (ms)", yAxisId: "time" },
-    ttfb: { color: "#ec4899", name: "TTFB (ms)", yAxisId: "time" },
+    lcp: { color: "var(--color-chart-2)", name: "LCP (ms)", yAxisId: "time" },
+    cls: { color: "var(--color-chart-3)", name: "CLS (×1000)", yAxisId: "time" },
+    fcp: { color: "var(--color-chart-4)", name: "FCP (ms)", yAxisId: "time" },
+    ttfb: { color: "var(--color-chart-5)", name: "TTFB (ms)", yAxisId: "time" },
   };
 
   const hasScoreMetric = metrics.includes("performanceScore");
@@ -93,22 +93,30 @@ export function MetricsChart({
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="var(--color-border)"
+          vertical={false}
+        />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 12 }}
+          tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
           tickMargin={10}
+          axisLine={{ stroke: "var(--color-border)" }}
+          tickLine={{ stroke: "var(--color-border)" }}
         />
         {hasScoreMetric && (
           <YAxis
             yAxisId="score"
             domain={[0, 100]}
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+            axisLine={{ stroke: "var(--color-border)" }}
+            tickLine={{ stroke: "var(--color-border)" }}
             label={{
               value: "Score",
               angle: -90,
               position: "insideLeft",
-              style: { fontSize: 12 },
+              style: { fontSize: 12, fill: "var(--color-muted-foreground)" },
             }}
           />
         )}
@@ -116,17 +124,21 @@ export function MetricsChart({
           <YAxis
             yAxisId="time"
             orientation="right"
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+            axisLine={{ stroke: "var(--color-border)" }}
+            tickLine={{ stroke: "var(--color-border)" }}
             label={{
               value: "Time (ms)",
               angle: 90,
               position: "insideRight",
-              style: { fontSize: 12 },
+              style: { fontSize: 12, fill: "var(--color-muted-foreground)" },
             }}
           />
         )}
         <Tooltip content={<CustomTooltip />} />
-        <Legend />
+        <Legend
+          wrapperStyle={{ fontSize: 12, color: "var(--color-muted-foreground)" }}
+        />
         {metrics.map((metric) => (
           <Line
             key={metric}
@@ -136,7 +148,7 @@ export function MetricsChart({
             name={metricConfig[metric].name}
             yAxisId={metricConfig[metric].yAxisId}
             strokeWidth={2}
-            dot={{ r: 3 }}
+            dot={{ r: 3, strokeWidth: 0, fill: metricConfig[metric].color }}
             connectNulls
           />
         ))}

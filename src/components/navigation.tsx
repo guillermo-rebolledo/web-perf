@@ -13,13 +13,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Activity, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Navigation() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
   return (
-    <nav className="border-b">
+    <nav className="border-b border-border">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/dashboard" className="flex items-center gap-2">
@@ -33,22 +34,21 @@ export function Navigation() {
                 "text-sm font-medium transition-colors hover:text-primary",
                 pathname === "/dashboard"
                   ? "text-foreground"
-                  : "text-muted-foreground"
+                  : "text-muted-foreground",
               )}
             >
               Dashboard
             </Link>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
           {session?.user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="h-4 w-4" />
-                  <span className="hidden md:inline">
-                    {session.user.email}
-                  </span>
+                  <span className="hidden md:inline">{session.user.email}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

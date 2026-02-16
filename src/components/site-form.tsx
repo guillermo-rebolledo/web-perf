@@ -94,7 +94,7 @@ export function SiteForm({ onSuccess, triggerButton }: SiteFormProps) {
       <DialogTrigger asChild>
         {triggerButton || <Button>Create Site</Button>}
       </DialogTrigger>
-      <DialogContent className="bg-white">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Create New Site</DialogTitle>
           <DialogDescription>

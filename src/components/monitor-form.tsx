@@ -104,7 +104,7 @@ export function MonitorForm({
       <DialogTrigger asChild>
         {triggerButton || <Button>Create Monitor</Button>}
       </DialogTrigger>
-      <DialogContent className="bg-white">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Monitor</DialogTitle>
           <DialogDescription>

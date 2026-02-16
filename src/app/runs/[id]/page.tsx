@@ -76,8 +76,8 @@ export default async function RunPage({
       : null;
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
+    <div className="container mx-auto py-8 flex flex-col gap-8">
+      <div>
         <Link href={`/sites/${run.monitor.siteId}`}>
           <Button variant="ghost" size="sm" className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -101,7 +101,7 @@ export default async function RunPage({
         </div>
       </div>
 
-      <Card className="mb-8">
+      <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Run Metadata</CardTitle>
         </CardHeader>
@@ -157,7 +157,7 @@ export default async function RunPage({
 
       {run.status === "success" && (
         <>
-          <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className=" grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
@@ -204,7 +204,7 @@ export default async function RunPage({
             </Card>
           </div>
 
-          <Card className="mb-8">
+          <Card>
             <CardHeader>
               <CardTitle>Core Web Vitals</CardTitle>
               <CardDescription>Key metrics for user experience</CardDescription>
@@ -272,7 +272,9 @@ export default async function RunPage({
                     {run.audits.map((audit, index) => (
                       <TableRow
                         key={audit.id}
-                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                        className={
+                          index % 2 === 0 ? "bg-background" : "bg-muted/50"
+                        }
                       >
                         <TableCell className="font-medium">
                           {audit.title}
