@@ -14,7 +14,6 @@ import {
   Monitor,
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +33,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
 
 const navItems = [
@@ -135,7 +133,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             <SidebarMenuItem>
               <DropdownMenu>
-                {/* @ts-expect-error Radix DropdownMenuTrigger types don't include asChild/children */}
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
@@ -178,7 +175,9 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   <ThemeItems />
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onSelect={() => void signOut({ callbackUrl: "/auth/signin" })}
+                    onSelect={() =>
+                      void signOut({ callbackUrl: "/auth/signin" })
+                    }
                     className="text-destructive"
                   >
                     <LogOut className="mr-2 h-4 w-4" />

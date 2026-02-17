@@ -20,7 +20,6 @@ export function Navigation() {
       <ThemeToggle />
       {session?.user && (
         <DropdownMenu>
-          {/* @ts-expect-error Radix DropdownMenuTrigger types don't include asChild/children */}
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm" className="gap-2">
               <User className="h-4 w-4" />

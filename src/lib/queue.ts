@@ -33,12 +33,11 @@ export const auditQueue = new Queue<AuditJobData>("performance-audits", {
       count: 50, // Keep last 50 failed jobs
       age: 86400 * 7, // 7 days
     },
-    timeout: 120000, // 2 minutes
   },
 });
 
 export async function enqueueAuditJob(data: AuditJobData): Promise<string> {
-  const job = await auditQueue.add("audit", data, {
+  const job = await auditQueue.add("audit" as const, data, {
     jobId: data.runId, // Use runId as jobId for idempotency
   });
   return job.id!;

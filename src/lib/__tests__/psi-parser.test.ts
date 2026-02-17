@@ -85,7 +85,8 @@ describe("parsePSIResponse", () => {
 
   it("ignores string audits", () => {
     const response = createPSIResponse();
-    response.lighthouseResult.audits["string-ref"] = "some-reference" as any;
+    response.lighthouseResult.audits["string-ref"] =
+      "some-reference" as string;
     const result = parsePSIResponse(response);
     const auditIds = result.audits.map((a) => a.auditId);
     expect(auditIds).not.toContain("string-ref");

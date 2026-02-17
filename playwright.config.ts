@@ -1,4 +1,8 @@
-import { defineConfig, devices } from "@playwright/test";
+/* eslint-disable @typescript-eslint/no-require-imports -- Playwright config: defineConfig/devices exist at runtime but are not in typings */
+const { defineConfig, devices } = require("@playwright/test") as {
+  defineConfig: (config: Record<string, unknown>) => Record<string, unknown>;
+  devices: Record<string, { defaultBrowserType: string; viewport?: { width: number; height: number }; userAgent?: string }>;
+};
 import path from "path";
 
 const STORAGE_STATE = path.resolve(__dirname, "e2e/.auth/user.json");
