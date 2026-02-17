@@ -14,10 +14,16 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
         outline: "text-foreground",
+        neutral:
+          "border-blue-400/40 bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 dark:text-blue-400",
         success:
           "border-transparent bg-score-good text-score-good-foreground shadow hover:bg-score-good/80",
+        successMinor:
+          "border-score-good/40 bg-score-good/15 text-score-good hover:bg-score-good/25",
         warning:
           "border-transparent bg-score-warning text-score-warning-foreground shadow hover:bg-score-warning/80",
+        warningMinor:
+          "border-score-warning/40 bg-score-warning/15 text-score-warning hover:bg-score-warning/25",
         poor: "border-transparent bg-score-poor text-score-poor-foreground shadow hover:bg-score-poor/80",
       },
     },

@@ -1,6 +1,7 @@
-import NextAuth from "next-auth";
+import NextAuth, { type Session, type User } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import EmailProvider from "next-auth/providers/email";
+import type { JWT } from "next-auth/jwt";
 import { prisma } from "./prisma";
 import { env } from "@/env";
 
@@ -21,7 +22,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: "/auth/error",
   },
   callbacks: {
-    async session({ token, session }) {
+    async session({ token, session }: { token: JWT; session: Session }) {
       if (token) {
         session.user.id = token.id;
         session.user.name = token.name;
@@ -30,10 +31,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: JWT; user: User }) {
       const dbUser = await prisma.user.findFirst({
         where: {
-          email: token.email,
+          email: token.email ?? undefined,
         },
       });
 

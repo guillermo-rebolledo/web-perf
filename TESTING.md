@@ -248,6 +248,20 @@ E2E tests run against the live application and database, so you need:
 
 The dev server is auto-started by Playwright. If you already have `pnpm dev` running, Playwright reuses it.
 
+## Debugging PSI Responses
+
+When troubleshooting PageSpeed Insights data, you can pass the `--debug-psi` flag to the worker to dump the raw PSI API response to disk. This only works in non-production environments.
+
+```bash
+# Start the worker with PSI debug logging
+pnpm dev:worker:debug-psi
+
+# Or pass the flag manually
+tsx watch src/worker/index.ts --debug-psi
+```
+
+When enabled, each audit job writes `psi-debug-{strategy}.json` (e.g. `psi-debug-mobile.json`) to the project root. The file is overwritten on every run so you always see the latest response.
+
 ## Running in CI
 
 Both Vitest and Playwright are configured to work in CI environments:

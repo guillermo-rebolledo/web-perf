@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "dev:worker": "tsx watch src/worker/index.ts",
+    "dev:worker:debug-psi": "tsx watch src/worker/index.ts --debug-psi",
     "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:worker\"",
+    "dev:all:debug-psi": "concurrently \"pnpm dev\" \"pnpm dev:worker:debug-psi\"",
     "build": "next build",
     "build:worker": "tsc src/worker/index.ts --outDir dist/worker",
     "start": "next start",
