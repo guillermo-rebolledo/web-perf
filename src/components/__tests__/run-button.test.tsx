@@ -35,7 +35,9 @@ describe("RunButton", () => {
     render(<RunButton monitorId="m1" />);
     await user.click(screen.getByRole("button", { name: /run now/i }));
 
-    await expect(screen.findByRole("button", { name: /run now/i })).resolves.toBeInTheDocument();
+    await expect(
+      screen.findByRole("button", { name: /running/i })
+    ).resolves.toBeInTheDocument();
   });
 
   it("calls POST /api/monitors/:id/run", async () => {
