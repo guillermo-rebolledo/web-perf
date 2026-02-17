@@ -602,7 +602,6 @@ const SidebarMenuButton = React.forwardRef<
 
     return (
       <Tooltip>
-        {/* @ts-expect-error Radix TooltipTrigger types don't include asChild/children */}
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent
           side="right"

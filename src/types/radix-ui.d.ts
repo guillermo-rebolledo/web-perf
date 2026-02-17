@@ -95,3 +95,10 @@ declare module "@radix-ui/react-switch" {
     className?: string;
   }
 }
+
+declare module "@radix-ui/react-tooltip" {
+  export interface TooltipTriggerProps {
+    children?: React.ReactNode;
+    asChild?: boolean;
+  }
+}
