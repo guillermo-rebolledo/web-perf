@@ -4,16 +4,26 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader2, Play } from "lucide-react";
+import { useRunPolling } from "@/hooks/use-run-polling";
 
 interface RunButtonProps {
   monitorId: string;
+  activeRunId?: string;
 }
 
-export function RunButton({ monitorId }: RunButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
+  const [isLoading, setIsLoading] = useState(!!activeRunId);
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const router = useRouter();
+  const { startPolling } = useRunPolling();
+
+  // If there's an active run on mount, start polling immediately
+  useEffect(() => {
+    if (activeRunId) {
+      startPolling(activeRunId, () => setIsLoading(false));
+    }
+  }, [activeRunId, startPolling]);
 
   const handleRun = async () => {
     setIsLoading(true);
@@ -39,12 +49,12 @@ export function RunButton({ monitorId }: RunButtonProps) {
 
       const data = await response.json();
       setRemaining(data.remaining);
-      
-      // Refresh the page to show the new run
+
+      // Refresh to show the queued run, then start polling
       router.refresh();
+      startPolling(data.runId, () => setIsLoading(false));
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
       setIsLoading(false);
     }
   };
