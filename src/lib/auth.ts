@@ -53,8 +53,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       });
 
       if (!dbUser) {
-        if (user) {
-          token.id = user?.id;
+        if (user?.id) {
+          token.id = user.id;
         }
         return token;
       }

@@ -6,8 +6,16 @@ import {
   mockUnauthenticated,
 } from "@/__tests__/helpers/auth-mock";
 import { prismaMock } from "@/__tests__/helpers/prisma-mock";
-import { createSite, createMonitor } from "@/__tests__/helpers/fixtures";
+import {
+  createSite,
+  createMonitor,
+  createRun,
+} from "@/__tests__/helpers/fixtures";
 import { GET, POST } from "@/app/api/monitors/route";
+
+vi.mock("@/lib/queue", () => ({
+  enqueueAuditJob: vi.fn().mockResolvedValue("mock-job-id"),
+}));
 
 function makeRequest(method: string, url: string, body?: unknown) {
   const init: RequestInit = { method };
@@ -102,6 +110,12 @@ describe("POST /api/monitors", () => {
   it("creates monitor with defaults", async () => {
     vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
     vi.mocked(prismaMock.monitor.create).mockResolvedValue(createMonitor());
+    vi.mocked(prismaMock.run.create).mockResolvedValue(
+      createRun({ id: "new-run", status: "queued" })
+    );
+    vi.mocked(prismaMock.run.update).mockResolvedValue(
+      createRun({ id: "new-run", jobId: "mock-job-id" })
+    );
 
     const res = await POST(
       makeRequest("POST", "/api/monitors", {
