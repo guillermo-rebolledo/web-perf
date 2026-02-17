@@ -15,7 +15,7 @@ A production-ready web performance monitoring application built with Next.js 15,
 - 🔄 **Automated Audits**: Background worker with cron scheduler for periodic testing
 - 🎯 **Manual Runs**: On-demand performance audits with rate limiting
 - 📉 **Run Comparison**: Side-by-side comparison of metrics, audits, and screenshots
-- 🔐 **Authentication**: Secure email magic link authentication via NextAuth
+- 🔐 **Authentication**: Google, GitHub, and email magic link authentication via NextAuth
 - ⚡ **Queue System**: BullMQ-powered job processing with retry logic
 - 🧹 **Auto-Cleanup**: Automatic screenshot TTL policy to manage database size
 - 🎨 **Modern UI**: Beautiful interface built with shadcn/ui and Tailwind CSS
@@ -33,7 +33,7 @@ A production-ready web performance monitoring application built with Next.js 15,
 - **Prisma** - Type-safe ORM
 
 ### Authentication
-- **NextAuth v5** - Email magic link authentication
+- **NextAuth v5** - Google, GitHub, and email magic link authentication
 - **Prisma Adapter** - Database session storage
 
 ### Queue & Worker
@@ -121,7 +121,13 @@ DATABASE_URL="postgresql://perflab:perflab@localhost:5432/perflab?schema=public"
 NEXTAUTH_SECRET="your-secret-here"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Email (SMTP for magic links)
+# OAuth Providers
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GITHUB_CLIENT_ID="your-github-client-id"
+GITHUB_CLIENT_SECRET="your-github-client-secret"
+
+# Email (SMTP for magic links — optional if only using OAuth)
 EMAIL_SERVER="smtp://user:password@smtp.example.com:587"
 EMAIL_FROM="noreply@example.com"
 
@@ -422,6 +428,30 @@ pnpm tsc --noEmit
 ```bash
 pnpm lint
 ```
+
+## OAuth Setup
+
+### Google
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Create a new project (or select an existing one)
+3. Navigate to **APIs & Services > Credentials**
+4. Click **Create Credentials > OAuth client ID**
+5. Select **Web application** as the application type
+6. Add `http://localhost:3000` to **Authorized JavaScript origins**
+7. Add `http://localhost:3000/api/auth/callback/google` to **Authorized redirect URIs**
+8. Copy the Client ID and Client Secret into your `.env`
+
+### GitHub
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Click **New OAuth App**
+3. Set **Homepage URL** to `http://localhost:3000`
+4. Set **Authorization callback URL** to `http://localhost:3000/api/auth/callback/github`
+5. Click **Register application**
+6. Copy the Client ID and generate a Client Secret, then add both to your `.env`
+
+> For production, replace `http://localhost:3000` with your production URL in both providers.
 
 ## Troubleshooting
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { enqueueAuditJob } from "@/lib/queue";
 import { z } from "zod";
 
 const createMonitorSchema = z.object({
@@ -99,11 +100,37 @@ export async function POST(request: NextRequest) {
         cadenceMinutes: validated.cadenceMinutes,
         strategy: validated.strategy,
         isActive: validated.isActive,
-        nextRunAt: new Date(), // Run immediately
+        nextRunAt: new Date(
+          Date.now() + validated.cadenceMinutes * 60 * 1000
+        ),
       },
     });
 
-    return NextResponse.json(monitor, { status: 201 });
+    // Create and enqueue the initial run immediately
+    const run = await prisma.run.create({
+      data: {
+        monitorId: monitor.id,
+        status: "queued",
+        queuedAt: new Date(),
+      },
+    });
+
+    const jobId = await enqueueAuditJob({
+      runId: run.id,
+      monitorId: monitor.id,
+      siteUrl: site.url,
+      strategy: validated.strategy,
+    });
+
+    await prisma.run.update({
+      where: { id: run.id },
+      data: { jobId },
+    });
+
+    return NextResponse.json(
+      { ...monitor, runId: run.id },
+      { status: 201 }
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

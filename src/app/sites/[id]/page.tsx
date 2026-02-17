@@ -160,7 +160,14 @@ export default async function SitePage({
                             )}`}
                         </CardDescription>
                       </div>
-                      <RunButton monitorId={monitor.id} />
+                      <RunButton
+                        monitorId={monitor.id}
+                        activeRunId={
+                          monitor.runs.find(
+                            (r) => r.status === "queued" || r.status === "running"
+                          )?.id
+                        }
+                      />
                     </div>
                   </CardHeader>
                   <CardContent>

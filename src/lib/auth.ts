@@ -1,6 +1,8 @@
 import NextAuth, { type Session, type User } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import EmailProvider from "next-auth/providers/email";
+import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
 import type { JWT } from "next-auth/jwt";
 import { prisma } from "./prisma";
 import { env } from "@/env";
@@ -8,10 +10,22 @@ import { env } from "@/env";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma) as any,
   providers: [
-    EmailProvider({
-      server: env.EMAIL_SERVER,
-      from: env.EMAIL_FROM,
+    GoogleProvider({
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
+    GitHubProvider({
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+    }),
+    ...(env.EMAIL_SERVER && env.EMAIL_FROM
+      ? [
+          EmailProvider({
+            server: env.EMAIL_SERVER,
+            from: env.EMAIL_FROM,
+          }),
+        ]
+      : []),
   ],
   session: {
     strategy: "jwt",
