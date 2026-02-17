@@ -10,8 +10,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  TooltipProps,
 } from "recharts";
+import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { format } from "date-fns";
 import { Run } from "@prisma/client";
 
@@ -20,23 +20,34 @@ interface MetricsChartProps {
   metrics?: Array<"performanceScore" | "lcp" | "cls" | "fcp" | "ttfb">;
 }
 
-const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: TooltipContentProps<number, string>) => {
   if (active && payload && payload.length) {
-    const strategy = payload[0]?.payload?.strategy;
+    const strategy = (payload[0] as { payload?: { strategy?: string } })
+      ?.payload?.strategy;
     const strategyIcon = strategy === "mobile" ? "📱" : "🖥️";
     const strategyLabel = strategy === "mobile" ? "Mobile" : "Desktop";
 
     return (
-      <div className="rounded-lg border bg-popover p-3 shadow-lg">
+      <div className="rounded-lg border border-border bg-popover p-3 shadow-lg">
         <p className="mb-2 font-semibold">{label}</p>
         <p className="mb-2 text-sm text-muted-foreground">
           {strategyIcon} {strategyLabel}
         </p>
-        {payload.map((entry, index) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
-            {entry.name}: <span className="font-semibold">{entry.value?.toFixed(2)}</span>
-          </p>
-        ))}
+        {payload.map(
+          (
+            entry: { color?: string; name?: string; value?: number },
+            index: number,
+          ) => (
+            <p key={index} className="text-sm" style={{ color: entry.color }}>
+              {entry.name}:{" "}
+              <span className="font-semibold">{entry.value?.toFixed(2)}</span>
+            </p>
+          ),
+        )}
       </div>
     );
   }
@@ -53,7 +64,7 @@ export function MetricsChart({
       .sort(
         (a, b) =>
           new Date(a.completedAt!).getTime() -
-          new Date(b.completedAt!).getTime()
+          new Date(b.completedAt!).getTime(),
       )
       .map((run) => ({
         date: format(new Date(run.completedAt!), "MMM dd HH:mm"),
@@ -82,7 +93,11 @@ export function MetricsChart({
       yAxisId: "score",
     },
     lcp: { color: "var(--color-chart-2)", name: "LCP (ms)", yAxisId: "time" },
-    cls: { color: "var(--color-chart-3)", name: "CLS (×1000)", yAxisId: "time" },
+    cls: {
+      color: "var(--color-chart-3)",
+      name: "CLS (×1000)",
+      yAxisId: "time",
+    },
     fcp: { color: "var(--color-chart-4)", name: "FCP (ms)", yAxisId: "time" },
     ttfb: { color: "var(--color-chart-5)", name: "TTFB (ms)", yAxisId: "time" },
   };
@@ -135,9 +150,12 @@ export function MetricsChart({
             }}
           />
         )}
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={CustomTooltip} />
         <Legend
-          wrapperStyle={{ fontSize: 12, color: "var(--color-muted-foreground)" }}
+          wrapperStyle={{
+            fontSize: 12,
+            color: "var(--color-muted-foreground)",
+          }}
         />
         {metrics.map((metric) => (
           <Line

@@ -808,6 +808,9 @@ pnpm start:worker     # Start production worker
 
 pnpm prisma studio    # Open database GUI
 pnpm prisma db push   # Push schema changes
+
+pnpm cleanup:screenshots      # Clean up old screenshots (uses SCREENSHOT_TTL_DAYS)
+pnpm cleanup:screenshots 7    # Clean up screenshots older than 7 days
 ```
 
 ### Adding New Features
@@ -1030,6 +1033,98 @@ GOOGLE_PAGESPEED_API_KEY=<your-key>
 3. **Redis**: Cluster mode for high availability
 4. **Job Concurrency**: Adjust based on API rate limits
 5. **Monitoring**: Set up error tracking (Sentry, etc.)
+6. **Screenshot Storage**: Consider migrating to object storage (S3, Cloudinary) if database size becomes an issue
+
+---
+
+## Screenshot Management
+
+### Storage Strategy
+
+Screenshots from PageSpeed Insights are stored as base64-encoded JPEG images in the PostgreSQL database:
+
+```prisma
+model Run {
+  // ... other fields
+  screenshotData String? @db.Text  // Base64-encoded JPEG
+}
+```
+
+**Why database storage?**
+- Atomic transactions with run data
+- Simplified backup/restore
+- No file system or CDN complexity
+- PostgreSQL TOAST compression handles large text efficiently
+
+### TTL Policy
+
+To prevent unbounded database growth, screenshots have an automatic TTL policy:
+
+**Default: 30 days** (configurable via `SCREENSHOT_TTL_DAYS`)
+
+#### Automatic Cleanup
+
+The worker runs a daily cleanup job at 3 AM:
+
+```typescript
+// src/worker/scheduler.ts
+cron.schedule("0 3 * * *", async () => {
+  await cleanupOldScreenshots(env.SCREENSHOT_TTL_DAYS);
+});
+```
+
+#### Manual Cleanup
+
+Run the cleanup script manually:
+
+```bash
+# Use default TTL (30 days)
+pnpm cleanup:screenshots
+
+# Custom duration
+pnpm cleanup:screenshots 7   # Delete screenshots older than 7 days
+pnpm cleanup:screenshots 90  # Delete screenshots older than 90 days
+```
+
+The cleanup process:
+1. Finds runs with screenshots older than the TTL
+2. Sets `screenshotData` to `null` (keeps the run record)
+3. Reports statistics (runs processed, space freed)
+
+### UI Components
+
+#### ScreenshotThumbnail Component
+
+```typescript
+<ScreenshotThumbnail
+  screenshotData={run.screenshotData}
+  siteName={run.monitor.site.name}
+  strategy={run.monitor.strategy}
+/>
+```
+
+Features:
+- Thumbnail preview (192px height)
+- Hover effect with zoom indicator
+- Click to open full-size modal
+- Responsive and accessible
+
+### Query Optimization
+
+When listing runs without needing screenshots, use Prisma `select` to exclude the large field:
+
+```typescript
+const runs = await prisma.run.findMany({
+  select: {
+    id: true,
+    performanceScore: true,
+    // ... other fields
+    // DON'T include screenshotData for list views
+  }
+});
+```
+
+This prevents loading large base64 strings unnecessarily.
 
 ---
 

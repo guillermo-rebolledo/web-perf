@@ -47,6 +47,9 @@ export interface ParsedMetrics {
   fcp?: number; // First Contentful Paint
   ttfb?: number; // Time to First Byte
 
+  // Screenshot data (base64)
+  screenshot?: string;
+
   // Selected audits
   audits: Array<{
     auditId: string;
@@ -99,6 +102,12 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
   const fcp = getFcpValue();
   const ttfb = getTtfbValue();
 
+  // Extract screenshot from final-screenshot audit
+  const screenshotAudit = audits["final-screenshot"];
+  const screenshot = typeof screenshotAudit === 'object' && screenshotAudit.details?.data 
+    ? screenshotAudit.details.data 
+    : undefined;
+
   // Select failed or warning audits (score < 0.9 or no score but has numeric value)
   const selectedAudits = Object.entries(audits)
     .filter(([_, audit]) => {
@@ -144,6 +153,7 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
     cls,
     fcp,
     ttfb,
+    screenshot,
     audits: selectedAudits,
   };
 }

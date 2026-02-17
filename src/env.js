@@ -27,6 +27,7 @@ export const env = createEnv({
     PAGESPEED_API_KEY: z.string().min(1),
     SCHEDULER_SECRET: z.string().min(32),
     RATE_LIMIT_RUNS_PER_DAY: z.coerce.number().default(100),
+    SCREENSHOT_TTL_DAYS: z.coerce.number().default(30),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -57,6 +58,7 @@ export const env = createEnv({
     PAGESPEED_API_KEY: process.env.PAGESPEED_API_KEY,
     SCHEDULER_SECRET: process.env.SCHEDULER_SECRET,
     RATE_LIMIT_RUNS_PER_DAY: process.env.RATE_LIMIT_RUNS_PER_DAY,
+    SCREENSHOT_TTL_DAYS: process.env.SCREENSHOT_TTL_DAYS,
     NODE_ENV: process.env.NODE_ENV,
   },
   /**

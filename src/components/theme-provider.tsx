@@ -28,6 +28,20 @@ function getSystemTheme(): ResolvedTheme {
 
 function applyTheme(resolved: ResolvedTheme) {
   document.documentElement.classList.toggle("dark", resolved === "dark");
+  // Update the browser's theme-color meta tag to match the background
+  requestAnimationFrame(() => {
+    const bg = getComputedStyle(document.documentElement)
+      .getPropertyValue("--background")
+      .trim();
+    if (!bg) return;
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "theme-color");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", bg);
+  });
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

@@ -1,8 +1,25 @@
-import { Job } from "bullmq";
-import { AuditJobData } from "@/lib/queue";
+import type { Job } from "bullmq";
+import type { AuditJobData } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { fetchPageSpeedInsights, parsePSIResponse } from "@/lib/psi-parser";
 import { env } from "@/env";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
+
+/**
+ * Helper function to write PSI response to a debug file
+ * File is overwritten on each run for easier debugging
+ */
+async function writeDebugFile(data: unknown, filename = "psi-debug.json") {
+  try {
+    const debugPath = join(process.cwd(), filename);
+    await writeFile(debugPath, JSON.stringify(data, null, 2), "utf-8");
+    console.log(`[Worker] Debug file written to: ${debugPath}`);
+  } catch (error) {
+    console.error("[Worker] Failed to write debug file:", error);
+    // Don't throw - debug file is optional
+  }
+}
 
 export async function processAuditJob(job: Job<AuditJobData>) {
   const { runId, monitorId, siteUrl, strategy } = job.data;
@@ -24,8 +41,11 @@ export async function processAuditJob(job: Job<AuditJobData>) {
     const psiResponse = await fetchPageSpeedInsights(
       siteUrl,
       strategy,
-      env.PAGESPEED_API_KEY
+      env.PAGESPEED_API_KEY,
     );
+
+    // Write debug file for inspection
+    await writeDebugFile(psiResponse, `psi-debug-${strategy}.json`);
 
     // Parse the response
     const metrics = parsePSIResponse(psiResponse);
@@ -53,6 +73,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           cls: metrics.cls,
           fcp: metrics.fcp,
           ttfb: metrics.ttfb,
+          screenshotData: metrics.screenshot,
         },
       });
 
