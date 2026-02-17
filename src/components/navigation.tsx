@@ -47,8 +47,19 @@ export function Navigation() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
-                  <User className="h-4 w-4" />
-                  <span className="hidden md:inline">{session.user.email}</span>
+                  {session.user.image ? (
+                    <img
+                      src={session.user.image}
+                      alt=""
+                      className="h-5 w-5 rounded-full"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <User className="h-4 w-4" />
+                  )}
+                  <span className="hidden md:inline">
+                    {session.user.name?.split(" ")[0] || session.user.email}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -65,7 +76,7 @@ export function Navigation() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => signOut({ callbackUrl: "/auth/signin" })}
-                  className="text-destructive"
+                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
