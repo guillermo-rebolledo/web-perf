@@ -3,7 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { auth } from "@/lib/auth";
 import { SessionProvider } from "@/components/session-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Navigation } from "@/components/navigation";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/ui/app-sidebar";
+import { SidebarLayout } from "@/components/sidebar-layout";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -57,8 +59,14 @@ export default async function RootLayout({
       >
         <ThemeProvider>
           <SessionProvider session={session}>
-            {session && <Navigation />}
-            <main>{children}</main>
+            {session ? (
+              <SidebarProvider className="block">
+                <AppSidebar />
+                <SidebarLayout>{children}</SidebarLayout>
+              </SidebarProvider>
+            ) : (
+              <main>{children}</main>
+            )}
           </SessionProvider>
         </ThemeProvider>
       </body>
