@@ -3,6 +3,8 @@
 A production-ready web performance monitoring application built with Next.js 15, featuring automated PageSpeed Insights audits, scheduled monitoring, and comprehensive performance analytics.
 
 > 📖 **For detailed architecture and implementation documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md)**
+>
+> 🧪 **For testing setup, tools, and conventions, see [TESTING.md](./TESTING.md)**
 
 ## Features
 
@@ -243,7 +245,8 @@ You'll be redirected to the sign-in page. Enter your email to receive a magic li
 ├── .env.example               # Environment template
 ├── package.json               # Dependencies and scripts
 ├── README.md                  # This file
-└── ARCHITECTURE.md            # Detailed architecture docs
+├── ARCHITECTURE.md            # Detailed architecture docs
+└── TESTING.md                 # Testing guide and conventions
 ```
 
 **📖 For detailed explanations of each component and module, see [ARCHITECTURE.md](./ARCHITECTURE.md)**
@@ -390,6 +393,24 @@ pnpm prisma migrate dev --name <migration-name>
 npx shadcn@latest add <component-name>
 ```
 
+### Testing
+
+```bash
+# Run unit / integration / component tests
+pnpm test
+
+# Watch mode
+pnpm test:watch
+
+# Coverage report
+pnpm test:coverage
+
+# E2E tests (Playwright)
+pnpm test:e2e
+```
+
+For full details on the testing strategy, tools, and conventions, see **[TESTING.md](./TESTING.md)**.
+
 ### Type Checking
 
 ```bash
@@ -436,7 +457,7 @@ We welcome contributions! Before getting started:
 2. **Fork the repository**
 3. **Create a feature branch**: `git checkout -b feature/amazing-feature`
 4. **Make your changes**: Follow the code style and patterns in the codebase
-5. **Test your changes**: Ensure everything works as expected
+5. **Test your changes**: Run `pnpm test` and ensure all tests pass
 6. **Run linting**: `pnpm lint`
 7. **Submit a pull request**: Include a clear description of your changes
 

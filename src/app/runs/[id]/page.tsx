@@ -43,17 +43,6 @@ export default async function RunPage({
       monitor: {
         include: {
           site: true,
-          runs: {
-            where: {
-              id: { not: id },
-              status: "success",
-              completedAt: { not: null },
-            },
-            orderBy: {
-              completedAt: "desc",
-            },
-            take: 1,
-          },
         },
       },
       audits: {
@@ -68,7 +57,22 @@ export default async function RunPage({
     notFound();
   }
 
-  const previousRun = run.monitor.runs[0] ?? null;
+  // Only look for runs completed *before* this one so the first-ever run
+  // doesn't incorrectly show a "Compare with Previous" button.
+  const previousRun = run.completedAt
+    ? await prisma.run.findFirst({
+        where: {
+          monitorId: run.monitorId,
+          id: { not: id },
+          status: "success",
+          completedAt: { not: null, lt: run.completedAt },
+        },
+        orderBy: {
+          completedAt: "desc",
+        },
+        select: { id: true },
+      })
+    : null;
   const duration =
     run.startedAt && run.completedAt
       ? differenceInSeconds(new Date(run.completedAt), new Date(run.startedAt))
