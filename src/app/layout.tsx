@@ -27,6 +27,15 @@ const themeScript = `
     var t = localStorage.getItem('theme');
     var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme:dark)').matches);
     if (dark) document.documentElement.classList.add('dark');
+    // Set theme-color early so the browser bar matches on first paint
+    requestAnimationFrame(function(){
+      var bg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+      if (bg) {
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (!m) { m = document.createElement('meta'); m.setAttribute('name','theme-color'); document.head.appendChild(m); }
+        m.setAttribute('content', bg);
+      }
+    });
   } catch(e) {}
 })();
 `;

@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { ScreenshotThumbnail } from "@/components/screenshot-thumbnail";
 import { ArrowLeft, TrendingDown, TrendingUp } from "lucide-react";
 import { compareRuns, formatMetricValue, formatDelta } from "@/lib/metrics-compare";
 import { format } from "date-fns";
@@ -78,37 +79,77 @@ export default async function CompareRunsPage({
 
       <div className="mb-8 grid gap-6 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Run 1 (Before)</CardTitle>
-            <CardDescription>
-              {run1.completedAt
-                ? format(new Date(run1.completedAt), "PPpp")
-                : "Incomplete"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href={`/runs/${run1.id}`}>
-              <Button variant="outline" size="sm">
-                View Details
-              </Button>
-            </Link>
+          <CardContent className="flex gap-4 p-4">
+            {run1.screenshotData ? (
+              <div className="w-28 shrink-0">
+                <ScreenshotThumbnail
+                  screenshotData={run1.screenshotData}
+                  siteName={run1.monitor.site.name}
+                  strategy={run1.monitor.strategy}
+                  compact
+                />
+              </div>
+            ) : (
+              <div className="w-28 h-20 shrink-0 rounded-md border bg-muted flex items-center justify-center">
+                <span className="text-xs text-muted-foreground">No image</span>
+              </div>
+            )}
+            <div className="flex flex-col justify-between min-w-0">
+              <div>
+                <h3 className="font-semibold">Run 1 (Before)</h3>
+                <p className="text-sm text-muted-foreground">
+                  {run1.completedAt
+                    ? format(new Date(run1.completedAt), "PPpp")
+                    : "Incomplete"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {run1.monitor.strategy.charAt(0).toUpperCase() +
+                    run1.monitor.strategy.slice(1)}
+                </p>
+              </div>
+              <Link href={`/runs/${run1.id}`}>
+                <Button variant="outline" size="sm" className="mt-2">
+                  View Details
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Run 2 (After)</CardTitle>
-            <CardDescription>
-              {run2.completedAt
-                ? format(new Date(run2.completedAt), "PPpp")
-                : "Incomplete"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href={`/runs/${run2.id}`}>
-              <Button variant="outline" size="sm">
-                View Details
-              </Button>
-            </Link>
+          <CardContent className="flex gap-4 p-4">
+            {run2.screenshotData ? (
+              <div className="w-28 shrink-0">
+                <ScreenshotThumbnail
+                  screenshotData={run2.screenshotData}
+                  siteName={run2.monitor.site.name}
+                  strategy={run2.monitor.strategy}
+                  compact
+                />
+              </div>
+            ) : (
+              <div className="w-28 h-20 shrink-0 rounded-md border bg-muted flex items-center justify-center">
+                <span className="text-xs text-muted-foreground">No image</span>
+              </div>
+            )}
+            <div className="flex flex-col justify-between min-w-0">
+              <div>
+                <h3 className="font-semibold">Run 2 (After)</h3>
+                <p className="text-sm text-muted-foreground">
+                  {run2.completedAt
+                    ? format(new Date(run2.completedAt), "PPpp")
+                    : "Incomplete"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {run2.monitor.strategy.charAt(0).toUpperCase() +
+                    run2.monitor.strategy.slice(1)}
+                </p>
+              </div>
+              <Link href={`/runs/${run2.id}`}>
+                <Button variant="outline" size="sm" className="mt-2">
+                  View Details
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -81,6 +82,9 @@ model Run {
   cls  Float? // Cumulative Layout Shift (unitless)
   fcp  Float? // First Contentful Paint (ms)
   ttfb Float? // Time to First Byte (ms)
+
+  // Screenshot from PageSpeed Insights
+  screenshotData String? @db.Text // Base64-encoded JPEG
 
   audits  Audit[]
   monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)

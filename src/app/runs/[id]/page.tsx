@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScoreBadge, MetricBadge } from "@/components/score-badge";
+import { ScreenshotThumbnail } from "@/components/screenshot-thumbnail";
 import { ArrowLeft } from "lucide-react";
 import { formatDistanceToNow, differenceInSeconds } from "date-fns";
 
@@ -106,7 +107,7 @@ export default async function RunPage({
           <CardTitle className="text-2xl">Run Metadata</CardTitle>
         </CardHeader>
         <CardContent>
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-5">
             <div className="flex flex-col gap-2">
               <dt className="text-lg font-geist-mono font-semibold tracking-tighter text-muted-foreground">
                 Status
@@ -151,13 +152,28 @@ export default async function RunPage({
               </dt>
               <dd className="text-sm">{duration ? `${duration}s` : "N/A"}</dd>
             </div>
+            {run.screenshotData && (
+              <div className="flex flex-col gap-2">
+                <dt className="text-lg font-geist-mono font-semibold tracking-tighter text-muted-foreground">
+                  Screenshot
+                </dt>
+                <dd>
+                  <ScreenshotThumbnail
+                    screenshotData={run.screenshotData}
+                    siteName={run.monitor.site.name}
+                    strategy={run.monitor.strategy}
+                    compact
+                  />
+                </dd>
+              </div>
+            )}
           </dl>
         </CardContent>
       </Card>
 
       {run.status === "success" && (
         <>
-          <div className=" grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-medium">
@@ -213,36 +229,42 @@ export default async function RunPage({
               <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-6">
                 <MetricBadge
                   label="LCP"
+                  description="Largest Contentful Paint"
                   value={run.lcp}
                   unit="ms"
                   thresholds={{ good: 2500, needsImprovement: 4000 }}
                 />
                 <MetricBadge
                   label="INP"
+                  description="Interaction to Next Paint"
                   value={run.inp}
                   unit="ms"
                   thresholds={{ good: 200, needsImprovement: 500 }}
                 />
                 <MetricBadge
                   label="TBT"
+                  description="Total Blocking Time"
                   value={run.tbt}
                   unit="ms"
                   thresholds={{ good: 200, needsImprovement: 600 }}
                 />
                 <MetricBadge
                   label="CLS"
+                  description="Cumulative Layout Shift"
                   value={run.cls}
                   unit=""
                   thresholds={{ good: 0.1, needsImprovement: 0.25 }}
                 />
                 <MetricBadge
                   label="FCP"
+                  description="First Contentful Paint"
                   value={run.fcp}
                   unit="ms"
                   thresholds={{ good: 1800, needsImprovement: 3000 }}
                 />
                 <MetricBadge
                   label="TTFB"
+                  description="Time to First Byte"
                   value={run.ttfb}
                   unit="ms"
                   thresholds={{ good: 800, needsImprovement: 1800 }}

@@ -8,12 +8,14 @@ A production-ready web performance monitoring application built with Next.js 15,
 
 - 🚀 **Site Monitoring**: Track multiple websites with customizable monitoring schedules
 - 📊 **Performance Metrics**: Core Web Vitals (LCP, INP, CLS, FCP, TTFB) and Lighthouse scores
+- 📸 **Visual Snapshots**: Capture and store page screenshots with each audit
 - 📈 **Trend Analysis**: Visualize performance over time with interactive charts
 - 🔄 **Automated Audits**: Background worker with cron scheduler for periodic testing
 - 🎯 **Manual Runs**: On-demand performance audits with rate limiting
-- 📉 **Run Comparison**: Side-by-side comparison of metrics and audits
+- 📉 **Run Comparison**: Side-by-side comparison of metrics, audits, and screenshots
 - 🔐 **Authentication**: Secure email magic link authentication via NextAuth
 - ⚡ **Queue System**: BullMQ-powered job processing with retry logic
+- 🧹 **Auto-Cleanup**: Automatic screenshot TTL policy to manage database size
 - 🎨 **Modern UI**: Beautiful interface built with shadcn/ui and Tailwind CSS
 
 ## Tech Stack
@@ -134,6 +136,9 @@ SCHEDULER_SECRET="your-scheduler-secret-here"
 
 # Rate limiting
 RATE_LIMIT_RUNS_PER_DAY="100"
+
+# Screenshot cleanup (TTL in days)
+SCREENSHOT_TTL_DAYS="30"
 
 # Environment
 NODE_ENV="development"
@@ -308,6 +313,16 @@ Manual runs are rate limited per user per day:
 - Configurable via `RATE_LIMIT_RUNS_PER_DAY`
 - Uses Redis for distributed tracking
 - Resets at midnight
+
+## Screenshot Management
+
+Screenshots from PageSpeed Insights are automatically captured and stored:
+- **Storage**: Base64-encoded JPEG in PostgreSQL
+- **Display**: Click-to-zoom thumbnails on run detail pages
+- **Comparison**: Side-by-side screenshots when comparing runs
+- **TTL Policy**: Automatic cleanup of screenshots older than 30 days (configurable via `SCREENSHOT_TTL_DAYS`)
+- **Cleanup Schedule**: Runs daily at 3 AM via the worker's cron scheduler
+- **Manual Cleanup**: Run `pnpm cleanup:screenshots [days]` to manually clean up screenshots
 
 ## Deployment
 

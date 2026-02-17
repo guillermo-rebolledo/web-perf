@@ -1,17 +1,29 @@
 import cron from "node-cron";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob } from "@/lib/queue";
+import { cleanupOldScreenshots } from "@/lib/screenshot-cleanup";
+import { env } from "@/env";
 import { addMinutes } from "date-fns";
 
 export function startScheduler() {
   console.log("[Scheduler] Starting cron scheduler (runs every minute)");
 
-  // Run every minute
+  // Run every minute - process due monitors
   cron.schedule("*/1 * * * *", async () => {
     try {
       await processDueMonitors();
     } catch (error) {
       console.error("[Scheduler] Error processing due monitors:", error);
+    }
+  });
+
+  // Run daily at 3 AM - cleanup old screenshots
+  cron.schedule("0 3 * * *", async () => {
+    try {
+      console.log("[Scheduler] Running daily screenshot cleanup");
+      await cleanupOldScreenshots(env.SCREENSHOT_TTL_DAYS);
+    } catch (error) {
+      console.error("[Scheduler] Error during screenshot cleanup:", error);
     }
   });
 }

@@ -11,7 +11,8 @@
     "start": "next start",
     "start:worker": "node dist/worker/index.js",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "cleanup:screenshots": "node scripts/cleanup-screenshots.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
