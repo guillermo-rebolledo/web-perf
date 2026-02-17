@@ -1,5 +1,11 @@
 import { Run, Audit } from "@prisma/client";
 
+export type Significance = "none" | "minor" | "significant";
+
+// Percentage threshold below which a non-zero change is considered
+// within typical Lighthouse measurement variance (~5 %).
+const MINOR_CHANGE_THRESHOLD = 5;
+
 export interface MetricDelta {
   name: string;
   before: number | null;
@@ -7,6 +13,7 @@ export interface MetricDelta {
   delta: number | null;
   percentChange: number | null;
   isImprovement: boolean;
+  significance: Significance;
   unit: string;
 }
 
@@ -118,6 +125,13 @@ export function compareRuns(
   return { scores, metrics, audits };
 }
 
+function getDisplayPrecision(unit: string): number {
+  if (unit === "ms") return 0;
+  if (unit === "points") return 0;
+  if (unit === "") return 3; // CLS
+  return 2;
+}
+
 function createMetricDelta(
   name: string,
   before: number | null,
@@ -125,15 +139,42 @@ function createMetricDelta(
   unit: string,
   higherIsBetter: boolean
 ): MetricDelta {
-  const delta = before !== null && after !== null ? after - before : null;
+  let delta = before !== null && after !== null ? after - before : null;
+
+  // If the delta rounds to zero at display precision, treat it as no change.
+  // This prevents confusing output like "+0.000 (+7.3%)" when raw values
+  // differ only beyond the displayed decimal places.
+  if (delta !== null) {
+    const precision = getDisplayPrecision(unit);
+    if (Number(delta.toFixed(precision)) === 0) {
+      delta = 0;
+    }
+  }
+
   const percentChange =
-    before !== null && before !== 0 && delta !== null
+    before !== null && before !== 0 && delta !== null && delta !== 0
       ? (delta / before) * 100
       : null;
 
   let isImprovement = false;
   if (delta !== null) {
     isImprovement = higherIsBetter ? delta > 0 : delta < 0;
+  }
+
+  // Classify the change into significance tiers:
+  //   "none"        – delta is zero (or rounds to zero at display precision)
+  //   "minor"       – non-zero but within typical Lighthouse variance (< 5 %)
+  //   "significant" – large enough to be actionable
+  let significance: Significance = "none";
+  if (delta !== null && delta !== 0) {
+    if (
+      percentChange !== null &&
+      Math.abs(percentChange) < MINOR_CHANGE_THRESHOLD
+    ) {
+      significance = "minor";
+    } else {
+      significance = "significant";
+    }
   }
 
   return {
@@ -143,6 +184,7 @@ function createMetricDelta(
     delta,
     percentChange,
     isImprovement,
+    significance,
     unit,
   };
 }

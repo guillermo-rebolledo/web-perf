@@ -21,8 +21,48 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScreenshotThumbnail } from "@/components/screenshot-thumbnail";
 import { ArrowLeft, TrendingDown, TrendingUp } from "lucide-react";
-import { compareRuns, formatMetricValue, formatDelta } from "@/lib/metrics-compare";
+import {
+  compareRuns,
+  formatMetricValue,
+  formatDelta,
+  type MetricDelta,
+} from "@/lib/metrics-compare";
 import { format } from "date-fns";
+
+function StatusBadge({ metric }: { metric: MetricDelta }) {
+  if (metric.significance === "none") {
+    return <Badge variant="neutral">No change</Badge>;
+  }
+
+  if (metric.significance === "minor") {
+    return (
+      <Badge
+        variant={metric.isImprovement ? "successMinor" : "warningMinor"}
+        className="gap-1"
+      >
+        {metric.isImprovement ? (
+          <TrendingUp className="h-3 w-3" />
+        ) : (
+          <TrendingDown className="h-3 w-3" />
+        )}
+        Minor
+      </Badge>
+    );
+  }
+
+  // significance === "significant"
+  return metric.isImprovement ? (
+    <Badge variant="success" className="gap-1">
+      <TrendingUp className="h-3 w-3" />
+      Improved
+    </Badge>
+  ) : (
+    <Badge variant="destructive" className="gap-1">
+      <TrendingDown className="h-3 w-3" />
+      Regressed
+    </Badge>
+  );
+}
 
 export default async function CompareRunsPage({
   params,
@@ -192,21 +232,7 @@ export default async function CompareRunsPage({
                     )}
                   </TableCell>
                   <TableCell>
-                    {score.delta !== null && score.delta !== 0 ? (
-                      score.isImprovement ? (
-                        <Badge variant="success" className="gap-1">
-                          <TrendingUp className="h-3 w-3" />
-                          Improved
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive" className="gap-1">
-                          <TrendingDown className="h-3 w-3" />
-                          Regressed
-                        </Badge>
-                      )
-                    ) : (
-                      <Badge variant="outline">No change</Badge>
-                    )}
+                    <StatusBadge metric={score} />
                   </TableCell>
                 </TableRow>
               ))}
@@ -253,21 +279,7 @@ export default async function CompareRunsPage({
                     )}
                   </TableCell>
                   <TableCell>
-                    {metric.delta !== null && metric.delta !== 0 ? (
-                      metric.isImprovement ? (
-                        <Badge variant="success" className="gap-1">
-                          <TrendingUp className="h-3 w-3" />
-                          Improved
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive" className="gap-1">
-                          <TrendingDown className="h-3 w-3" />
-                          Regressed
-                        </Badge>
-                      )
-                    ) : (
-                      <Badge variant="outline">No change</Badge>
-                    )}
+                    <StatusBadge metric={metric} />
                   </TableCell>
                 </TableRow>
               ))}

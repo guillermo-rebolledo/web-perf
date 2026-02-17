@@ -226,6 +226,13 @@ body {
   color: var(--foreground);
 }
 
+* {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
+}
+
 @layer base {
   body {
     letter-spacing: var(--tracking-normal);

@@ -6,9 +6,15 @@ import { env } from "@/env";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
+/** Enabled when NODE_ENV is not production and --debug-psi is passed as a CLI argument */
+const PSI_DEBUG_ENABLED =
+  process.env.NODE_ENV !== "production" &&
+  process.argv.includes("--debug-psi");
+
 /**
- * Helper function to write PSI response to a debug file
- * File is overwritten on each run for easier debugging
+ * Helper function to write PSI response to a debug file.
+ * Only called when PSI_DEBUG_ENABLED is true.
+ * File is overwritten on each run for easier debugging.
  */
 async function writeDebugFile(data: unknown, filename = "psi-debug.json") {
   try {
@@ -44,8 +50,9 @@ export async function processAuditJob(job: Job<AuditJobData>) {
       env.PAGESPEED_API_KEY,
     );
 
-    // Write debug file for inspection
-    await writeDebugFile(psiResponse, `psi-debug-${strategy}.json`);
+    if (PSI_DEBUG_ENABLED) {
+      await writeDebugFile(psiResponse, `psi-debug-${strategy}.json`);
+    }
 
     // Parse the response
     const metrics = parsePSIResponse(psiResponse);
