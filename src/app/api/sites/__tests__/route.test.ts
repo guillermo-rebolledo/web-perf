@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Site } from "@prisma/client";
 import { NextRequest } from "next/server";
 import {
   mockAuthenticated,
@@ -14,7 +15,8 @@ function makeRequest(method: string, url: string, body?: unknown) {
     init.body = JSON.stringify(body);
     init.headers = { "Content-Type": "application/json" };
   }
-  return new NextRequest(new URL(url, "http://localhost:3000"), init);
+  const urlObj = new URL(url, "http://localhost:3000");
+  return new NextRequest(urlObj, { ...init, signal: init.signal ?? undefined });
 }
 
 describe("GET /api/sites", () => {
@@ -33,7 +35,7 @@ describe("GET /api/sites", () => {
       { ...createSite(), monitors: [] },
       { ...createSite({ id: "site-2", name: "Site 2" }), monitors: [] },
     ];
-    prismaMock.site.findMany.mockResolvedValue(sites as any);
+    vi.mocked(prismaMock.site.findMany).mockResolvedValue(sites as (Site & { monitors: unknown[] })[]);
 
     const res = await GET(makeRequest("GET", "/api/sites"));
     const data = await res.json();
@@ -68,7 +70,7 @@ describe("POST /api/sites", () => {
   });
 
   it("rejects duplicate site URLs for the same user", async () => {
-    prismaMock.site.findFirst.mockResolvedValue(createSite());
+    vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
 
     const res = await POST(
       makeRequest("POST", "/api/sites", {
@@ -83,8 +85,8 @@ describe("POST /api/sites", () => {
   });
 
   it("creates a new site with canonicalized URL", async () => {
-    prismaMock.site.findFirst.mockResolvedValue(null);
-    prismaMock.site.create.mockResolvedValue(
+    vi.mocked(prismaMock.site.findFirst).mockResolvedValue(null);
+    vi.mocked(prismaMock.site.create).mockResolvedValue(
       createSite({ url: "https://example.com/" })
     );
 

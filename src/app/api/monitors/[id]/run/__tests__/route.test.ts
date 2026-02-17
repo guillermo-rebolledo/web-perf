@@ -5,6 +5,7 @@ import {
   mockUnauthenticated,
 } from "@/__tests__/helpers/auth-mock";
 import { prismaMock } from "@/__tests__/helpers/prisma-mock";
+import type { Monitor, Run, Site } from "@prisma/client";
 import {
   createMonitor,
   createSite,
@@ -63,11 +64,11 @@ describe("POST /api/monitors/[id]/run", () => {
       reset: new Date(),
     });
 
-    prismaMock.monitor.findFirst.mockResolvedValue({
+    vi.mocked(prismaMock.monitor.findFirst).mockResolvedValue({
       ...createMonitor(),
       site: createSite(),
       runs: [],
-    } as any);
+    } as Monitor & { site: Site; runs: Run[] });
 
     const res = await POST(
       makeRequest("POST", "/api/monitors/m1/run"),
@@ -77,7 +78,7 @@ describe("POST /api/monitors/[id]/run", () => {
   });
 
   it("returns 404 when monitor not found", async () => {
-    prismaMock.monitor.findFirst.mockResolvedValue(null);
+    vi.mocked(prismaMock.monitor.findFirst).mockResolvedValue(null);
     const res = await POST(
       makeRequest("POST", "/api/monitors/m1/run"),
       makeParams("m1")
@@ -86,11 +87,11 @@ describe("POST /api/monitors/[id]/run", () => {
   });
 
   it("returns 409 when a run is already in progress", async () => {
-    prismaMock.monitor.findFirst.mockResolvedValue({
+    vi.mocked(prismaMock.monitor.findFirst).mockResolvedValue({
       ...createMonitor(),
       site: createSite(),
       runs: [createRun({ status: "running" })],
-    } as any);
+    } as Monitor & { site: Site; runs: Run[] });
 
     const res = await POST(
       makeRequest("POST", "/api/monitors/m1/run"),
@@ -100,15 +101,15 @@ describe("POST /api/monitors/[id]/run", () => {
   });
 
   it("creates run and enqueues job (202)", async () => {
-    prismaMock.monitor.findFirst.mockResolvedValue({
+    vi.mocked(prismaMock.monitor.findFirst).mockResolvedValue({
       ...createMonitor(),
       site: createSite(),
       runs: [],
-    } as any);
-    prismaMock.run.create.mockResolvedValue(
+    } as Monitor & { site: Site; runs: Run[] });
+    vi.mocked(prismaMock.run.create).mockResolvedValue(
       createRun({ id: "new-run", status: "queued" })
     );
-    prismaMock.run.update.mockResolvedValue(
+    vi.mocked(prismaMock.run.update).mockResolvedValue(
       createRun({ id: "new-run", jobId: "mock-job-id" })
     );
 

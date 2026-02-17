@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -31,12 +32,15 @@ export function ScreenshotThumbnail({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <div className="group relative cursor-pointer overflow-hidden rounded-lg border">
-          <img
+          <Image
             src={screenshotData}
             alt={`Screenshot of ${siteName} (${strategy})`}
+            width={1200}
+            height={compact ? 80 : 288}
             className={`w-full object-cover object-top transition-transform group-hover:scale-105 ${
               compact ? "h-20" : "h-48"
             }`}
+            unoptimized
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
             <Button variant="secondary" size={compact ? "icon" : "sm"}>
@@ -60,10 +64,13 @@ export function ScreenshotThumbnail({
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[70vh] overflow-auto">
-          <img
+          <Image
             src={screenshotData}
             alt={`Full screenshot of ${siteName} (${strategy})`}
+            width={1200}
+            height={800}
             className="w-full"
+            unoptimized
           />
         </div>
       </DialogContent>

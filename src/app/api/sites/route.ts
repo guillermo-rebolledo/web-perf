@@ -9,8 +9,9 @@ const createSiteSchema = z.object({
   url: z.string().url(),
 });
 
-// GET /api/sites - List user's sites
-export async function GET(request: NextRequest) {
+// GET /api/sites - List user's sites (request not needed for list)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- required by Next.js route signature
+export async function GET(_request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: "Invalid request data", details: error.errors },
+        { error: "Invalid request data", details: error.issues },
         { status: 400 }
       );
     }

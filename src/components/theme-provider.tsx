@@ -4,7 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
-  useState,
+  useSyncExternalStore,
   useCallback,
 } from "react";
 
@@ -26,6 +26,33 @@ function getSystemTheme(): ResolvedTheme {
     : "light";
 }
 
+function getStoredTheme(): Theme {
+  if (typeof window === "undefined") return "system";
+  const stored = localStorage.getItem("theme");
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+}
+
+let themeListeners: Array<() => void> = [];
+function subscribeToTheme(callback: () => void) {
+  themeListeners.push(callback);
+  return () => {
+    themeListeners = themeListeners.filter((l) => l !== callback);
+  };
+}
+function notifyThemeListeners() {
+  themeListeners.forEach((l) => l());
+}
+
+function subscribeToSystemTheme(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
 function applyTheme(resolved: ResolvedTheme) {
   document.documentElement.classList.toggle("dark", resolved === "dark");
   // Update the browser's theme-color meta tag to match the background
@@ -45,48 +72,29 @@ function applyTheme(resolved: ResolvedTheme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>("dark");
-
-  const resolve = useCallback(
-    (t: Theme): ResolvedTheme => (t === "system" ? getSystemTheme() : t),
-    [],
+  const theme = useSyncExternalStore<Theme>(
+    subscribeToTheme,
+    getStoredTheme,
+    () => "system",
   );
-
-  // Initialize from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("theme") as Theme | null;
-    const initial = stored ?? "system";
-    const resolved = resolve(initial);
-    setThemeState(initial);
-    setResolvedTheme(resolved);
-    applyTheme(resolved);
-  }, [resolve]);
-
-  // Listen for OS preference changes when in system mode
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => {
-      if (theme === "system") {
-        const resolved = getSystemTheme();
-        setResolvedTheme(resolved);
-        applyTheme(resolved);
-      }
-    };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [theme]);
-
-  const setTheme = useCallback(
-    (t: Theme) => {
-      localStorage.setItem("theme", t);
-      const resolved = resolve(t);
-      setThemeState(t);
-      setResolvedTheme(resolved);
-      applyTheme(resolved);
-    },
-    [resolve],
+  const systemTheme = useSyncExternalStore<ResolvedTheme>(
+    subscribeToSystemTheme,
+    getSystemTheme,
+    () => "dark",
   );
+  const resolvedTheme: ResolvedTheme =
+    theme === "system" ? systemTheme : theme;
+
+  // Apply theme when resolved theme changes
+  useEffect(() => {
+    applyTheme(resolvedTheme);
+  }, [resolvedTheme]);
+
+  const setTheme = useCallback((t: Theme) => {
+    localStorage.setItem("theme", t);
+    notifyThemeListeners();
+    applyTheme(t === "system" ? getSystemTheme() : t);
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>

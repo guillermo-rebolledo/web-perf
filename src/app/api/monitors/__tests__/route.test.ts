@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { Monitor, Run } from "@prisma/client";
 import { NextRequest } from "next/server";
 import {
   mockAuthenticated,
@@ -14,7 +15,8 @@ function makeRequest(method: string, url: string, body?: unknown) {
     init.body = JSON.stringify(body);
     init.headers = { "Content-Type": "application/json" };
   }
-  return new NextRequest(new URL(url, "http://localhost:3000"), init);
+  const urlObj = new URL(url, "http://localhost:3000");
+  return new NextRequest(urlObj, { ...init, signal: init.signal ?? undefined });
 }
 
 describe("GET /api/monitors", () => {
@@ -36,7 +38,7 @@ describe("GET /api/monitors", () => {
   });
 
   it("returns 404 when site does not belong to user", async () => {
-    prismaMock.site.findFirst.mockResolvedValue(null);
+    vi.mocked(prismaMock.site.findFirst).mockResolvedValue(null);
     const res = await GET(
       makeRequest("GET", "/api/monitors?siteId=unknown-site")
     );
@@ -44,9 +46,11 @@ describe("GET /api/monitors", () => {
   });
 
   it("returns monitors for a valid site", async () => {
-    prismaMock.site.findFirst.mockResolvedValue(createSite());
+    vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
     const monitors = [{ ...createMonitor(), runs: [] }];
-    prismaMock.monitor.findMany.mockResolvedValue(monitors as any);
+    vi.mocked(prismaMock.monitor.findMany).mockResolvedValue(
+      monitors as (Monitor & { runs: Run[] })[]
+    );
 
     const res = await GET(
       makeRequest("GET", "/api/monitors?siteId=test-site-id")
@@ -84,7 +88,7 @@ describe("POST /api/monitors", () => {
   });
 
   it("returns 404 when site does not belong to user", async () => {
-    prismaMock.site.findFirst.mockResolvedValue(null);
+    vi.mocked(prismaMock.site.findFirst).mockResolvedValue(null);
     const res = await POST(
       makeRequest("POST", "/api/monitors", {
         siteId: "clxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -96,8 +100,8 @@ describe("POST /api/monitors", () => {
   });
 
   it("creates monitor with defaults", async () => {
-    prismaMock.site.findFirst.mockResolvedValue(createSite());
-    prismaMock.monitor.create.mockResolvedValue(createMonitor());
+    vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
+    vi.mocked(prismaMock.monitor.create).mockResolvedValue(createMonitor());
 
     const res = await POST(
       makeRequest("POST", "/api/monitors", {

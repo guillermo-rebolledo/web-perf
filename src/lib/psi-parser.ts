@@ -7,13 +7,13 @@ export interface PSIAudit {
   displayValue?: string;
   numericValue?: number;
   numericUnit?: string;
-  [key: string]: any; // Allow additional properties
+  [key: string]: unknown; // Allow additional properties
 }
 
 export interface PSICategory {
   score: number;
   title?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface PSIResponse {
@@ -23,13 +23,13 @@ export interface PSIResponse {
       accessibility: PSICategory;
       "best-practices": PSICategory;
       seo: PSICategory;
-      [key: string]: any;
+      [key: string]: unknown;
     };
-    audits: Record<string, PSIAudit | string | any>;
+    audits: Record<string, PSIAudit | string | unknown>;
     fetchTime?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ParsedMetrics {
@@ -60,39 +60,57 @@ export interface ParsedMetrics {
   }>;
 }
 
+function isPSIAudit(audit: unknown): audit is PSIAudit {
+  return (
+    typeof audit === "object" &&
+    audit !== null &&
+    "id" in audit &&
+    "title" in audit &&
+    "score" in audit
+  );
+}
+
+function hasScreenshotDetails(
+  audit: unknown,
+): audit is { details?: { data?: string } } {
+  return typeof audit === "object" && audit !== null && "details" in audit;
+}
+
 export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
   const { categories, audits } = response.lighthouseResult;
 
   // Extract scores (convert from 0-1 to 0-100)
   const performanceScore = Math.round(categories.performance.score * 100);
   const accessibilityScore = Math.round(categories.accessibility.score * 100);
-  const bestPracticesScore = Math.round(categories["best-practices"].score * 100);
+  const bestPracticesScore = Math.round(
+    categories["best-practices"].score * 100,
+  );
   const seoScore = Math.round(categories.seo.score * 100);
 
   // Extract Core Web Vitals - with safe access for string audits
   const getLcpValue = () => {
     const audit = audits["largest-contentful-paint"];
-    return typeof audit === 'object' ? audit.numericValue : undefined;
+    return isPSIAudit(audit) ? audit.numericValue : undefined;
   };
   const getInpValue = () => {
     const audit = audits["interaction-to-next-paint"];
-    return typeof audit === 'object' ? audit.numericValue : undefined;
+    return isPSIAudit(audit) ? audit.numericValue : undefined;
   };
   const getTbtValue = () => {
     const audit = audits["total-blocking-time"];
-    return typeof audit === 'object' ? audit.numericValue : undefined;
+    return isPSIAudit(audit) ? audit.numericValue : undefined;
   };
   const getClsValue = () => {
     const audit = audits["cumulative-layout-shift"];
-    return typeof audit === 'object' ? audit.numericValue : undefined;
+    return isPSIAudit(audit) ? audit.numericValue : undefined;
   };
   const getFcpValue = () => {
     const audit = audits["first-contentful-paint"];
-    return typeof audit === 'object' ? audit.numericValue : undefined;
+    return isPSIAudit(audit) ? audit.numericValue : undefined;
   };
   const getTtfbValue = () => {
     const audit = audits["server-response-time"];
-    return typeof audit === 'object' ? audit.numericValue : undefined;
+    return isPSIAudit(audit) ? audit.numericValue : undefined;
   };
 
   const lcp = getLcpValue();
@@ -104,26 +122,28 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
 
   // Extract screenshot from final-screenshot audit
   const screenshotAudit = audits["final-screenshot"];
-  const screenshot = typeof screenshotAudit === 'object' && screenshotAudit.details?.data 
-    ? screenshotAudit.details.data 
+  const screenshot = hasScreenshotDetails(screenshotAudit)
+    ? screenshotAudit.details?.data
     : undefined;
 
   // Select failed or warning audits (score < 0.9 or no score but has numeric value)
   const selectedAudits = Object.entries(audits)
-    .filter(([_, audit]) => {
+    .filter(([, audit]) => {
       // Skip string audits (they're just references)
-      if (typeof audit === 'string') return false;
-      
+      if (typeof audit === "string") return false;
+      if (!isPSIAudit(audit)) return false;
+
       // Include audits with low scores or important metrics
       return (
         (audit.score !== null && audit.score < 0.9) ||
-        (audit.score === null && audit.numericValue !== undefined && audit.numericValue > 0)
+        (audit.score === null &&
+          audit.numericValue !== undefined &&
+          audit.numericValue > 0)
       );
     })
     .map(([id, audit]) => {
-      // Type guard to ensure we're working with objects
-      if (typeof audit === 'string') return null;
-      
+      if (!isPSIAudit(audit)) return null;
+
       return {
         auditId: id,
         title: audit.title,
@@ -161,11 +181,13 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
 export async function fetchPageSpeedInsights(
   url: string,
   strategy: "mobile" | "desktop",
-  apiKey: string
+  apiKey: string,
 ): Promise<PSIResponse> {
   const categories = ["performance", "accessibility", "best-practices", "seo"];
-  const apiUrl = new URL("https://www.googleapis.com/pagespeedonline/v5/runPagespeed");
-  
+  const apiUrl = new URL(
+    "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
+  );
+
   apiUrl.searchParams.set("url", url);
   apiUrl.searchParams.set("strategy", strategy);
   categories.forEach((cat) => apiUrl.searchParams.append("category", cat));
@@ -180,16 +202,16 @@ export async function fetchPageSpeedInsights(
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(
-      `PageSpeed Insights API error (${response.status}): ${errorText}`
+      `PageSpeed Insights API error (${response.status}): ${errorText}`,
     );
   }
 
   const data = await response.json();
-  
+
   // Basic validation - just check the structure exists
   if (!data?.lighthouseResult?.categories || !data?.lighthouseResult?.audits) {
     throw new Error("Invalid PageSpeed Insights response structure");
   }
-  
+
   return data;
 }

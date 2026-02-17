@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import type { PrismaClient } from "@prisma/client";
 import { prismaMock } from "@/__tests__/helpers/prisma-mock";
-import { createPSIResponse } from "@/__tests__/helpers/fixtures";
+import { createPSIResponse, createRun, createMonitor } from "@/__tests__/helpers/fixtures";
 import type { Job } from "bullmq";
 import type { AuditJobData } from "@/lib/queue";
 
@@ -53,15 +54,16 @@ describe("processAuditJob", () => {
     vi.mocked(fetchPageSpeedInsights).mockResolvedValue(createPSIResponse());
 
     // Mock the $transaction to execute the callback with the prismaMock
-    prismaMock.$transaction.mockImplementation(async (fn: any) => {
-      return fn(prismaMock);
+    type TransactionFn = Parameters<PrismaClient["$transaction"]>[0];
+    vi.mocked(prismaMock.$transaction).mockImplementation(async (fn: TransactionFn) => {
+      return fn(prismaMock as Parameters<TransactionFn>[0]) as ReturnType<TransactionFn>;
     });
   });
 
   it("updates run status to running", async () => {
-    prismaMock.run.update.mockResolvedValue({} as any);
-    prismaMock.audit.createMany.mockResolvedValue({ count: 5 });
-    prismaMock.monitor.update.mockResolvedValue({} as any);
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
 
@@ -74,9 +76,9 @@ describe("processAuditJob", () => {
   });
 
   it("fetches PSI data with correct params", async () => {
-    prismaMock.run.update.mockResolvedValue({} as any);
-    prismaMock.audit.createMany.mockResolvedValue({ count: 5 });
-    prismaMock.monitor.update.mockResolvedValue({} as any);
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
 
@@ -88,28 +90,32 @@ describe("processAuditJob", () => {
   });
 
   it("updates run with parsed metrics on success", async () => {
-    prismaMock.run.update.mockResolvedValue({} as any);
-    prismaMock.audit.createMany.mockResolvedValue({ count: 5 });
-    prismaMock.monitor.update.mockResolvedValue({} as any);
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
 
     // The second call to run.update (inside transaction) should have metrics
-    const transactionUpdateCall = prismaMock.run.update.mock.calls.find(
-      (call) => call[0].data && "performanceScore" in (call[0].data as any)
+    type RunUpdateData = { status?: string; performanceScore?: number; lcp?: number };
+    const runUpdateMock = vi.mocked(prismaMock.run.update);
+    const transactionUpdateCall = runUpdateMock.mock.calls.find(
+      (call: Parameters<typeof prismaMock.run.update>) =>
+        call[0].data &&
+        "performanceScore" in (call[0].data as RunUpdateData)
     );
 
     expect(transactionUpdateCall).toBeDefined();
-    const updateData = transactionUpdateCall![0].data as any;
+    const updateData = transactionUpdateCall![0].data as RunUpdateData;
     expect(updateData.status).toBe("success");
     expect(updateData.performanceScore).toBe(85);
     expect(updateData.lcp).toBe(2500);
   });
 
   it("creates audit records", async () => {
-    prismaMock.run.update.mockResolvedValue({} as any);
-    prismaMock.audit.createMany.mockResolvedValue({ count: 5 });
-    prismaMock.monitor.update.mockResolvedValue({} as any);
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
 
@@ -123,9 +129,9 @@ describe("processAuditJob", () => {
   });
 
   it("updates monitor lastRunAt", async () => {
-    prismaMock.run.update.mockResolvedValue({} as any);
-    prismaMock.audit.createMany.mockResolvedValue({ count: 5 });
-    prismaMock.monitor.update.mockResolvedValue({} as any);
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
 
@@ -141,16 +147,19 @@ describe("processAuditJob", () => {
     vi.mocked(fetchPageSpeedInsights).mockRejectedValue(
       new Error("API error")
     );
-    prismaMock.run.update.mockResolvedValue({} as any);
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
 
     await expect(processAuditJob(createMockJob(jobData))).rejects.toThrow(
       "API error"
     );
 
-    const failCall = prismaMock.run.update.mock.calls.find(
-      (call) => (call[0].data as any)?.status === "failed"
+    type RunUpdateData = { status?: string; errorMessage?: string };
+    const runUpdateMock = vi.mocked(prismaMock.run.update);
+    const failCall = runUpdateMock.mock.calls.find(
+      (call: Parameters<typeof prismaMock.run.update>) =>
+        (call[0].data as RunUpdateData)?.status === "failed"
     );
     expect(failCall).toBeDefined();
-    expect((failCall![0].data as any).errorMessage).toBe("API error");
+    expect((failCall![0].data as RunUpdateData).errorMessage).toBe("API error");
   });
 });
