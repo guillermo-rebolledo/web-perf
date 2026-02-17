@@ -45,16 +45,14 @@ export default async function RunPage({
           site: true,
           runs: {
             where: {
+              id: { not: id },
               status: "success",
-              completedAt: {
-                lt: new Date(),
-              },
+              completedAt: { not: null },
             },
             orderBy: {
               completedAt: "desc",
             },
             take: 1,
-            skip: 0,
           },
         },
       },
@@ -70,7 +68,7 @@ export default async function RunPage({
     notFound();
   }
 
-  const previousRun = run.monitor.runs.find((r) => r.id !== run.id);
+  const previousRun = run.monitor.runs[0] ?? null;
   const duration =
     run.startedAt && run.completedAt
       ? differenceInSeconds(new Date(run.completedAt), new Date(run.startedAt))
