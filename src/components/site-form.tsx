@@ -18,6 +18,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { canonicalizeUrl } from "@/lib/url-utils";
+import { CirclePlus } from "lucide-react";
 
 const siteSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -92,7 +93,12 @@ export function SiteForm({ onSuccess, triggerButton }: SiteFormProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {triggerButton || <Button>Create Site</Button>}
+        {triggerButton || (
+          <Button>
+            <CirclePlus />
+            Create Site
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
