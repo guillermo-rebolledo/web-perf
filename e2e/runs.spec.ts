@@ -27,12 +27,12 @@ test.describe("Run detail page (authenticated)", () => {
     await page.goto(`/runs/${TEST_RUN.id}`);
     await expect(page).toHaveURL(new RegExp(`/runs/${TEST_RUN.id}`));
 
-    // Should show the site name
-    await expect(page.getByText(TEST_SITE.name)).toBeVisible();
+    // Should show the site name (appears in breadcrumb and subtitle)
+    await expect(page.getByText(TEST_SITE.name).first()).toBeVisible();
 
     // Should show performance score
     await expect(
-      page.getByText(String(TEST_RUN.performanceScore))
+      page.getByText(String(TEST_RUN.performanceScore)).first()
     ).toBeVisible();
   });
 
@@ -60,10 +60,12 @@ test.describe("Run detail page (authenticated)", () => {
     ).toBeVisible();
   });
 
-  test("has a back button to navigate to the site", async ({ page }) => {
+  test("has breadcrumb navigation to the site", async ({ page }) => {
     await page.goto(`/runs/${TEST_RUN.id}`);
-    const backButton = page.getByRole("link", { name: /back/i });
-    await expect(backButton).toBeVisible();
+    // Breadcrumb shows site name as a link back to the site page
+    const siteLink = page.getByRole("link", { name: TEST_SITE.name });
+    await expect(siteLink).toBeVisible();
+    await expect(siteLink).toHaveAttribute("href", `/sites/${TEST_SITE.id}`);
   });
 });
 
@@ -71,10 +73,11 @@ test.describe("Site detail page (authenticated)", () => {
   test("shows monitors and run history", async ({ page }) => {
     await page.goto(`/sites/${TEST_SITE.id}`);
     await expect(page).toHaveURL(new RegExp(`/sites/${TEST_SITE.id}`));
-    await expect(page.getByText(TEST_SITE.name)).toBeVisible();
+    // Site detail page shows the URL in the description
+    await expect(page.getByText(TEST_SITE.url)).toBeVisible();
 
-    // Should show the monitor
-    await expect(page.getByText(/mobile/i)).toBeVisible();
+    // Should show the monitor heading with strategy
+    await expect(page.getByText(/mobile monitor/i)).toBeVisible();
 
     // Should show a Run Now button
     await expect(
