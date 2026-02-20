@@ -29,10 +29,8 @@ import {
 } from "@/components/ui/breadcrumb";
 import { ScoreBadge, MetricBadge } from "@/components/score-badge";
 import { ScoreStatCard } from "@/components/score-stat-card";
-import { ScreenshotThumbnail } from "@/components/screenshot-thumbnail";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, GitCompare } from "lucide-react";
-import { formatDistanceToNow, differenceInSeconds } from "date-fns";
+import { GitCompare } from "lucide-react";
 import { formatRelativeTime } from "@/lib/dates";
 import { getThresholds } from "@/lib/metric-thresholds";
 import { DescriptionWithParsedLink } from "@/components/description-with-parsed-link";
@@ -78,10 +76,6 @@ export default async function RunPage({
         select: { id: true },
       })
     : null;
-  const duration =
-    run.startedAt && run.completedAt
-      ? differenceInSeconds(new Date(run.completedAt), new Date(run.startedAt))
-      : null;
 
   const strategy = run.monitor.strategy === "desktop" ? "desktop" : "mobile";
   const t = getThresholds(strategy);
