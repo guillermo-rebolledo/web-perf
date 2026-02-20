@@ -50,3 +50,44 @@ export function extractDomain(urlString: string): string {
     return "";
   }
 }
+
+const markdownLinkRegex = /\[([^\]]*)\]\(([^)]*)\)/;
+
+export function urlParser(urlStr: string): { description: string; href: string } | null {
+  const match = urlStr.match(markdownLinkRegex);
+  if (!match) return null;
+  return {
+    description: match[1],
+    href: match[2],
+  };
+}
+
+export type ParsedDescriptionWithLink =
+  | { kind: "plain"; text: string }
+  | {
+      kind: "withLink";
+      before: string;
+      linkText: string;
+      href: string;
+      after: string;
+    };
+
+/**
+ * Parses a string that may contain a markdown-style link [text](url).
+ * Returns structured segments so the UI can render plain text and a link separately.
+ */
+export function parseDescriptionWithLink(
+  description: string,
+): ParsedDescriptionWithLink {
+  const match = description.match(markdownLinkRegex);
+  if (!match || match.index === undefined) {
+    return { kind: "plain", text: description };
+  }
+  return {
+    kind: "withLink",
+    before: description.slice(0, match.index),
+    linkText: match[1],
+    href: match[2],
+    after: description.slice(match.index + match[0].length),
+  };
+}

@@ -4,6 +4,14 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -19,12 +27,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MonitorForm } from "@/components/monitor-form";
 import { RunButton } from "@/components/run-button";
+import { RunStatusBadge, type RunStatus } from "@/components/run-status-badge";
 import { ScoreBadge } from "@/components/score-badge";
 import { MetricsChart } from "@/components/metrics-chart";
-import { ArrowLeft } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { EmptyMonitors } from "@/components/empty-monitors";
+import { formatCadence } from "@/lib/dates";
 
 export default async function SitePage({
   params,
@@ -86,73 +97,82 @@ export default async function SitePage({
 
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <Link href="/dashboard">
-          <Button variant="ghost" size="sm" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        </Link>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{site.name}</h1>
-            <p className="text-muted-foreground">{site.url}</p>
+      <div className="flex flex-col gap-8">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Site</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        <div className="flex flex-col md:flex-row md:justify-between gap-4">
+          <div className="flex flex-col">
+            <h2 className="text-3xl font-bold font-inter tracking-tighter">
+              Monitors
+            </h2>
+            <p className="text-muted-foreground tracking-tighter text-sm">
+              Historical trends and score comparison for
+              <Link
+                href={site.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pl-[3px] hover:underline focus:underline underline-offset-2 hover:opacity-90 focus:opacity-90"
+              >
+                {site.url}
+              </Link>
+              .
+            </p>
           </div>
           <MonitorForm siteId={site.id} />
         </div>
-      </div>
 
-      {allRuns.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Performance Trends</CardTitle>
-            <CardDescription>
-              Last 30 successful runs across all monitors
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MetricsChart runs={allRuns} />
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="mb-8">
-        <h2 className="mb-4 text-2xl font-bold">Monitors</h2>
-        {site.monitors.length === 0 ? (
+        {allRuns.length > 0 && (
           <Card>
-            <CardContent className="py-12 text-center">
-              <p className="mb-4 text-muted-foreground">
-                No monitors configured for this site
-              </p>
-              <MonitorForm
-                siteId={site.id}
-                triggerButton={<Button>Create First Monitor</Button>}
-              />
+            <CardHeader>
+              <CardTitle>Performance Trends</CardTitle>
+              <CardDescription>
+                Last 30 successful runs across all monitors
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MetricsChart runs={allRuns} />
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-6">
-            {site.monitors.map((monitor) => {
-              const recentRuns = monitor.runs.slice(0, 10);
+        )}
 
-              return (
-                <Card key={monitor.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="flex items-center gap-2">
-                          {monitor.strategy === "mobile" ? "📱" : "🖥️"}{" "}
-                          {monitor.strategy.charAt(0).toUpperCase() +
-                            monitor.strategy.slice(1)}{" "}
-                          Monitor
+        <div className="min-w-0">
+          {site.monitors.length === 0 ? (
+            <EmptyMonitors siteId={site.id} />
+          ) : (
+            <div className="grid min-w-0 gap-6">
+              {site.monitors.map((monitor) => {
+                const recentRuns = monitor.runs.slice(0, 10);
+
+                return (
+                  <Card key={monitor.id} className="min-w-0">
+                    <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+                      <div className="min-w-0">
+                        <CardTitle>
                           {monitor.isActive ? (
-                            <Badge variant="success">Active</Badge>
+                            <Badge variant="success" className="uppercase">
+                              Active
+                            </Badge>
                           ) : (
-                            <Badge variant="outline">Inactive</Badge>
+                            <Badge variant="outline" className="uppercase">
+                              Inactive
+                            </Badge>
                           )}
+                          <span className="capitalize px-1">
+                            {`${monitor.strategy === "mobile" ? "📱" : "🖥️"} ${monitor.strategy} Monitor`}
+                          </span>
                         </CardTitle>
                         <CardDescription>
-                          Runs every {monitor.cadenceMinutes} minutes
+                          Runs every {formatCadence(monitor.cadenceMinutes)}
                           {monitor.lastRunAt &&
                             ` • Last run ${formatDistanceToNow(
                               new Date(monitor.lastRunAt),
@@ -160,92 +180,126 @@ export default async function SitePage({
                             )}`}
                         </CardDescription>
                       </div>
-                      <RunButton
-                        monitorId={monitor.id}
-                        activeRunId={
-                          monitor.runs.find(
-                            (r) => r.status === "queued" || r.status === "running"
-                          )?.id
-                        }
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {recentRuns.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No runs yet
-                      </p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Performance</TableHead>
-                            <TableHead>LCP</TableHead>
-                            <TableHead>CLS</TableHead>
-                            <TableHead>Time</TableHead>
-                            <TableHead>Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {recentRuns.map((run, index) => (
-                            <TableRow 
-                              key={run.id}
-                              className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
-                            >
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    run.status === "success"
-                                      ? "success"
-                                      : run.status === "failed"
-                                        ? "destructive"
-                                        : "secondary"
-                                  }
-                                >
-                                  {run.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                <ScoreBadge score={run.performanceScore} />
-                              </TableCell>
-                              <TableCell>
-                                {run.lcp ? `${Math.round(run.lcp)}ms` : "N/A"}
-                              </TableCell>
-                              <TableCell>
-                                {run.cls ? run.cls.toFixed(3) : "N/A"}
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {run.completedAt
-                                  ? formatDistanceToNow(
-                                      new Date(run.completedAt),
-                                      { addSuffix: true },
-                                    )
-                                  : formatDistanceToNow(
-                                      new Date(run.queuedAt),
-                                      { addSuffix: true },
-                                    )}
-                              </TableCell>
-                              <TableCell>
-                                {run.status === "success" && (
-                                  <Link href={`/runs/${run.id}`}>
-                                    <Button variant="ghost" size="sm">
-                                      View Details
-                                    </Button>
-                                  </Link>
-                                )}
-                              </TableCell>
+                      <div className="shrink-0">
+                        <RunButton
+                          monitorId={monitor.id}
+                          activeRunId={
+                            monitor.runs.find(
+                              (r) =>
+                                r.status === "queued" || r.status === "running",
+                            )?.id
+                          }
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="min-w-0 overflow-hidden p-0!">
+                      {recentRuns.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No runs yet
+                        </p>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Performance</TableHead>
+                              <TableHead>Accessibility</TableHead>
+                              <TableHead>Best Practices</TableHead>
+                              <TableHead>SEO</TableHead>
+                              <TableHead>Time</TableHead>
+                              <TableHead>Actions</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                          </TableHeader>
+                          <TableBody>
+                            {recentRuns.map((run) => {
+                              const isPending =
+                                run.status === "queued" ||
+                                run.status === "running";
+                              if (isPending) {
+                                return (
+                                  <TableRow key={run.id}>
+                                    <TableCell>
+                                      <RunStatusBadge
+                                        status={run.status as RunStatus}
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Skeleton className="h-6 w-12" />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Skeleton className="h-6 w-12" />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Skeleton className="h-6 w-12" />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Skeleton className="h-6 w-12" />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Skeleton className="h-4 w-24" />
+                                    </TableCell>
+                                    <TableCell>
+                                      <Skeleton className="h-8 w-24" />
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              }
+                              return (
+                                <TableRow key={run.id}>
+                                  <TableCell>
+                                    <RunStatusBadge
+                                      status={run.status as RunStatus}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <ScoreBadge score={run.performanceScore} />
+                                  </TableCell>
+                                  <TableCell>
+                                    <ScoreBadge
+                                      score={run.accessibilityScore}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <ScoreBadge
+                                      score={run.bestPracticesScore}
+                                    />
+                                  </TableCell>
+                                  <TableCell>
+                                    <ScoreBadge score={run.seoScore} />
+                                  </TableCell>
+                                  <TableCell className="capitalize text-muted-foreground tracking-tighter text-xs">
+                                    {run.completedAt
+                                      ? formatDistanceToNow(
+                                          new Date(run.completedAt),
+                                          { addSuffix: true },
+                                        )
+                                      : formatDistanceToNow(
+                                          new Date(run.queuedAt),
+                                          { addSuffix: true },
+                                        )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {run.status === "success" && (
+                                      <Link href={`/runs/${run.id}`}>
+                                        <Button size="sm" variant="muted">
+                                          View Details
+                                        </Button>
+                                      </Link>
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

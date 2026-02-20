@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import type { RunForPage } from "@/types/prisma";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -18,10 +19,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 import { ScoreBadge, MetricBadge } from "@/components/score-badge";
-import { ScreenshotThumbnail } from "@/components/screenshot-thumbnail";
-import { ArrowLeft } from "lucide-react";
-import { formatDistanceToNow, differenceInSeconds } from "date-fns";
+import { ScoreStatCard } from "@/components/score-stat-card";
+import { Badge } from "@/components/ui/badge";
+import { GitCompare } from "lucide-react";
+import { formatRelativeTime } from "@/lib/dates";
+import { getThresholds } from "@/lib/metric-thresholds";
+import { DescriptionWithParsedLink } from "@/components/description-with-parsed-link";
 
 export default async function RunPage({
   params,
@@ -35,23 +47,14 @@ export default async function RunPage({
     redirect("/auth/signin");
   }
 
-  const run = await prisma.run.findFirst({
-    where: {
-      id,
-    },
+  const run = (await prisma.run.findFirst({
+    where: { id },
     include: {
-      monitor: {
-        include: {
-          site: true,
-        },
-      },
-      audits: {
-        orderBy: {
-          score: "asc",
-        },
-      },
+      monitor: { include: { site: true } },
+      audits: { orderBy: { score: "asc" } },
+      insights: { orderBy: { score: "asc" } },
     },
-  });
+  } as never)) as RunForPage | null;
 
   if (!run || run.monitor.site.userId !== session.user.id) {
     notFound();
@@ -73,38 +76,70 @@ export default async function RunPage({
         select: { id: true },
       })
     : null;
-  const duration =
-    run.startedAt && run.completedAt
-      ? differenceInSeconds(new Date(run.completedAt), new Date(run.startedAt))
-      : null;
+
+  const strategy = run.monitor.strategy === "desktop" ? "desktop" : "mobile";
+  const t = getThresholds(strategy);
 
   return (
     <div className="container mx-auto py-8 flex flex-col gap-8">
-      <div>
-        <Link href={`/sites/${run.monitor.siteId}`}>
-          <Button variant="ghost" size="sm" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Site
-          </Button>
-        </Link>
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-4xl font-bold">Run Details</h1>
-            <p className="text-muted-foreground">
-              {run.monitor.site.name} •{" "}
-              {run.monitor.strategy.charAt(0).toUpperCase() +
-                run.monitor.strategy.slice(1)}
-            </p>
+      <div className="flex flex-col gap-8">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/sites/${run.monitor.siteId}`}>
+                {run.monitor.site.name}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Run Details</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        <div className="flex flex-col md:flex-row md:justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            {run.status === "success" && (
+              <div className="flex items-center gap-2">
+                <span className="bg-green-100 border border-green-200 text-green-500 font-semibold rounded w-fit px-2 py-1 text-xs uppercase">
+                  Analysis Complete
+                </span>
+
+                {run.completedAt && (
+                  <span className="text-xs text-muted-foreground tracking-tighter">
+                    {`Tested ${formatRelativeTime(run.completedAt)}`}
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="flex flex-col">
+              <h2 className="text-3xl font-bold font-inter tracking-tighter">
+                Run Details
+              </h2>
+              <p className="text-muted-foreground tracking-tighter text-sm">
+                {`${run.monitor.site.name} • ${
+                  run.monitor.strategy.charAt(0).toUpperCase() +
+                  run.monitor.strategy.slice(1)
+                }`}
+              </p>
+            </div>
           </div>
           {previousRun && run.status === "success" && (
             <Link href={`/runs/${previousRun.id}/compare/${run.id}`}>
-              <Button variant="outline">Compare with Previous</Button>
+              <Button>
+                <GitCompare />
+                Compare with Previous
+              </Button>
             </Link>
           )}
         </div>
       </div>
 
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Run Metadata</CardTitle>
         </CardHeader>
@@ -154,6 +189,27 @@ export default async function RunPage({
               </dt>
               <dd className="text-sm">{duration ? `${duration}s` : "N/A"}</dd>
             </div>
+            {run.lighthouseVersion && (
+              <div className="flex flex-col gap-2">
+                <dt className="text-lg font-geist-mono font-semibold tracking-tighter text-muted-foreground">
+                  Lighthouse
+                </dt>
+                <dd className="text-sm">v{run.lighthouseVersion}</dd>
+              </div>
+            )}
+            {run.finalUrl && run.finalUrl !== run.monitor.site.url && (
+              <div className="flex flex-col gap-2">
+                <dt className="text-lg font-geist-mono font-semibold tracking-tighter text-muted-foreground">
+                  Final URL
+                </dt>
+                <dd
+                  className="text-sm truncate max-w-[200px]"
+                  title={run.finalUrl}
+                >
+                  {run.finalUrl}
+                </dd>
+              </div>
+            )}
             {run.screenshotData && (
               <div className="flex flex-col gap-2">
                 <dt className="text-lg font-geist-mono font-semibold tracking-tighter text-muted-foreground">
@@ -170,56 +226,35 @@ export default async function RunPage({
               </div>
             )}
           </dl>
+          {run.runWarnings.length > 0 && (
+            <div className="mt-4 flex flex-col gap-2">
+              {run.runWarnings.map((warning: string, i: number) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-2 rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-400"
+                >
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{warning}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
-      </Card>
+      </Card> */}
 
       {run.status === "success" && (
         <>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">
-                  Performance
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScoreBadge score={run.performanceScore} className="text-2xl" />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">
-                  Accessibility
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScoreBadge
-                  score={run.accessibilityScore}
-                  className="text-2xl"
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">
-                  Best Practices
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScoreBadge
-                  score={run.bestPracticesScore}
-                  className="text-2xl"
-                />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">SEO</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScoreBadge score={run.seoScore} className="text-2xl" />
-              </CardContent>
-            </Card>
+            <ScoreStatCard score={run.performanceScore} title="Performance" />
+            <ScoreStatCard
+              score={run.accessibilityScore}
+              title="Accessibility"
+            />
+            <ScoreStatCard
+              score={run.bestPracticesScore}
+              title="Best Practices"
+            />
+            <ScoreStatCard score={run.seoScore} title="SEO" />
           </div>
 
           <Card>
@@ -234,46 +269,104 @@ export default async function RunPage({
                   description="Largest Contentful Paint"
                   value={run.lcp}
                   unit="ms"
-                  thresholds={{ good: 2500, needsImprovement: 4000 }}
+                  thresholds={t.lcp}
                 />
                 <MetricBadge
                   label="INP"
                   description="Interaction to Next Paint"
                   value={run.inp}
                   unit="ms"
-                  thresholds={{ good: 200, needsImprovement: 500 }}
+                  thresholds={t.inp}
                 />
                 <MetricBadge
                   label="TBT"
                   description="Total Blocking Time"
                   value={run.tbt}
                   unit="ms"
-                  thresholds={{ good: 200, needsImprovement: 600 }}
+                  thresholds={t.tbt}
                 />
                 <MetricBadge
                   label="CLS"
                   description="Cumulative Layout Shift"
                   value={run.cls}
                   unit=""
-                  thresholds={{ good: 0.1, needsImprovement: 0.25 }}
+                  thresholds={t.cls}
                 />
                 <MetricBadge
                   label="FCP"
                   description="First Contentful Paint"
                   value={run.fcp}
                   unit="ms"
-                  thresholds={{ good: 1800, needsImprovement: 3000 }}
+                  thresholds={t.fcp}
                 />
                 <MetricBadge
                   label="TTFB"
                   description="Time to First Byte"
                   value={run.ttfb}
                   unit="ms"
-                  thresholds={{ good: 800, needsImprovement: 1800 }}
+                  thresholds={t.ttfb}
                 />
               </div>
             </CardContent>
           </Card>
+
+          {(run.speedIndex != null ||
+            run.tti != null ||
+            run.totalByteWeight != null ||
+            run.numRequests != null ||
+            run.mainThreadWork != null) && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Extra Metrics</CardTitle>
+                <CardDescription>
+                  Additional performance diagnostics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-5">
+                  <MetricBadge
+                    label="Speed Index"
+                    description="How quickly content is visually displayed"
+                    value={run.speedIndex}
+                    unit="ms"
+                    thresholds={t.speedIndex}
+                  />
+                  <MetricBadge
+                    label="TTI"
+                    description="Time to Interactive"
+                    value={run.tti}
+                    unit="ms"
+                    thresholds={t.tti}
+                  />
+                  <MetricBadge
+                    label="Byte Weight"
+                    description="Total page weight"
+                    value={
+                      run.totalByteWeight != null
+                        ? Math.round(run.totalByteWeight / 1024)
+                        : undefined
+                    }
+                    unit="KiB"
+                    thresholds={t.byteWeight}
+                  />
+                  <MetricBadge
+                    label="Requests"
+                    description="Total network requests"
+                    value={run.numRequests}
+                    unit=""
+                    thresholds={t.requests}
+                  />
+                  <MetricBadge
+                    label="Main Thread"
+                    description="Main thread work"
+                    value={run.mainThreadWork}
+                    unit="ms"
+                    thresholds={t.mainThread}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {run.audits.length > 0 && (
             <Card>
@@ -283,12 +376,11 @@ export default async function RunPage({
                   Failed or warning audits from this run
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="min-w-0 overflow-hidden p-0!">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Audit</TableHead>
-                      <TableHead>Score</TableHead>
                       <TableHead>Value</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -303,13 +395,6 @@ export default async function RunPage({
                         <TableCell className="font-medium">
                           {audit.title}
                         </TableCell>
-                        <TableCell>
-                          {audit.score !== null ? (
-                            <ScoreBadge score={audit.score * 100} />
-                          ) : (
-                            "N/A"
-                          )}
-                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {audit.displayValue || "—"}
                         </TableCell>
@@ -317,6 +402,61 @@ export default async function RunPage({
                     ))}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {run.insights.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Insights</CardTitle>
+                <CardDescription>
+                  Actionable recommendations to improve performance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-4">
+                  {run.insights.map((insight) => (
+                    <div
+                      key={insight.id}
+                      className="flex flex-col gap-1.5 rounded-lg border p-4"
+                    >
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium">{insight.title}</span>
+                        {insight.score !== null && (
+                          <ScoreBadge score={insight.score * 100} />
+                        )}
+                        {insight.displayValue && (
+                          <Badge variant="secondary" className="text-xs">
+                            {insight.displayValue}
+                          </Badge>
+                        )}
+                        {insight.metricSavings &&
+                          typeof insight.metricSavings === "object" &&
+                          !Array.isArray(insight.metricSavings) &&
+                          Object.entries(insight.metricSavings)
+                            .filter(
+                              (entry): entry is [string, number] =>
+                                typeof entry[1] === "number" && entry[1] > 0,
+                            )
+                            .map(([metric, value]) => (
+                              <Badge
+                                key={metric}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {metric} −{value}ms
+                              </Badge>
+                            ))}
+                      </div>
+                      {insight.description && (
+                        <DescriptionWithParsedLink
+                          description={insight.description}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
