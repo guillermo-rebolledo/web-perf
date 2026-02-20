@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { SiteForm } from "@/components/site-form";
-import { EmptySites } from "@/components/ui/empty-sites";
+import { EmptySites } from "@/components/empty-sites";
 import { SiteCard } from "@/components/ui/site-card";
 import type { SiteWithMonitorsAndRuns } from "@/types/prisma";
 

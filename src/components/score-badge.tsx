@@ -49,9 +49,13 @@ export function MetricBadge({
   if (value === null || value === undefined) {
     return (
       <div className={cn("flex flex-col gap-1 select-none", className)}>
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className="text-xs font-medium text-muted-foreground">
+          {label}
+        </span>
         {description && (
-          <span className="text-[10px] leading-tight text-muted-foreground/70">{description}</span>
+          <span className="text-[10px] leading-tight text-muted-foreground/70">
+            {description}
+          </span>
         )}
         <Badge variant="outline">N/A</Badge>
       </div>
@@ -86,12 +90,18 @@ export function MetricBadge({
         : `${value}${unit}`;
 
   return (
-    <div className={cn("flex flex-col gap-1 select-none", className)}>
-      <span className="text-xs font-medium text-muted-foreground">{label}</span>
-      {description && (
-        <span className="text-[10px] leading-tight text-muted-foreground/70">{description}</span>
-      )}
-      <Badge variant={variant}>{displayValue}</Badge>
+    <div className={cn("flex flex-col select-none", className)}>
+      <span className="text-xs font-semibold leading-tight text-foreground">
+        {label}
+      </span>
+      <div className="flex flex-col gap-1">
+        {description && (
+          <span className="text-[10px] leading-tight text-muted-foreground">
+            {description}
+          </span>
+        )}
+        <Badge variant={variant}>{displayValue}</Badge>
+      </div>
     </div>
   );
 }
