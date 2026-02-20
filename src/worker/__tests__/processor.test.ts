@@ -63,6 +63,7 @@ describe("processAuditJob", () => {
   it("updates run status to running", async () => {
     vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
     vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.insight.createMany).mockResolvedValue({ count: 2 });
     vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
@@ -78,6 +79,7 @@ describe("processAuditJob", () => {
   it("fetches PSI data with correct params", async () => {
     vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
     vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.insight.createMany).mockResolvedValue({ count: 2 });
     vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
@@ -92,6 +94,7 @@ describe("processAuditJob", () => {
   it("updates run with parsed metrics on success", async () => {
     vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
     vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.insight.createMany).mockResolvedValue({ count: 2 });
     vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
@@ -115,6 +118,7 @@ describe("processAuditJob", () => {
   it("creates audit records", async () => {
     vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
     vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.insight.createMany).mockResolvedValue({ count: 2 });
     vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));
@@ -128,9 +132,102 @@ describe("processAuditJob", () => {
     );
   });
 
+  it("creates insight records from failing insight audits", async () => {
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.insight.createMany).mockResolvedValue({ count: 2 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
+
+    await processAuditJob(createMockJob(jobData));
+
+    expect(prismaMock.insight.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            runId: "run-1",
+            insightId: "image-delivery-insight",
+            title: "Deliver images in modern formats",
+            score: 0.4,
+            metricSavings: { LCP: 50, FCP: 0 },
+          }),
+          expect.objectContaining({
+            runId: "run-1",
+            insightId: "render-blocking-insight",
+            score: 0.6,
+          }),
+        ]),
+      })
+    );
+  });
+
+  it("skips insight creation when no failing insights exist", async () => {
+    const responseWithNoInsights = createPSIResponse({
+      lighthouseResult: {
+        ...createPSIResponse().lighthouseResult,
+        audits: {
+          ...createPSIResponse().lighthouseResult.audits,
+          // Override insight audits to have passing scores
+          "image-delivery-insight": {
+            id: "image-delivery-insight",
+            title: "Deliver images in modern formats",
+            description: "All good.",
+            score: 1,
+          },
+          "render-blocking-insight": {
+            id: "render-blocking-insight",
+            title: "Eliminate render-blocking resources",
+            description: "All good.",
+            score: 1,
+          },
+        },
+      },
+    });
+    vi.mocked(fetchPageSpeedInsights).mockResolvedValue(responseWithNoInsights);
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
+
+    await processAuditJob(createMockJob(jobData));
+
+    expect(prismaMock.insight.createMany).not.toHaveBeenCalled();
+  });
+
+  it("saves extra metrics and run metadata", async () => {
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.insight.createMany).mockResolvedValue({ count: 2 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
+
+    await processAuditJob(createMockJob(jobData));
+
+    type RunUpdateData = Record<string, unknown>;
+    const runUpdateMock = vi.mocked(prismaMock.run.update);
+    const transactionUpdateCall = runUpdateMock.mock.calls.find(
+      (call: Parameters<typeof prismaMock.run.update>) =>
+        call[0].data &&
+        "performanceScore" in (call[0].data as RunUpdateData)
+    );
+
+    expect(transactionUpdateCall).toBeDefined();
+    const data = transactionUpdateCall![0].data as RunUpdateData;
+
+    // Run metadata
+    expect(data.lighthouseVersion).toBe("12.4.0");
+    expect(data.finalUrl).toBe("https://example.com/");
+    expect(data.runWarnings).toEqual([]);
+
+    // Extra metrics
+    expect(data.speedIndex).toBe(3200);
+    expect(data.tti).toBe(4100);
+    expect(data.totalByteWeight).toBe(512000);
+    expect(data.numRequests).toBe(42);
+    expect(data.mainThreadWork).toBe(2800);
+  });
+
   it("updates monitor lastRunAt", async () => {
     vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
     vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.insight.createMany).mockResolvedValue({ count: 2 });
     vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
 
     await processAuditJob(createMockJob(jobData));

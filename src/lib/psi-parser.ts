@@ -7,6 +7,7 @@ export interface PSIAudit {
   displayValue?: string;
   numericValue?: number;
   numericUnit?: string;
+  metricSavings?: Record<string, number>;
   [key: string]: unknown; // Allow additional properties
 }
 
@@ -26,10 +27,22 @@ export interface PSIResponse {
       [key: string]: unknown;
     };
     audits: Record<string, PSIAudit | string | unknown>;
+    lighthouseVersion?: string;
+    finalUrl?: string;
+    runWarnings?: string[];
     fetchTime?: string;
     [key: string]: unknown;
   };
   [key: string]: unknown;
+}
+
+export interface ParsedInsight {
+  insightId: string;
+  title: string;
+  description: string;
+  score: number | null;
+  displayValue?: string;
+  metricSavings?: Record<string, number>;
 }
 
 export interface ParsedMetrics {
@@ -39,6 +52,11 @@ export interface ParsedMetrics {
   bestPracticesScore: number;
   seoScore: number;
 
+  // Run metadata
+  lighthouseVersion?: string;
+  finalUrl?: string;
+  runWarnings: string[];
+
   // Core Web Vitals and metrics (in milliseconds or unitless)
   lcp?: number; // Largest Contentful Paint
   inp?: number; // Interaction to Next Paint
@@ -46,6 +64,13 @@ export interface ParsedMetrics {
   cls?: number; // Cumulative Layout Shift
   fcp?: number; // First Contentful Paint
   ttfb?: number; // Time to First Byte
+
+  // Extra performance metrics
+  speedIndex?: number;
+  tti?: number;
+  totalByteWeight?: number;
+  numRequests?: number;
+  mainThreadWork?: number;
 
   // Screenshot data (base64)
   screenshot?: string;
@@ -58,6 +83,9 @@ export interface ParsedMetrics {
     displayValue?: string;
     numericValue?: number;
   }>;
+
+  // Performance insights
+  insights: ParsedInsight[];
 }
 
 function isPSIAudit(audit: unknown): audit is PSIAudit {
@@ -76,8 +104,19 @@ function hasScreenshotDetails(
   return typeof audit === "object" && audit !== null && "details" in audit;
 }
 
+function hasDiagnosticsDetails(
+  audit: unknown,
+): audit is { details?: { items?: Array<Record<string, unknown>> } } {
+  return typeof audit === "object" && audit !== null && "details" in audit;
+}
+
 export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
   const { categories, audits } = response.lighthouseResult;
+
+  // Extract run metadata
+  const lighthouseVersion = response.lighthouseResult.lighthouseVersion;
+  const finalUrl = response.lighthouseResult.finalUrl;
+  const runWarnings = response.lighthouseResult.runWarnings ?? [];
 
   // Extract scores (convert from 0-1 to 0-100)
   const performanceScore = Math.round(categories.performance.score * 100);
@@ -119,6 +158,35 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
   const cls = getClsValue();
   const fcp = getFcpValue();
   const ttfb = getTtfbValue();
+
+  // Extract extra performance metrics
+  const speedIndexAudit = audits["speed-index"];
+  const speedIndex = isPSIAudit(speedIndexAudit)
+    ? speedIndexAudit.numericValue
+    : undefined;
+
+  const ttiAudit = audits["interactive"];
+  const tti = isPSIAudit(ttiAudit) ? ttiAudit.numericValue : undefined;
+
+  const mainThreadAudit = audits["mainthread-work-breakdown"];
+  const mainThreadWork = isPSIAudit(mainThreadAudit)
+    ? mainThreadAudit.numericValue
+    : undefined;
+
+  const diagnosticsAudit = audits["diagnostics"];
+  let totalByteWeight: number | undefined;
+  let numRequests: number | undefined;
+  if (hasDiagnosticsDetails(diagnosticsAudit)) {
+    const item = diagnosticsAudit.details?.items?.[0];
+    if (item) {
+      totalByteWeight =
+        typeof item.totalByteWeight === "number"
+          ? item.totalByteWeight
+          : undefined;
+      numRequests =
+        typeof item.numRequests === "number" ? item.numRequests : undefined;
+    }
+  }
 
   // Extract screenshot from final-screenshot audit
   const screenshotAudit = audits["final-screenshot"];
@@ -162,19 +230,51 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
     })
     .slice(0, 15); // Top 15 audits
 
+  // Extract performance insights (audits ending with "-insight")
+  const insights: ParsedInsight[] = Object.entries(audits)
+    .filter(([id, audit]) => {
+      if (!id.endsWith("-insight")) return false;
+      if (!isPSIAudit(audit)) return false;
+      // Only include failing/warning insights (score < 1 and not null)
+      return audit.score !== null && audit.score < 1;
+    })
+    .map(([id, audit]) => {
+      const a = audit as PSIAudit;
+      return {
+        insightId: id,
+        title: a.title,
+        description: a.description ?? "",
+        score: a.score,
+        displayValue: a.displayValue,
+        metricSavings: a.metricSavings as
+          | Record<string, number>
+          | undefined,
+      };
+    })
+    .sort((a, b) => (a.score ?? 1) - (b.score ?? 1));
+
   return {
     performanceScore,
     accessibilityScore,
     bestPracticesScore,
     seoScore,
+    lighthouseVersion,
+    finalUrl,
+    runWarnings,
     lcp,
     inp: inp ?? tbt, // Use TBT as fallback
     tbt,
     cls,
     fcp,
     ttfb,
+    speedIndex,
+    tti,
+    totalByteWeight,
+    numRequests,
+    mainThreadWork,
     screenshot,
     audits: selectedAudits,
+    insights,
   };
 }
 

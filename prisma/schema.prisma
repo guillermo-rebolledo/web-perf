@@ -83,11 +83,24 @@ model Run {
   fcp  Float? // First Contentful Paint (ms)
   ttfb Float? // Time to First Byte (ms)
 
+  // Run metadata
+  lighthouseVersion String?
+  finalUrl          String?
+  runWarnings       String[] // Postgres array
+
+  // Extra performance metrics
+  speedIndex      Float? // ms
+  tti             Float? // Time to Interactive (ms)
+  totalByteWeight Int?   // bytes
+  numRequests     Int?   // request count
+  mainThreadWork  Float? // ms
+
   // Screenshot from PageSpeed Insights
   screenshotData String? @db.Text // Base64-encoded JPEG
 
-  audits  Audit[]
-  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  audits   Audit[]
+  insights Insight[]
+  monitor  Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
 
   @@index([monitorId, completedAt])
   @@index([status])
@@ -101,6 +114,21 @@ model Audit {
   score        Float? // 0-1 scale
   displayValue String?
   numericValue Float?
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+}
+
+model Insight {
+  id           String  @id @default(cuid())
+  runId        String
+  insightId    String  // e.g. "image-delivery-insight"
+  title        String
+  description  String  @db.Text
+  score        Float?  // 0-1
+  displayValue String?
+  metricSavings Json?  // { LCP: 50, FCP: 0 } — flexible structure
 
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
