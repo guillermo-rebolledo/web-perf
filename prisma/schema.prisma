@@ -114,6 +114,7 @@ model Audit {
   score        Float? // 0-1 scale
   displayValue String?
   numericValue Float?
+  scored       Boolean @default(true) // Whether this audit contributes to a category score
 
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 
@@ -128,7 +129,9 @@ model Insight {
   description  String  @db.Text
   score        Float?  // 0-1
   displayValue String?
+  scored       Boolean @default(false) // Whether this insight contributes to a category score
   metricSavings Json?  // { LCP: 50, FCP: 0 } — flexible structure
+  sources       Json?  // Per-resource details from audit items
 
   run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
 

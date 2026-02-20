@@ -51,11 +51,36 @@ describe("parsePSIResponse", () => {
     const auditIds = result.audits.map((a) => a.auditId);
 
     expect(auditIds).toContain("render-blocking-resources");
-    expect(auditIds).toContain("unused-javascript");
     expect(auditIds).toContain("largest-contentful-paint");
     expect(auditIds).toContain("first-contentful-paint");
     expect(auditIds).toContain("interaction-to-next-paint");
     expect(auditIds).toContain("total-blocking-time");
+    // Allowlisted diagnostics and insight audits should NOT appear in audits
+    expect(auditIds).not.toContain("unused-javascript");
+    expect(auditIds).not.toContain("image-delivery-insight");
+    expect(auditIds).not.toContain("render-blocking-insight");
+    expect(auditIds).not.toContain("network-dependency-tree-insight");
+  });
+
+  it("marks audits as scored based on auditRefs weight", () => {
+    const result = parsePSIResponse(createPSIResponse());
+
+    // LCP has weight: 25 in the fixture auditRefs
+    const lcp = result.audits.find((a) => a.auditId === "largest-contentful-paint")!;
+    expect(lcp.scored).toBe(true);
+
+    // render-blocking-resources has weight: 0 in the fixture auditRefs
+    const renderBlocking = result.audits.find((a) => a.auditId === "render-blocking-resources")!;
+    expect(renderBlocking.scored).toBe(false);
+  });
+
+  it("marks insights as unscored based on auditRefs weight", () => {
+    const result = parsePSIResponse(createPSIResponse());
+
+    // All insights and allowlisted diagnostics have weight: 0
+    for (const insight of result.insights) {
+      expect(insight.scored).toBe(false);
+    }
   });
 
   it("sorts audits by score ascending (worst first)", () => {
@@ -137,18 +162,35 @@ describe("parsePSIResponse", () => {
   it("extracts failing insight audits", () => {
     const result = parsePSIResponse(createPSIResponse());
 
-    expect(result.insights).toHaveLength(2);
-    expect(result.insights[0]).toEqual({
+    // Sorted by score ascending: network-dependency (0), unused-js (0.3), image-delivery (0.4), render-blocking (0.6)
+    const ids = result.insights.map((i) => i.insightId);
+    expect(ids).toContain("network-dependency-tree-insight");
+    expect(ids).toContain("unused-javascript");
+    expect(ids).toContain("image-delivery-insight");
+    expect(ids).toContain("render-blocking-insight");
+
+    const imageInsight = result.insights.find((i) => i.insightId === "image-delivery-insight")!;
+    expect(imageInsight).toEqual({
       insightId: "image-delivery-insight",
       title: "Deliver images in modern formats",
       description: "Consider using WebP or AVIF for smaller file sizes.",
       score: 0.4,
+      scored: false,
       displayValue: "Est savings of 94 KiB",
       metricSavings: { LCP: 50, FCP: 0 },
+      sources: [
+        { url: "https://example.com/hero.png", totalBytes: 250000, wastedBytes: 94000 },
+        { url: "https://example.com/logo.png", totalBytes: 15000, wastedBytes: 8000 },
+      ],
     });
-    expect(result.insights[1]).toMatchObject({
-      insightId: "render-blocking-insight",
+
+    const renderInsight = result.insights.find((i) => i.insightId === "render-blocking-insight")!;
+    expect(renderInsight).toMatchObject({
       score: 0.6,
+      sources: [
+        { url: "https://example.com/styles.css", wastedMs: 200 },
+        { url: "https://example.com/app.js", wastedMs: 100 },
+      ],
     });
   });
 
@@ -159,6 +201,48 @@ describe("parsePSIResponse", () => {
     for (let i = 1; i < scores.length; i++) {
       expect(scores[i]).toBeGreaterThanOrEqual(scores[i - 1]);
     }
+  });
+
+  it("flattens network-dependency-tree chain into sources with depth", () => {
+    const result = parsePSIResponse(createPSIResponse());
+    const insight = result.insights.find(
+      (i) => i.insightId === "network-dependency-tree-insight",
+    )!;
+
+    expect(insight.sources).toEqual([
+      { url: "https://example.com/", transferSize: 7500, depth: 0 },
+      { url: "https://example.com/style.css", transferSize: 6000, depth: 1 },
+      { url: "https://example.com/font.woff2", transferSize: 15000, depth: 2 },
+      { url: "https://example.com/app.js", transferSize: 2400, depth: 1 },
+    ]);
+  });
+
+  it("promotes allowlisted diagnostic audits to insights with sources", () => {
+    const result = parsePSIResponse(createPSIResponse());
+    const unusedJs = result.insights.find((i) => i.insightId === "unused-javascript")!;
+
+    expect(unusedJs).toBeDefined();
+    expect(unusedJs.title).toBe("Reduce unused JavaScript");
+    expect(unusedJs.score).toBe(0.3);
+    expect(unusedJs.metricSavings).toEqual({ LCP: 50, FCP: 0 });
+    expect(unusedJs.sources).toEqual([
+      { url: "https://example.com/client.js", totalBytes: 60000, wastedBytes: 27000 },
+      { url: "https://example.com/vendor.js", totalBytes: 41000, wastedBytes: 24000 },
+    ]);
+  });
+
+  it("excludes allowlisted diagnostics with passing scores", () => {
+    const response = createPSIResponse();
+    response.lighthouseResult.audits["unused-javascript"] = {
+      id: "unused-javascript",
+      title: "Reduce unused JavaScript",
+      description: "All good.",
+      score: 1,
+    };
+    const result = parsePSIResponse(response);
+    const ids = result.insights.map((i) => i.insightId);
+
+    expect(ids).not.toContain("unused-javascript");
   });
 
   it("excludes passing insights (score === 1)", () => {
@@ -174,6 +258,35 @@ describe("parsePSIResponse", () => {
 
     expect(ids).not.toContain("image-delivery-insight");
     expect(ids).toContain("render-blocking-insight");
+  });
+
+  it("omits sources when insight has no details.items", () => {
+    const response = createPSIResponse();
+    // Remove details from all insight audits
+    delete (response.lighthouseResult.audits["image-delivery-insight"] as Record<string, unknown>).details;
+    delete (response.lighthouseResult.audits["render-blocking-insight"] as Record<string, unknown>).details;
+    delete (response.lighthouseResult.audits["network-dependency-tree-insight"] as Record<string, unknown>).details;
+    delete (response.lighthouseResult.audits["unused-javascript"] as Record<string, unknown>).details;
+    const result = parsePSIResponse(response);
+
+    for (const insight of result.insights) {
+      expect(insight.sources).toBeUndefined();
+    }
+  });
+
+  it("filters out items without a url field from sources", () => {
+    const response = createPSIResponse();
+    (response.lighthouseResult.audits["image-delivery-insight"] as Record<string, unknown>).details = {
+      items: [
+        { url: "https://example.com/valid.png", wastedBytes: 1000 },
+        { totalBytes: 500 }, // no url — should be excluded
+      ],
+    };
+    const result = parsePSIResponse(response);
+    const insight = result.insights.find((i) => i.insightId === "image-delivery-insight")!;
+
+    expect(insight.sources).toHaveLength(1);
+    expect(insight.sources![0].url).toBe("https://example.com/valid.png");
   });
 
   it("excludes insights with null score", () => {

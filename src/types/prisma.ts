@@ -75,6 +75,7 @@ export interface RunPageAudit {
   id: string;
   title: string;
   score: number | null;
+  scored: boolean;
   displayValue: string | null;
 }
 
@@ -87,8 +88,10 @@ export interface RunPageInsight {
   title: string;
   description: string;
   score: number | null;
+  scored: boolean;
   displayValue: string | null;
   metricSavings: MetricSavings | null;
+  sources: Array<{ url: string; totalBytes?: number; wastedBytes?: number; wastedMs?: number }> | null;
 }
 
 /** Run scalar fields used on run detail page (matches Prisma Run model) */

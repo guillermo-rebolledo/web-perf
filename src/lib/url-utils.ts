@@ -51,6 +51,16 @@ export function extractDomain(urlString: string): string {
   }
 }
 
+export function extractFilename(url: string): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const filename = pathname.split("/").pop();
+    return filename || pathname;
+  } catch {
+    return url;
+  }
+}
+
 const markdownLinkRegex = /\[([^\]]*)\]\(([^)]*)\)/;
 
 export function urlParser(urlStr: string): { description: string; href: string } | null {

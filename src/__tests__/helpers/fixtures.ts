@@ -83,6 +83,7 @@ export function createAudit(overrides: Partial<Audit> = {}): Audit {
     auditId: "first-contentful-paint",
     title: "First Contentful Paint",
     score: 0.7,
+    scored: true,
     displayValue: "1.8 s",
     numericValue: 1800,
     ...overrides,
@@ -97,7 +98,22 @@ export function createPSIResponse(
   return {
     lighthouseResult: {
       categories: {
-        performance: { score: 0.85 },
+        performance: {
+          score: 0.85,
+          auditRefs: [
+            { id: "largest-contentful-paint", weight: 25 },
+            { id: "first-contentful-paint", weight: 10 },
+            { id: "total-blocking-time", weight: 30 },
+            { id: "cumulative-layout-shift", weight: 25 },
+            { id: "speed-index", weight: 10 },
+            { id: "interaction-to-next-paint", weight: 0 },
+            { id: "render-blocking-resources", weight: 0 },
+            { id: "unused-javascript", weight: 0 },
+            { id: "image-delivery-insight", weight: 0 },
+            { id: "render-blocking-insight", weight: 0 },
+            { id: "network-dependency-tree-insight", weight: 0 },
+          ],
+        },
         accessibility: { score: 0.92 },
         "best-practices": { score: 1 },
         seo: { score: 0.9 },
@@ -169,9 +185,18 @@ export function createPSIResponse(
         "unused-javascript": {
           id: "unused-javascript",
           title: "Reduce unused JavaScript",
+          description: "Reduce unused JavaScript and defer loading scripts until they are required.",
           score: 0.3,
           displayValue: "Potential savings of 150 KiB",
           numericValue: 150000,
+          metricSavings: { LCP: 50, FCP: 0 },
+          details: {
+            type: "opportunity",
+            items: [
+              { url: "https://example.com/client.js", totalBytes: 60000, wastedBytes: 27000, wastedPercent: 45 },
+              { url: "https://example.com/vendor.js", totalBytes: 41000, wastedBytes: 24000, wastedPercent: 58 },
+            ],
+          },
         },
         "speed-index": {
           id: "speed-index",
@@ -217,6 +242,12 @@ export function createPSIResponse(
           score: 0.4,
           displayValue: "Est savings of 94 KiB",
           metricSavings: { LCP: 50, FCP: 0 },
+          details: {
+            items: [
+              { url: "https://example.com/hero.png", totalBytes: 250000, wastedBytes: 94000 },
+              { url: "https://example.com/logo.png", totalBytes: 15000, wastedBytes: 8000 },
+            ],
+          },
         },
         "render-blocking-insight": {
           id: "render-blocking-insight",
@@ -225,6 +256,55 @@ export function createPSIResponse(
           score: 0.6,
           displayValue: "Potential savings of 300 ms",
           metricSavings: { FCP: 300, LCP: 150 },
+          details: {
+            items: [
+              { url: "https://example.com/styles.css", wastedMs: 200 },
+              { url: "https://example.com/app.js", wastedMs: 100 },
+            ],
+          },
+        },
+        "network-dependency-tree-insight": {
+          id: "network-dependency-tree-insight",
+          title: "Network dependency tree",
+          description: "Avoid chaining critical requests.",
+          score: 0,
+          metricSavings: { LCP: 0 },
+          details: {
+            type: "list",
+            items: [
+              {
+                type: "list-section",
+                value: {
+                  type: "network-tree",
+                  longestChain: { duration: 900 },
+                  chains: {
+                    root: {
+                      url: "https://example.com/",
+                      transferSize: 7500,
+                      children: {
+                        child1: {
+                          url: "https://example.com/style.css",
+                          transferSize: 6000,
+                          children: {
+                            grandchild1: {
+                              url: "https://example.com/font.woff2",
+                              transferSize: 15000,
+                              children: {},
+                            },
+                          },
+                        },
+                        child2: {
+                          url: "https://example.com/app.js",
+                          transferSize: 2400,
+                          children: {},
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
         },
       },
       lighthouseVersion: "12.4.0",
