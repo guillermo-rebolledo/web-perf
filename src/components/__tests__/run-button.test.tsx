@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RunButton } from "@/components/run-button";
 
@@ -55,7 +55,7 @@ describe("RunButton", () => {
     });
   });
 
-  it("displays remaining runs after success", async () => {
+  it("displays remaining runs in tooltip after success", async () => {
     const user = userEvent.setup();
     mockFetch.mockResolvedValue({
       ok: true,
@@ -65,7 +65,12 @@ describe("RunButton", () => {
     render(<RunButton monitorId="m1" />);
     await user.click(screen.getByRole("button", { name: /run now/i }));
 
-    await expect(screen.findByText(/42 manual runs remaining/i)).resolves.toBeInTheDocument();
+    // Wait for fetch to resolve and state to update, then open tooltip and assert
+    const runsRemainingTrigger = screen.getByRole("generic", { name: /runs remaining/i });
+    await waitFor(async () => {
+      await user.hover(runsRemainingTrigger);
+      expect(screen.getByRole("tooltip")).toHaveTextContent(/42 manual runs remaining today/i);
+    });
   });
 
   it("shows rate limit error on 429", async () => {
