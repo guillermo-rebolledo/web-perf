@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { canonicalizeUrl, validateUrl, extractDomain } from "@/lib/url-utils";
+import { canonicalizeUrl, validateUrl, extractDomain, extractFilename } from "@/lib/url-utils";
 
 describe("canonicalizeUrl", () => {
   it("upgrades http to https for non-localhost URLs", () => {
@@ -64,5 +64,27 @@ describe("extractDomain", () => {
 
   it("returns empty string for invalid URLs", () => {
     expect(extractDomain("not-a-url")).toBe("");
+  });
+});
+
+describe("extractFilename", () => {
+  it("extracts the filename from a URL path", () => {
+    expect(extractFilename("https://example.com/assets/hero.png")).toBe("hero.png");
+  });
+
+  it("handles URLs with query strings", () => {
+    expect(extractFilename("https://cdn.example.com/app.js?v=123")).toBe("app.js");
+  });
+
+  it("returns the pathname for root URLs", () => {
+    expect(extractFilename("https://example.com/")).toBe("/");
+  });
+
+  it("returns the raw string for invalid URLs", () => {
+    expect(extractFilename("not-a-url")).toBe("not-a-url");
+  });
+
+  it("handles deeply nested paths", () => {
+    expect(extractFilename("https://cdn.example.com/a/b/c/styles.css")).toBe("styles.css");
   });
 });

@@ -36,13 +36,24 @@ export interface PSIResponse {
   [key: string]: unknown;
 }
 
+export interface InsightSource {
+  url: string;
+  totalBytes?: number;
+  wastedBytes?: number;
+  wastedMs?: number;
+  transferSize?: number;
+  depth?: number;
+}
+
 export interface ParsedInsight {
   insightId: string;
   title: string;
   description: string;
   score: number | null;
+  scored: boolean;
   displayValue?: string;
   metricSavings?: Record<string, number>;
+  sources?: InsightSource[];
 }
 
 export interface ParsedMetrics {
@@ -80,6 +91,7 @@ export interface ParsedMetrics {
     auditId: string;
     title: string;
     score: number | null;
+    scored: boolean;
     displayValue?: string;
     numericValue?: number;
   }>;
@@ -110,8 +122,66 @@ function hasDiagnosticsDetails(
   return typeof audit === "object" && audit !== null && "details" in audit;
 }
 
+interface ChainNode {
+  url?: string;
+  transferSize?: number;
+  children?: Record<string, ChainNode>;
+  [key: string]: unknown;
+}
+
+/** Recursively flatten a network dependency chain tree into a flat list with depth. */
+function flattenChains(
+  chains: Record<string, ChainNode>,
+  depth: number,
+): InsightSource[] {
+  const result: InsightSource[] = [];
+  for (const node of Object.values(chains)) {
+    if (typeof node.url === "string") {
+      result.push({
+        url: node.url,
+        ...(typeof node.transferSize === "number" && { transferSize: node.transferSize }),
+        depth,
+      });
+    }
+    if (node.children && typeof node.children === "object") {
+      result.push(...flattenChains(node.children, depth + 1));
+    }
+  }
+  return result;
+}
+
+/** Extract sources from a network-tree list-section item. */
+function extractChainSources(
+  items: Array<Record<string, unknown>>,
+): InsightSource[] | undefined {
+  for (const item of items) {
+    if (item.type !== "list-section") continue;
+    const value = item.value as Record<string, unknown> | undefined;
+    if (value?.type !== "network-tree") continue;
+    const chains = value.chains as Record<string, ChainNode> | undefined;
+    if (!chains || typeof chains !== "object") continue;
+    const flattened = flattenChains(chains, 0);
+    return flattened.length > 0 ? flattened : undefined;
+  }
+  return undefined;
+}
+
 export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
   const { categories, audits } = response.lighthouseResult;
+
+  // Build set of audit IDs that contribute to category scores (weight > 0)
+  const scoredAuditIds = new Set<string>();
+  for (const category of Object.values(categories)) {
+    const refs = (category as Record<string, unknown>).auditRefs as
+      | Array<{ id: string; weight: number }>
+      | undefined;
+    if (!Array.isArray(refs)) continue;
+    for (const ref of refs) {
+      if (typeof ref.weight === "number" && ref.weight > 0) {
+        scoredAuditIds.add(ref.id);
+      }
+    }
+  }
 
   // Extract run metadata
   const lighthouseVersion = response.lighthouseResult.lighthouseVersion;
@@ -194,12 +264,24 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
     ? screenshotAudit.details?.data
     : undefined;
 
+  // Diagnostic audits to promote to insights (have useful per-resource details)
+  const DIAGNOSTIC_ALLOWLIST = new Set([
+    "unused-javascript",
+    "unused-css-rules",
+    "redirects",
+    "total-byte-weight",
+    "bootup-time",
+  ]);
+
   // Select failed or warning audits (score < 0.9 or no score but has numeric value)
+  // Exclude insight audits and allowlisted diagnostics — those are shown in the insights section
   const selectedAudits = Object.entries(audits)
-    .filter(([, audit]) => {
+    .filter(([id, audit]) => {
       // Skip string audits (they're just references)
       if (typeof audit === "string") return false;
       if (!isPSIAudit(audit)) return false;
+      // Skip audits that will appear as insights
+      if (id.endsWith("-insight") || DIAGNOSTIC_ALLOWLIST.has(id)) return false;
 
       // Include audits with low scores or important metrics
       return (
@@ -216,6 +298,7 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
         auditId: id,
         title: audit.title,
         score: audit.score,
+        scored: scoredAuditIds.has(id),
         displayValue: audit.displayValue,
         numericValue: audit.numericValue,
       };
@@ -230,25 +313,52 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
     })
     .slice(0, 15); // Top 15 audits
 
-  // Extract performance insights (audits ending with "-insight")
+  /** Extract sources from an audit's details.items */
+  function extractSources(
+    audit: PSIAudit,
+  ): InsightSource[] | undefined {
+    const details = (audit as Record<string, unknown>).details as
+      | { items?: Array<Record<string, unknown>> }
+      | undefined;
+    const items = Array.isArray(details?.items) ? details.items : [];
+    // Try flat items first (render-blocking, image-delivery, unused-js, etc.)
+    const flatSources = items
+      .filter((item) => typeof item === "object" && item !== null && typeof item.url === "string")
+      .map((item) => ({
+        url: item.url as string,
+        ...(typeof item.totalBytes === "number" && { totalBytes: item.totalBytes }),
+        ...(typeof item.wastedBytes === "number" && { wastedBytes: item.wastedBytes }),
+        ...(typeof item.wastedMs === "number" && { wastedMs: item.wastedMs }),
+      }));
+    if (flatSources.length > 0) return flatSources;
+    // Fall back to chain tree extraction (network-dependency-tree-insight)
+    return extractChainSources(items);
+  }
+
+  // Extract performance insights (audits ending with "-insight" + allowlisted diagnostics)
   const insights: ParsedInsight[] = Object.entries(audits)
     .filter(([id, audit]) => {
-      if (!id.endsWith("-insight")) return false;
       if (!isPSIAudit(audit)) return false;
-      // Only include failing/warning insights (score < 1 and not null)
+      const isInsight = id.endsWith("-insight");
+      const isAllowlisted = DIAGNOSTIC_ALLOWLIST.has(id);
+      if (!isInsight && !isAllowlisted) return false;
+      // Only include failing/warning (score < 1 and not null)
       return audit.score !== null && audit.score < 1;
     })
     .map(([id, audit]) => {
       const a = audit as PSIAudit;
+      const sources = extractSources(a);
       return {
         insightId: id,
         title: a.title,
         description: a.description ?? "",
         score: a.score,
+        scored: scoredAuditIds.has(id),
         displayValue: a.displayValue,
         metricSavings: a.metricSavings as
           | Record<string, number>
           | undefined,
+        ...(sources && sources.length > 0 ? { sources } : {}),
       };
     })
     .sort((a, b) => (a.score ?? 1) - (b.score ?? 1));

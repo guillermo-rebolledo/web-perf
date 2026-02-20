@@ -1,5 +1,6 @@
 import type { Job } from "bullmq";
 import type { AuditJobData } from "@/lib/queue";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fetchPageSpeedInsights, parsePSIResponse } from "@/lib/psi-parser";
 import { env } from "@/env";
@@ -100,6 +101,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
             auditId: audit.auditId,
             title: audit.title,
             score: audit.score,
+            scored: audit.scored,
             displayValue: audit.displayValue,
             numericValue: audit.numericValue,
           })),
@@ -115,8 +117,12 @@ export async function processAuditJob(job: Job<AuditJobData>) {
             title: insight.title,
             description: insight.description,
             score: insight.score,
+            scored: insight.scored,
             displayValue: insight.displayValue,
             metricSavings: insight.metricSavings ?? undefined,
+            sources: insight.sources
+              ? (insight.sources as unknown as Prisma.InputJsonValue)
+              : undefined,
           })),
         });
       }

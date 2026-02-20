@@ -18,6 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { ScreenshotThumbnail } from "@/components/screenshot-thumbnail";
 import { ArrowLeft, TrendingDown, TrendingUp } from "lucide-react";
@@ -105,7 +113,29 @@ export default async function CompareRunsPage({
   const comparison = compareRuns(run1, run2);
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 flex flex-col gap-8">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/sites/${run1.monitor.siteId}`}>
+              {run1.monitor.site.name}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/runs/${run2.id}`}>Run Details</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Compare Runs</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <div className="mb-8">
         <Link href={`/sites/${run1.monitor.siteId}`}>
           <Button variant="ghost" size="sm" className="mb-4">

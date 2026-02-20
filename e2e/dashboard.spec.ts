@@ -41,15 +41,17 @@ test.describe("Dashboard (authenticated)", () => {
     await expect(page.getByText(TEST_SITE.url)).toBeVisible();
   });
 
-  test("navigation bar is visible when authenticated", async ({ page }) => {
+  test("sidebar navigation is visible when authenticated", async ({ page }) => {
     await page.goto("/dashboard");
-    await expect(page.getByRole("navigation")).toBeVisible();
+    await expect(page.getByText("Navigation")).toBeVisible();
+    await expect(page.getByRole("link", { name: /dashboard/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /sites/i })).toBeVisible();
   });
 
   test("can navigate to the seeded site detail page", async ({ page }) => {
     await page.goto("/dashboard");
     await page.getByText(TEST_SITE.name).click();
     await expect(page).toHaveURL(new RegExp(`/sites/${TEST_SITE.id}`));
-    await expect(page.getByText(TEST_SITE.name)).toBeVisible();
+    await expect(page.getByText(TEST_SITE.url)).toBeVisible();
   });
 });

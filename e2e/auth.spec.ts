@@ -21,13 +21,13 @@ test.describe("Authentication", () => {
   test("sign-in page shows submit button", async ({ page }) => {
     await page.goto("/auth/signin");
     await expect(
-      page.getByRole("button", { name: /sign in|send/i })
+      page.getByRole("button", { name: /send magic link/i })
     ).toBeVisible();
   });
 
   test("submitting empty email shows validation", async ({ page }) => {
     await page.goto("/auth/signin");
-    const submitBtn = page.getByRole("button", { name: /sign in|send/i });
+    const submitBtn = page.getByRole("button", { name: /send magic link/i });
     await submitBtn.click();
     // Browser native validation should prevent submission or show error
     const emailInput = page.getByPlaceholder(/email/i);

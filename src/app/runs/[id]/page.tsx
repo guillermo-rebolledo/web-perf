@@ -34,6 +34,8 @@ import { GitCompare } from "lucide-react";
 import { formatRelativeTime } from "@/lib/dates";
 import { getThresholds } from "@/lib/metric-thresholds";
 import { DescriptionWithParsedLink } from "@/components/description-with-parsed-link";
+import { formatBytes } from "@/lib/utils";
+import { extractFilename } from "@/lib/url-utils";
 
 export default async function RunPage({
   params,
@@ -393,7 +395,18 @@ export default async function RunPage({
                         }
                       >
                         <TableCell className="font-medium">
-                          {audit.title}
+                          <span className="flex items-center gap-2">
+                            {audit.title}
+                            {!audit.scored && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] text-muted-foreground"
+                                title="This audit is a recommendation and does not affect your performance score"
+                              >
+                                Unscored
+                              </Badge>
+                            )}
+                          </span>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {audit.displayValue || "—"}
@@ -416,46 +429,173 @@ export default async function RunPage({
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-4">
-                  {run.insights.map((insight) => (
-                    <div
-                      key={insight.id}
-                      className="flex flex-col gap-1.5 rounded-lg border p-4"
-                    >
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{insight.title}</span>
-                        {insight.score !== null && (
-                          <ScoreBadge score={insight.score * 100} />
+                  {run.insights.map((insight) => {
+                    const sources = Array.isArray(insight.sources)
+                      ? (insight.sources as Array<{
+                          url: string;
+                          totalBytes?: number;
+                          wastedBytes?: number;
+                          wastedMs?: number;
+                          transferSize?: number;
+                          depth?: number;
+                        }>)
+                      : [];
+                    const hasByteSources = sources.some(
+                      (s) => s.wastedBytes != null,
+                    );
+                    const hasTimeSources = sources.some(
+                      (s) => s.wastedMs != null,
+                    );
+                    const isChainView = sources.some((s) => s.depth != null);
+
+                    return (
+                      <div
+                        key={insight.id}
+                        className="flex flex-col gap-1.5 rounded-lg border border-border p-4"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{insight.title}</span>
+                          {!insight.scored && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] text-muted-foreground"
+                              title="This insight is a recommendation and does not affect your performance score"
+                            >
+                              Unscored
+                            </Badge>
+                          )}
+                          {insight.score !== null && (
+                            <ScoreBadge score={insight.score * 100} />
+                          )}
+                          {insight.displayValue && (
+                            <Badge variant="secondary" className="text-xs">
+                              {insight.displayValue}
+                            </Badge>
+                          )}
+                          {insight.metricSavings &&
+                            typeof insight.metricSavings === "object" &&
+                            !Array.isArray(insight.metricSavings) &&
+                            Object.entries(insight.metricSavings)
+                              .filter(
+                                (entry): entry is [string, number] =>
+                                  typeof entry[1] === "number" && entry[1] > 0,
+                              )
+                              .map(([metric, value]) => (
+                                <Badge
+                                  key={metric}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {metric} −{value}ms
+                                </Badge>
+                              ))}
+                        </div>
+                        {insight.description && (
+                          <DescriptionWithParsedLink
+                            description={insight.description}
+                          />
                         )}
-                        {insight.displayValue && (
-                          <Badge variant="secondary" className="text-xs">
-                            {insight.displayValue}
-                          </Badge>
+                        {sources.length > 0 && (
+                          <div className="mt-2 overflow-x-auto rounded-md border border-border">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Resource</TableHead>
+                                  {isChainView && (
+                                    <TableHead className="text-right">
+                                      Transfer Size
+                                    </TableHead>
+                                  )}
+                                  {hasByteSources && (
+                                    <>
+                                      <TableHead className="text-right">
+                                        Size
+                                      </TableHead>
+                                      <TableHead className="text-right">
+                                        Potential Savings
+                                      </TableHead>
+                                    </>
+                                  )}
+                                  {hasTimeSources && (
+                                    <TableHead className="text-right">
+                                      Wasted Time
+                                    </TableHead>
+                                  )}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {sources.map((source, idx) => (
+                                  <TableRow key={idx}>
+                                    <TableCell
+                                      className="max-w-[300px] truncate font-mono text-xs"
+                                      style={
+                                        source.depth
+                                          ? {
+                                              paddingLeft: `${source.depth * 20 + 16}px`,
+                                            }
+                                          : undefined
+                                      }
+                                    >
+                                      {isChainView && source.depth ? (
+                                        <span className="text-muted-foreground mr-1">
+                                          {"└ "}
+                                        </span>
+                                      ) : null}
+                                      <a
+                                        href={source.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="underline decoration-muted-foreground/40 underline-offset-2 hover:decoration-foreground"
+                                        title={source.url}
+                                      >
+                                        {extractFilename(source.url)}
+                                      </a>
+                                    </TableCell>
+                                    {isChainView && (
+                                      <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
+                                        {source.transferSize != null
+                                          ? formatBytes(source.transferSize)
+                                          : "—"}
+                                      </TableCell>
+                                    )}
+                                    {hasByteSources && (
+                                      <>
+                                        <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
+                                          {source.totalBytes != null
+                                            ? formatBytes(source.totalBytes)
+                                            : "—"}
+                                        </TableCell>
+                                        <TableCell className="text-right text-xs tabular-nums">
+                                          {source.wastedBytes != null ? (
+                                            <span className="text-orange-600 dark:text-orange-400">
+                                              {formatBytes(source.wastedBytes)}
+                                            </span>
+                                          ) : (
+                                            "—"
+                                          )}
+                                        </TableCell>
+                                      </>
+                                    )}
+                                    {hasTimeSources && (
+                                      <TableCell className="text-right text-xs tabular-nums">
+                                        {source.wastedMs != null ? (
+                                          <span className="text-orange-600 dark:text-orange-400">
+                                            {source.wastedMs} ms
+                                          </span>
+                                        ) : (
+                                          "—"
+                                        )}
+                                      </TableCell>
+                                    )}
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
                         )}
-                        {insight.metricSavings &&
-                          typeof insight.metricSavings === "object" &&
-                          !Array.isArray(insight.metricSavings) &&
-                          Object.entries(insight.metricSavings)
-                            .filter(
-                              (entry): entry is [string, number] =>
-                                typeof entry[1] === "number" && entry[1] > 0,
-                            )
-                            .map(([metric, value]) => (
-                              <Badge
-                                key={metric}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {metric} −{value}ms
-                              </Badge>
-                            ))}
                       </div>
-                      {insight.description && (
-                        <DescriptionWithParsedLink
-                          description={insight.description}
-                        />
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
