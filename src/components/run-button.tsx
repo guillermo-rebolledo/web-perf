@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Loader2, Play } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info, Loader2, Play } from "lucide-react";
 import { useRunPolling } from "@/hooks/use-run-polling";
 
 interface RunButtonProps {
@@ -38,7 +44,7 @@ export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
         const errorData = await response.json();
         if (response.status === 429) {
           throw new Error(
-            `Rate limit exceeded. ${errorData.remaining} runs remaining today.`
+            `Rate limit exceeded. ${errorData.remaining} runs remaining today.`,
           );
         }
         if (response.status === 409) {
@@ -61,29 +67,47 @@ export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <Button
-        onClick={handleRun}
-        disabled={isLoading}
-        size="sm"
-        className="w-fit"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Running...
-          </>
-        ) : (
-          <>
-            <Play className="mr-2 h-4 w-4" />
-            Run Now
-          </>
-        )}
-      </Button>
-      {remaining !== null && (
-        <p className="text-xs text-muted-foreground">
-          {remaining} manual runs remaining today
-        </p>
-      )}
+      <div className="flex items-center gap-2">
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                aria-label="Runs remaining"
+              >
+                <Info className="size-6" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              align="center"
+              className="bg-background text-foreground border border-border shadow-md"
+            >
+              {remaining !== null
+                ? `${remaining} manual runs remaining today`
+                : "Manual runs remaining today (run to see quota)"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <Button
+          onClick={handleRun}
+          disabled={isLoading}
+          size="sm"
+          className="w-fit"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Running...
+            </>
+          ) : (
+            <>
+              <Play className="mr-2 h-4 w-4" />
+              Run Now
+            </>
+          )}
+        </Button>
+      </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
