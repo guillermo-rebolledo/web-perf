@@ -80,6 +80,14 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           cls: metrics.cls,
           fcp: metrics.fcp,
           ttfb: metrics.ttfb,
+          lighthouseVersion: metrics.lighthouseVersion,
+          finalUrl: metrics.finalUrl,
+          runWarnings: metrics.runWarnings,
+          speedIndex: metrics.speedIndex,
+          tti: metrics.tti,
+          totalByteWeight: metrics.totalByteWeight,
+          numRequests: metrics.numRequests,
+          mainThreadWork: metrics.mainThreadWork,
           screenshotData: metrics.screenshot,
         },
       });
@@ -94,6 +102,21 @@ export async function processAuditJob(job: Job<AuditJobData>) {
             score: audit.score,
             displayValue: audit.displayValue,
             numericValue: audit.numericValue,
+          })),
+        });
+      }
+
+      // Create insight records
+      if (metrics.insights.length > 0) {
+        await tx.insight.createMany({
+          data: metrics.insights.map((insight) => ({
+            runId,
+            insightId: insight.insightId,
+            title: insight.title,
+            description: insight.description,
+            score: insight.score,
+            displayValue: insight.displayValue,
+            metricSavings: insight.metricSavings ?? undefined,
           })),
         });
       }
