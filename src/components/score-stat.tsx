@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 const SIZE = 120;
@@ -9,7 +8,7 @@ const RADIUS = (SIZE - STROKE_WIDTH) / 2;
 const CENTER = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export type ScoreVariant = "good" | "warning" | "poor" | "neutral";
+type ScoreVariant = "good" | "warning" | "poor" | "neutral";
 
 function getScoreVariant(score: number): ScoreVariant {
   if (score >= 90) return "good";
@@ -31,19 +30,19 @@ const variantRangeLabel: Record<Exclude<ScoreVariant, "neutral">, string> = {
   poor: "0–49",
 };
 
-export interface ScoreStatCardProps {
+export interface ScoreStatProps {
   score: number | null;
   title: string;
   variant?: ScoreVariant;
   className?: string;
 }
 
-export function ScoreStatCard({
+export function ScoreStat({
   score,
   title,
   variant: variantOverride,
   className,
-}: ScoreStatCardProps) {
+}: ScoreStatProps) {
   const variant =
     variantOverride ?? (score !== null ? getScoreVariant(score) : "neutral");
   const ringClass = variantRingClass[variant];
@@ -52,8 +51,8 @@ export function ScoreStatCard({
   const strokeDashoffset = CIRCUMFERENCE * (1 - progress);
 
   return (
-    <Card className={cn("overflow-hidden", className)}>
-      <CardContent className="flex flex-col items-center justify-center gap-3 p-6">
+    <div className={cn("overflow-hidden", className)}>
+      <div className="flex flex-col items-center justify-center gap-3 p-6">
         <div className="relative" style={{ width: SIZE, height: SIZE }}>
           <svg width={SIZE} height={SIZE} className="-rotate-90" aria-hidden>
             {/* Track */}
@@ -101,7 +100,7 @@ export function ScoreStatCard({
             </p>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

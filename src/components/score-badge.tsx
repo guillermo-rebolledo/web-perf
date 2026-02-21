@@ -6,6 +6,11 @@ interface ScoreBadgeProps {
   className?: string;
 }
 
+export type Thresholds = {
+  good: number;
+  needsImprovement: number;
+};
+
 export function ScoreBadge({ score, className }: ScoreBadgeProps) {
   if (score === null) {
     return (
@@ -29,10 +34,7 @@ interface MetricBadgeProps {
   description?: string;
   value: number | null | undefined;
   unit: string;
-  thresholds?: {
-    good: number;
-    needsImprovement: number;
-  };
+  thresholds?: Thresholds;
   lowerIsBetter?: boolean;
   className?: string;
 }
