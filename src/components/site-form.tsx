@@ -18,11 +18,25 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { canonicalizeUrl } from "@/lib/url-utils";
-import { CirclePlus } from "lucide-react";
+import { CirclePlus, FolderPen, Lightbulb, Link } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const siteSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
-  url: z.string().url("Must be a valid URL"),
+  url: z
+    .string()
+    .url("Must be a valid URL")
+    .refine(
+      (val) => {
+        try {
+          const hostname = new URL(val).hostname;
+          return hostname.includes(".");
+        } catch {
+          return false;
+        }
+      },
+      { message: "URL must have a valid domain (e.g. example.com)" },
+    ),
 });
 
 type SiteFormData = z.infer<typeof siteSchema>;
@@ -41,12 +55,13 @@ export function SiteForm({ onSuccess, triggerButton }: SiteFormProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, touchedFields, isSubmitted },
     reset,
     setValue,
     watch,
   } = useForm<SiteFormData>({
     resolver: zodResolver(siteSchema),
+    mode: "onChange",
   });
 
   const onSubmit = async (data: SiteFormData) => {
@@ -90,6 +105,11 @@ export function SiteForm({ onSuccess, triggerButton }: SiteFormProps) {
     }
   };
 
+  function handleCancel() {
+    setOpen(false);
+    reset();
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -102,42 +122,79 @@ export function SiteForm({ onSuccess, triggerButton }: SiteFormProps) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create New Site</DialogTitle>
+          <DialogTitle>Monitor New Site</DialogTitle>
           <DialogDescription>
-            Add a website to monitor its performance metrics.
+            Add a website to track its performance over time.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Site Name</Label>
+              <Label htmlFor="name" className="flex items-center gap-1">
+                <FolderPen className="" />
+                Site Name
+              </Label>
               <Input
                 id="name"
                 placeholder="My Awesome Site"
+                className={cn(
+                  (touchedFields.name || isSubmitted) &&
+                    errors.name &&
+                    "border-destructive focus-visible:ring-destructive",
+                )}
                 {...register("name")}
               />
-              {errors.name && (
+              {(touchedFields.name || isSubmitted) && errors.name && (
                 <p className="text-sm text-destructive">
                   {errors.name.message}
                 </p>
               )}
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="url">URL</Label>
+              <Label htmlFor="url" className="flex items-center gap-1">
+                <Link className="size-4" />
+                Website URL
+              </Label>
               <Input
                 id="url"
                 type="url"
-                placeholder="https://example.com"
+                placeholder="https://www.example.com"
+                className={cn(
+                  (touchedFields.url || isSubmitted) &&
+                    errors.url &&
+                    "border-destructive focus-visible:ring-destructive",
+                )}
                 {...register("url")}
                 onBlur={handleUrlBlur}
               />
-              {errors.url && (
+              {(touchedFields.url || isSubmitted) && errors.url && (
                 <p className="text-sm text-destructive">{errors.url.message}</p>
               )}
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
+
+            <div className="bg-amber-100 p-2 rounded flex items-start gap-2">
+              <Lightbulb className="size-8 text-amber-800" />
+              <div className="flex flex-col">
+                <p className="text-sm font-semibold tracking-tighter text-amber-800">
+                  Tip
+                </p>
+                <p className="text-xs tracking-tighter text-amber-800">
+                  Use the final destination URL of your page. Redirects can skew
+                  performance metrics and slow down scans.
+                </p>
+              </div>
+            </div>
           </div>
           <DialogFooter>
+            <Button
+              variant="text"
+              type="button"
+              disabled={isLoading}
+              onClick={handleCancel}
+            >
+              Cancel
+            </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creating..." : "Create Site"}
             </Button>

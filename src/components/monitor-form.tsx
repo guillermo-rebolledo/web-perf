@@ -15,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Calendar,
+  Clock,
+  Monitor,
+  MonitorSmartphone,
+  Smartphone,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +47,31 @@ interface MonitorFormProps {
   onSuccess?: () => void;
   triggerButton?: React.ReactNode;
 }
+
+const cadenceLabels: Record<number, string> = {
+  30: "30 minutes",
+  60: "1 hour",
+  360: "6 hours",
+  720: "12 hours",
+  1440: "24 hours",
+  10080: "1 week",
+  43200: "1 month",
+};
+
+const strategies = [
+  {
+    value: "mobile" as const,
+    label: "Mobile",
+    description: "Test with a simulated mobile device",
+    icon: Smartphone,
+  },
+  {
+    value: "desktop" as const,
+    label: "Desktop",
+    description: "Test with a desktop viewport",
+    icon: Monitor,
+  },
+];
 
 export function MonitorForm({
   siteId,
@@ -106,15 +139,18 @@ export function MonitorForm({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Monitor</DialogTitle>
+          <DialogTitle>Configure Audit Monitor</DialogTitle>
           <DialogDescription>
-            Configure how often and how to audit this site.
+            Set up automated performance tracking for Core Web Vitals and
+            PageSpeed Insights to catch regressions before they hit production.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Cadence</Label>
+              <Label className="flex items-center gap-1">
+                <Calendar className="size-4" /> Scan Frequency
+              </Label>
               <Select
                 value={cadenceMinutes.toString()}
                 onValueChange={(value) =>
@@ -131,6 +167,7 @@ export function MonitorForm({
                   <SelectItem value="720">Every 12 hours</SelectItem>
                   <SelectItem value="1440">Every 24 hours</SelectItem>
                   <SelectItem value="10080">Every week</SelectItem>
+                  <SelectItem value="43200">Every month</SelectItem>
                 </SelectContent>
               </Select>
               {errors.cadenceMinutes && (
@@ -139,28 +176,58 @@ export function MonitorForm({
                 </p>
               )}
             </div>
-            <div className="grid gap-2">
-              <Label>Strategy</Label>
-              <Select
+            <fieldset className="grid gap-2">
+              <Label className="flex items-center gap-1">
+                <MonitorSmartphone className="size-4" />
+                Audit Strategy
+              </Label>
+              <RadioGroup
                 value={strategy}
                 onValueChange={(value: "mobile" | "desktop") =>
                   setValue("strategy", value)
                 }
+                className="grid grid-cols-2 gap-3"
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mobile">Mobile</SelectItem>
-                  <SelectItem value="desktop">Desktop</SelectItem>
-                </SelectContent>
-              </Select>
+                {strategies.map((option) => {
+                  const labelId = `strategy-${option.value}-label`;
+                  const descId = `strategy-${option.value}-desc`;
+                  return (
+                    <label
+                      key={option.value}
+                      className="relative flex cursor-pointer flex-col gap-1 rounded-lg border border-border p-4 transition-colors has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5 has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 hover:bg-accent/50"
+                    >
+                      <RadioGroupItem
+                        value={option.value}
+                        aria-labelledby={labelId}
+                        aria-describedby={descId}
+                        className="sr-only"
+                      />
+                      <option.icon
+                        className="h-5 w-5 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <span
+                        id={labelId}
+                        className="text-sm font-medium leading-none tracking-tight"
+                      >
+                        {option.label}
+                      </span>
+                      <span
+                        id={descId}
+                        className="text-xs text-muted-foreground leading-none tracking-tight"
+                      >
+                        {option.description}
+                      </span>
+                    </label>
+                  );
+                })}
+              </RadioGroup>
               {errors.strategy && (
-                <p className="text-sm text-destructive">
+                <p className="text-sm text-destructive" role="alert">
                   {errors.strategy.message}
                 </p>
               )}
-            </div>
+            </fieldset>
             <div className="flex items-center justify-between">
               <Label htmlFor="isActive">Active</Label>
               <Switch
@@ -170,8 +237,40 @@ export function MonitorForm({
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
+            <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/50 p-3">
+              <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <p className="text-xs leading-none tracking-tight text-muted-foreground">
+                {isActive ? (
+                  <>
+                    First{" "}
+                    <span className="font-medium text-foreground">
+                      {strategy}
+                    </span>{" "}
+                    scan runs immediately after creation, then every{" "}
+                    <span className="font-medium text-foreground">
+                      {cadenceLabels[cadenceMinutes]}
+                    </span>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Monitor is{" "}
+                    <span className="font-medium text-foreground">paused</span>.
+                    No scans will run until activated.
+                  </>
+                )}
+              </p>
+            </div>
           </div>
           <DialogFooter>
+            <Button
+              variant="text"
+              type="button"
+              disabled={isLoading}
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creating..." : "Create Monitor"}
             </Button>

@@ -27,15 +27,16 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { ScoreBadge, MetricBadge } from "@/components/score-badge";
-import { ScoreStatCard } from "@/components/score-stat-card";
+import { ScoreBadge } from "@/components/score-badge";
+import { ScoreStat } from "@/components/score-stat";
 import { Badge } from "@/components/ui/badge";
-import { GitCompare } from "lucide-react";
+import { ExternalLink, GitCompare } from "lucide-react";
 import { formatRelativeTime } from "@/lib/dates";
 import { getThresholds } from "@/lib/metric-thresholds";
 import { DescriptionWithParsedLink } from "@/components/description-with-parsed-link";
 import { formatBytes } from "@/lib/utils";
 import { extractFilename } from "@/lib/url-utils";
+import { MetricCard } from "@/components/metric-card";
 
 export default async function RunPage({
   params,
@@ -85,23 +86,37 @@ export default async function RunPage({
   return (
     <div className="container mx-auto py-8 flex flex-col gap-8">
       <div className="flex flex-col gap-8">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href={`/sites/${run.monitor.siteId}`}>
-                {run.monitor.site.name}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Run Details</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink href={`/sites/${run.monitor.siteId}`}>
+                  {run.monitor.site.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Run Details</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+
+          {run.finalUrl && (
+            <a
+              href={run.finalUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted-foreground tracking-tighter text-xs flex items-center gap-1 hover:underline focus:underline bg-muted w-fit px-2 py-1 rounded shadow"
+            >
+              {run.finalUrl}
+              <ExternalLink className="size-4" />
+            </a>
+          )}
+        </div>
 
         <div className="flex flex-col md:flex-row md:justify-between gap-4">
           <div className="flex flex-col gap-2">
@@ -246,129 +261,142 @@ export default async function RunPage({
 
       {run.status === "success" && (
         <>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <ScoreStatCard score={run.performanceScore} title="Performance" />
-            <ScoreStatCard
-              score={run.accessibilityScore}
-              title="Accessibility"
-            />
-            <ScoreStatCard
-              score={run.bestPracticesScore}
-              title="Best Practices"
-            />
-            <ScoreStatCard score={run.seoScore} title="SEO" />
-          </div>
-
           <Card>
-            <CardHeader>
-              <CardTitle>Core Web Vitals</CardTitle>
-              <CardDescription>Key metrics for user experience</CardDescription>
-            </CardHeader>
             <CardContent>
-              <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-6">
-                <MetricBadge
-                  label="LCP"
-                  description="Largest Contentful Paint"
-                  value={run.lcp}
-                  unit="ms"
-                  thresholds={t.lcp}
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <ScoreStat score={run.performanceScore} title="Performance" />
+                <ScoreStat
+                  score={run.accessibilityScore}
+                  title="Accessibility"
                 />
-                <MetricBadge
-                  label="INP"
-                  description="Interaction to Next Paint"
-                  value={run.inp}
-                  unit="ms"
-                  thresholds={t.inp}
+                <ScoreStat
+                  score={run.bestPracticesScore}
+                  title="Best Practices"
                 />
-                <MetricBadge
-                  label="TBT"
-                  description="Total Blocking Time"
-                  value={run.tbt}
-                  unit="ms"
-                  thresholds={t.tbt}
-                />
-                <MetricBadge
-                  label="CLS"
-                  description="Cumulative Layout Shift"
-                  value={run.cls}
-                  unit=""
-                  thresholds={t.cls}
-                />
-                <MetricBadge
-                  label="FCP"
-                  description="First Contentful Paint"
-                  value={run.fcp}
-                  unit="ms"
-                  thresholds={t.fcp}
-                />
-                <MetricBadge
-                  label="TTFB"
-                  description="Time to First Byte"
-                  value={run.ttfb}
-                  unit="ms"
-                  thresholds={t.ttfb}
-                />
+                <ScoreStat score={run.seoScore} title="SEO" />
               </div>
             </CardContent>
           </Card>
+
+          <hr className="border-border spave-y-4" />
+
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col tracking-tighter">
+              <h3 className="text-lg font-semibold leading-none">
+                Core Web Vitals
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Key metrics for user experience
+              </p>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-4">
+              <MetricCard
+                title="LCP"
+                subtitle="Largest Contentful Paint"
+                value={run.lcp}
+                unit="ms"
+                thresholds={t.lcp}
+              />
+              <MetricCard
+                title="INP"
+                subtitle="Interaction to Next Paint"
+                value={run.inp}
+                unit="ms"
+                thresholds={t.inp}
+              />
+              <MetricCard
+                title="TBT"
+                subtitle="Total Blocking Time"
+                value={run.tbt}
+                unit="ms"
+                thresholds={t.tbt}
+              />
+              <MetricCard
+                title="CLS"
+                subtitle="Cumulative Layout Shift"
+                value={run.cls}
+                unit=""
+                thresholds={t.cls}
+              />
+              <MetricCard
+                title="FCP"
+                subtitle="First Contentful Paint"
+                value={run.fcp}
+                unit="ms"
+                thresholds={t.fcp}
+              />
+              <MetricCard
+                title="TTFB"
+                subtitle="Time to First Byte"
+                value={run.ttfb}
+                unit="ms"
+                thresholds={t.ttfb}
+              />
+            </div>
+          </div>
+
+          <hr className="border-border spave-y-4" />
 
           {(run.speedIndex != null ||
             run.tti != null ||
             run.totalByteWeight != null ||
             run.numRequests != null ||
             run.mainThreadWork != null) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Extra Metrics</CardTitle>
-                <CardDescription>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col tracking-tighter">
+                <h3 className="text-lg font-semibold leading-none">
+                  Extra Metrics
+                </h3>
+                <p className="text-sm text-muted-foreground">
                   Additional performance diagnostics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-5">
-                  <MetricBadge
-                    label="Speed Index"
-                    description="How quickly content is visually displayed"
-                    value={run.speedIndex}
-                    unit="ms"
-                    thresholds={t.speedIndex}
-                  />
-                  <MetricBadge
-                    label="TTI"
-                    description="Time to Interactive"
-                    value={run.tti}
-                    unit="ms"
-                    thresholds={t.tti}
-                  />
-                  <MetricBadge
-                    label="Byte Weight"
-                    description="Total page weight"
-                    value={
-                      run.totalByteWeight != null
-                        ? Math.round(run.totalByteWeight / 1024)
-                        : undefined
-                    }
-                    unit="KiB"
-                    thresholds={t.byteWeight}
-                  />
-                  <MetricBadge
-                    label="Requests"
-                    description="Total network requests"
-                    value={run.numRequests}
-                    unit=""
-                    thresholds={t.requests}
-                  />
-                  <MetricBadge
-                    label="Main Thread"
-                    description="Main thread work"
-                    value={run.mainThreadWork}
-                    unit="ms"
-                    thresholds={t.mainThread}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                </p>
+              </div>
+              <div className="grid gap-6 sm:grid-cols-3 lg:grid-cols-5">
+                <MetricCard
+                  title="Speed Index"
+                  subtitle="How quickly content is visually displayed"
+                  value={run.speedIndex}
+                  unit="ms"
+                  thresholds={t.speedIndex}
+                />
+                <MetricCard
+                  title="TTI"
+                  subtitle="Time to Interactive"
+                  value={run.tti}
+                  unit="ms"
+                  thresholds={t.tti}
+                />
+                <MetricCard
+                  title="Byte Weight"
+                  subtitle="Total page weight"
+                  value={
+                    run.totalByteWeight != null
+                      ? Math.round(run.totalByteWeight / 1024)
+                      : null
+                  }
+                  unit="KiB"
+                  thresholds={t.byteWeight}
+                />
+                <MetricCard
+                  title="Requests"
+                  subtitle="Total network requests"
+                  value={run.numRequests}
+                  unit=""
+                  thresholds={t.requests}
+                />
+                <MetricCard
+                  title="Main Thread"
+                  subtitle="Main thread work"
+                  value={run.mainThreadWork}
+                  unit="ms"
+                  thresholds={t.mainThread}
+                />
+              </div>
+            </div>
           )}
+
+          <hr className="border-border spave-y-4" />
 
           {run.audits.length > 0 && (
             <Card>

@@ -33,7 +33,7 @@ describe("SiteForm", () => {
 
     await user.click(screen.getByRole("button", { name: /create site/i }));
 
-    expect(screen.getByText("Create New Site")).toBeInTheDocument();
+    expect(screen.getByText("Monitor New Site")).toBeInTheDocument();
     expect(screen.getByLabelText(/site name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/url/i)).toBeInTheDocument();
   });
