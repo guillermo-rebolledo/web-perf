@@ -1,4 +1,3 @@
-import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Thresholds } from "@/components/score-badge";
 
@@ -41,7 +40,6 @@ export function MetricCard({
   value,
   unit,
   thresholds,
-  description,
   variant: variantOverride,
   lowerIsBetter = true,
 }: MetricCardProps) {
