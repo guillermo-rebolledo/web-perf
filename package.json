@@ -12,6 +12,7 @@
     "build": "next build",
     "build:worker": "echo 'Worker uses tsx - no build needed'",
     "start": "next start",
+    "start:migrate": "prisma migrate deploy && next start",
     "start:worker": "NODE_ENV=production tsx src/worker/index.ts",
     "lint": "eslint",
     "test": "vitest run",
