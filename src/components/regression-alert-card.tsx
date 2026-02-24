@@ -4,7 +4,11 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getSeverityInfo, getConfidenceInfo, getMetricUnit } from "@/lib/alert-utils";
+import {
+  getSeverityInfo,
+  getConfidenceInfo,
+  getMetricUnit,
+} from "@/lib/alert-utils";
 
 type Severity = "minor" | "moderate" | "critical";
 type Confidence = "low" | "medium" | "high";
@@ -31,7 +35,10 @@ interface RegressionAlertCardProps {
   showViewDetails?: boolean;
 }
 
-export function RegressionAlertCard({ alert, showViewDetails = true }: RegressionAlertCardProps) {
+export function RegressionAlertCard({
+  alert,
+  showViewDetails = true,
+}: RegressionAlertCardProps) {
   const severityInfo = getSeverityInfo(alert.severity);
   const confidenceInfo = getConfidenceInfo(alert.confidence);
   const topCause = alert.likelyCauses?.[0];
@@ -48,18 +55,18 @@ export function RegressionAlertCard({ alert, showViewDetails = true }: Regressio
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-2">
-            <AlertTriangle className={cn("h-5 w-5", severityInfo.iconClassName)} />
+            <AlertTriangle
+              className={cn("h-5 w-5", severityInfo.iconClassName)}
+            />
             <CardTitle className="text-lg">
               {alert.metricName.toUpperCase()} Regression
             </CardTitle>
           </div>
           <div className="flex gap-2">
-            <Badge variant={severityInfo.variant}>
-              {severityInfo.label}
-            </Badge>
-            <Badge variant={confidenceInfo.variant}>
+            <Badge variant={severityInfo.variant}>{severityInfo.label}</Badge>
+            <span className={confidenceInfo.className}>
               {confidenceInfo.label} Confidence
-            </Badge>
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -82,10 +89,16 @@ export function RegressionAlertCard({ alert, showViewDetails = true }: Regressio
           </div>
           <div>
             <div className="text-muted-foreground text-xs">Change</div>
-            <div className={cn("font-mono font-semibold", severityInfo.iconClassName)}>
+            <div
+              className={cn(
+                "font-mono font-semibold",
+                severityInfo.iconClassName,
+              )}
+            >
               +{formatMetricValue(alert.delta)}
               <span className="text-muted-foreground ml-1">
-                ({alert.percentChange > 0 ? '+' : ''}{alert.percentChange.toFixed(1)}%)
+                ({alert.percentChange > 0 ? "+" : ""}
+                {alert.percentChange.toFixed(1)}%)
               </span>
             </div>
           </div>
@@ -97,21 +110,14 @@ export function RegressionAlertCard({ alert, showViewDetails = true }: Regressio
             <div className="text-xs text-muted-foreground mb-1">
               Likely Cause:
             </div>
-            <div className="text-sm font-medium">
-              {topCause.title}
-            </div>
+            <div className="text-sm font-medium">{topCause.title}</div>
           </div>
         )}
 
         {/* View details button */}
         {showViewDetails && (
           <div className="pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              asChild
-              className="w-full"
-            >
+            <Button variant="outline" size="sm" asChild className="w-full">
               <Link href={`/runs/${alert.runId}/regressions/${alert.id}`}>
                 View Root Cause Analysis →
               </Link>
