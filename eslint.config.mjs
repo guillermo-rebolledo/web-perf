@@ -31,6 +31,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Generated output (e.g. compiled worker)
     "dist/**",
+    // Test coverage reports
+    "coverage/**",
   ]),
 ]);
 

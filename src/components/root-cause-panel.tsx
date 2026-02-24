@@ -1,5 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lightbulb, TrendingUp } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  ChartBar,
+  Eye,
+  FileBraces,
+  Lightbulb,
+  Server,
+  TrendingUp,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EvidenceItem {
@@ -25,9 +40,11 @@ interface RootCausePanelProps {
 }
 
 function getConfidenceColor(confidence: number): string {
-  if (confidence >= 80) return "bg-green-500";
-  if (confidence >= 60) return "bg-yellow-500";
-  return "bg-gray-400";
+  if (confidence >= 80)
+    return "text-green-500 bg-green-50 border border-green-500";
+  if (confidence >= 60)
+    return "bg-yellow-500 bg-yellow-50 border border-yellow-500 text-yellow-800";
+  return "bg-gray-400 bg-gray-50 border border-gray-400";
 }
 
 function getConfidenceLabel(confidence: number): string {
@@ -36,12 +53,39 @@ function getConfidenceLabel(confidence: number): string {
   return "Low";
 }
 
+function getCauseItemIcon(type: EvidenceItem["type"]): React.ReactNode {
+  let icon = null;
+  let wrapperClassName = "";
+
+  switch (type) {
+    case "metric":
+      icon = <ChartBar className="size-4" />;
+      wrapperClassName = "bg-blue-500/10 text-blue-500";
+      break;
+    case "audit":
+      icon = <FileBraces className="size-4" />;
+      wrapperClassName = "bg-amber-500/10 text-amber-500";
+      break;
+    case "resource":
+      icon = <Server className="size-4" />;
+      wrapperClassName = "bg-green-500/10 text-green-500";
+      break;
+    case "insight":
+    default:
+      icon = <Eye className="size-4" />;
+      wrapperClassName = "bg-purple-500/10 text-purple-500";
+      break;
+  }
+  return <span className={cn("p-1 rounded", wrapperClassName)}>{icon}</span>;
+}
+
 export function RootCausePanel({ causes }: RootCausePanelProps) {
   if (causes.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center text-muted-foreground">
-          No root causes identified. This may be due to insufficient historical data.
+          No root causes identified. This may be due to insufficient historical
+          data.
         </CardContent>
       </Card>
     );
@@ -49,38 +93,38 @@ export function RootCausePanel({ causes }: RootCausePanelProps) {
 
   return (
     <div className="space-y-4">
-      {causes.slice(0, 3).map((cause, index) => (
-        <Card key={cause.id} className={cn(
-          "transition-all",
-          index === 0 && "border-primary/50 shadow-md"
-        )}>
+      {causes.map((cause, index) => (
+        <Card
+          key={cause.id}
+          className={cn(
+            "transition-all",
+            index === 0 && "border-border shadow-md",
+          )}
+        >
           <CardHeader>
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={cn(
-                    "flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold",
-                    index === 0 && "bg-primary",
-                    index === 1 && "bg-blue-500",
-                    index === 2 && "bg-slate-500"
-                  )}>
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold bg-primary">
                     {index + 1}
                   </span>
-                  <CardTitle className="text-base">{cause.title}</CardTitle>
+                  <CardTitle className="tracking-tighter">
+                    {cause.title}
+                  </CardTitle>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {cause.description}
                 </p>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Confidence:</span>
-                  <div className={cn(
-                    "px-2 py-1 rounded-full text-xs font-semibold text-white",
-                    getConfidenceColor(cause.confidence)
-                  )}>
-                    {getConfidenceLabel(cause.confidence)} ({cause.confidence}%)
-                  </div>
+              <div className="mt-3 flex flex-col items-start gap-2 md:mt-0 md:items-end">
+                <div
+                  className={cn(
+                    "px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono",
+                    getConfidenceColor(cause.confidence),
+                  )}
+                >
+                  {getConfidenceLabel(cause.confidence)} Confidence (
+                  {cause.confidence}%)
                 </div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <TrendingUp className="h-3 w-3" />
@@ -93,50 +137,67 @@ export function RootCausePanel({ causes }: RootCausePanelProps) {
           <CardContent className="space-y-4">
             {/* Evidence Table */}
             {cause.evidence.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold mb-2">Evidence:</h4>
-                <div className="rounded-md border overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50">
-                      <tr>
-                        <th className="text-left p-2 font-medium">Metric/Resource</th>
-                        <th className="text-left p-2 font-medium">Before</th>
-                        <th className="text-left p-2 font-medium">After</th>
-                        <th className="text-left p-2 font-medium">Change</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+              <div className="flex flex-col gap-2">
+                <h4 className="text-sm font-semibold tracking-tighter">
+                  Evidence:
+                </h4>
+                <div className="rounded-md border border-border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-left">
+                          Metric/Resource
+                        </TableHead>
+                        <TableHead className="text-left">Before</TableHead>
+                        <TableHead className="text-left">After</TableHead>
+                        <TableHead className="text-left">Change</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {cause.evidence.map((item, idx) => (
-                        <tr key={idx} className="border-t">
-                          <td className="p-2 font-medium">{item.label}</td>
-                          <td className="p-2 font-mono text-xs">{item.before}</td>
-                          <td className="p-2 font-mono text-xs">{item.after}</td>
-                          <td className="p-2 font-mono text-xs font-semibold text-orange-600">
+                        <TableRow key={idx}>
+                          <TableCell className="font-medium flex items-center gap-2">
+                            {getCauseItemIcon(item.type)} {item.label}
+                          </TableCell>
+                          <TableCell className="font-geist-mono text-xs">
+                            {typeof item.before === "number"
+                              ? item.before.toFixed(2)
+                              : item.before}
+                          </TableCell>
+                          <TableCell className="font-geist-mono text-xs">
+                            {typeof item.after === "number"
+                              ? item.after.toFixed(2)
+                              : item.after}
+                          </TableCell>
+                          <TableCell className="font-geist-mono text-xs font-semibold text-orange-600">
                             {item.delta}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             )}
 
-            {/* Recommendations */}
             {cause.recommendations.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-yellow-500" />
+              <div className="flex flex-col gap-2">
+                <h4 className="text-sm font-semibold tracking-tighter">
                   Recommendations:
                 </h4>
-                <ul className="space-y-1.5">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                   {cause.recommendations.map((rec, idx) => (
-                    <li key={idx} className="text-sm text-muted-foreground flex gap-2">
-                      <span className="text-primary font-bold">•</span>
-                      <span>{rec}</span>
-                    </li>
+                    <div
+                      key={idx}
+                      className="text-sm text-muted-foreground flex items-center gap-1"
+                    >
+                      <span className="text-primary">
+                        <Lightbulb className="size-4" />
+                      </span>
+                      <span className="tracking-tighter">{rec}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
           </CardContent>

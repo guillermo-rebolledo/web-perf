@@ -76,7 +76,7 @@ export function MetricCard({
   return (
     <div
       className={cn(
-        "p-4 rounded-r-lg border-l-4 bg-card shadow flex flex-col gap-2 select-none",
+        "p-4 rounded-lg border-l-4 bg-card shadow flex flex-col gap-2 select-none",
         variantBorderClass[variant],
       )}
     >

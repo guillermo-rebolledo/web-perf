@@ -31,6 +31,16 @@ export interface PSIResponse {
     finalUrl?: string;
     runWarnings?: string[];
     fetchTime?: string;
+    environment?: {
+      networkUserAgent?: string;
+      hostUserAgent?: string;
+      benchmarkIndex?: number;
+      [key: string]: unknown;
+    };
+    configSettings?: {
+      emulatedFormFactor?: string;
+      [key: string]: unknown;
+    };
     [key: string]: unknown;
   };
   [key: string]: unknown;
@@ -87,6 +97,11 @@ export interface ParsedMetrics {
   lighthouseVersion?: string;
   finalUrl?: string;
   runWarnings: string[];
+
+  // Environment & configuration metadata
+  browserUserAgent?: string;
+  benchmarkIndex?: number;
+  emulatedFormFactor?: string;
 
   // Core Web Vitals and metrics (in milliseconds or unitless)
   lcp?: number; // Largest Contentful Paint
@@ -207,6 +222,15 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
   const lighthouseVersion = response.lighthouseResult.lighthouseVersion;
   const finalUrl = response.lighthouseResult.finalUrl;
   const runWarnings = response.lighthouseResult.runWarnings ?? [];
+
+  // Extract environment metadata
+  const environment = response.lighthouseResult.environment;
+  const browserUserAgent = environment?.networkUserAgent;
+  const benchmarkIndex = environment?.benchmarkIndex;
+
+  // Extract configuration metadata
+  const configSettings = response.lighthouseResult.configSettings;
+  const emulatedFormFactor = configSettings?.emulatedFormFactor;
 
   // Extract scores (convert from 0-1 to 0-100)
   const performanceScore = Math.round(categories.performance.score * 100);
@@ -451,6 +475,9 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
     lighthouseVersion,
     finalUrl,
     runWarnings,
+    browserUserAgent,
+    benchmarkIndex,
+    emulatedFormFactor,
     lcp,
     inp: inp ?? tbt, // Use TBT as fallback
     tbt,

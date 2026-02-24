@@ -7,11 +7,11 @@ import {
   Activity,
   ChevronsUpDown,
   LayoutDashboard,
-  Globe,
   LogOut,
   Moon,
   Sun,
   Monitor,
+  AlertTriangle,
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import {
@@ -42,9 +42,9 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Sites",
-    url: "/sites",
-    icon: Globe,
+    title: "Regression Alerts",
+    url: "/alerts",
+    icon: AlertTriangle,
   },
 ];
 
