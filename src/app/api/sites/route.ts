@@ -10,7 +10,6 @@ const createSiteSchema = z.object({
 });
 
 // GET /api/sites - List user's sites (request not needed for list)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- required by Next.js route signature
 export async function GET(_request: NextRequest) {
   try {
     const session = await auth();

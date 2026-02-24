@@ -86,6 +86,7 @@ export function createAudit(overrides: Partial<Audit> = {}): Audit {
     scored: true,
     displayValue: "1.8 s",
     numericValue: 1800,
+    details: null,
     ...overrides,
   };
 }

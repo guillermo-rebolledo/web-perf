@@ -43,6 +43,26 @@ export interface InsightSource {
   wastedMs?: number;
   transferSize?: number;
   depth?: number;
+  // Network request details (from network-requests audit)
+  resourceType?: string;
+  startTime?: number;
+  endTime?: number;
+  mimeType?: string;
+  // Resource summary details (from resource-summary audit)
+  resourceSize?: number;
+  requestCount?: number;
+  // Layout shift details (from layout-shift-elements audit)
+  node?: string;
+  score?: number;
+  // LCP element details (from largest-contentful-paint-element audit)
+  element?: string;
+  // Third-party details (from third-party-summary audit)
+  mainThreadTime?: number;
+  blockingTime?: number;
+  // Main thread details (from mainthread-work-breakdown audit)
+  group?: string;
+  groupLabel?: string;
+  duration?: number;
 }
 
 export interface ParsedInsight {
@@ -266,11 +286,32 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
 
   // Diagnostic audits to promote to insights (have useful per-resource details)
   const DIAGNOSTIC_ALLOWLIST = new Set([
+    // Original diagnostics
     "unused-javascript",
     "unused-css-rules",
     "redirects",
     "total-byte-weight",
     "bootup-time",
+
+    // Network diagnostics (for root-cause analysis)
+    "network-requests",
+    "network-server-latency",
+    "network-rtt",
+    "resource-summary",
+    "third-party-summary",
+
+    // Rendering diagnostics
+    "layout-shift-elements",
+    "largest-contentful-paint-element",
+    "lcp-lazy-loaded",
+
+    // Main thread diagnostics
+    "long-tasks",
+    "mainthread-work-breakdown",
+
+    // JavaScript diagnostics
+    "legacy-javascript",
+    "duplicated-javascript",
   ]);
 
   // Select failed or warning audits (score < 0.9 or no score but has numeric value)
@@ -323,13 +364,52 @@ export function parsePSIResponse(response: PSIResponse): ParsedMetrics {
     const items = Array.isArray(details?.items) ? details.items : [];
     // Try flat items first (render-blocking, image-delivery, unused-js, etc.)
     const flatSources = items
-      .filter((item) => typeof item === "object" && item !== null && typeof item.url === "string")
-      .map((item) => ({
-        url: item.url as string,
-        ...(typeof item.totalBytes === "number" && { totalBytes: item.totalBytes }),
-        ...(typeof item.wastedBytes === "number" && { wastedBytes: item.wastedBytes }),
-        ...(typeof item.wastedMs === "number" && { wastedMs: item.wastedMs }),
-      }));
+      .filter((item) => typeof item === "object" && item !== null)
+      .map((item) => {
+        const source: InsightSource = {
+          url: (item.url as string) || (item.entity as string) || "",
+        };
+
+        // Standard fields
+        if (typeof item.totalBytes === "number") source.totalBytes = item.totalBytes;
+        if (typeof item.wastedBytes === "number") source.wastedBytes = item.wastedBytes;
+        if (typeof item.wastedMs === "number") source.wastedMs = item.wastedMs;
+        if (typeof item.transferSize === "number") source.transferSize = item.transferSize;
+
+        // Network request fields
+        if (typeof item.resourceType === "string") source.resourceType = item.resourceType;
+        if (typeof item.startTime === "number") source.startTime = item.startTime;
+        if (typeof item.endTime === "number") source.endTime = item.endTime;
+        if (typeof item.mimeType === "string") source.mimeType = item.mimeType;
+
+        // Resource summary fields
+        if (typeof item.resourceSize === "number") source.resourceSize = item.resourceSize;
+        if (typeof item.requestCount === "number") source.requestCount = item.requestCount;
+
+        // Layout shift fields
+        if (typeof item.node === "object") {
+          source.node = JSON.stringify(item.node);
+        }
+        if (typeof item.score === "number") source.score = item.score;
+
+        // LCP element fields
+        if (typeof item.element === "object") {
+          source.element = JSON.stringify(item.element);
+        }
+
+        // Third-party fields
+        if (typeof item.mainThreadTime === "number") source.mainThreadTime = item.mainThreadTime;
+        if (typeof item.blockingTime === "number") source.blockingTime = item.blockingTime;
+
+        // Main thread work breakdown fields
+        if (typeof item.group === "string") source.group = item.group;
+        if (typeof item.groupLabel === "string") source.groupLabel = item.groupLabel;
+        if (typeof item.duration === "number") source.duration = item.duration;
+
+        return source;
+      })
+      .filter((item) => item.url !== ""); // Only keep items with URLs or entities
+
     if (flatSources.length > 0) return flatSources;
     // Fall back to chain tree extraction (network-dependency-tree-insight)
     return extractChainSources(items);

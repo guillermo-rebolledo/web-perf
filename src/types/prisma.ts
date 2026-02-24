@@ -125,11 +125,30 @@ interface RunPageScalars {
   screenshotData: string | null;
 }
 
+/** Regression alert for run detail page */
+export interface RunPageRegressionAlert {
+  id: string;
+  runId: string;
+  metricName: string;
+  baselineValue: number;
+  actualValue: number;
+  delta: number;
+  percentChange: number;
+  severity: "minor" | "moderate" | "critical";
+  confidence: "low" | "medium" | "high";
+  likelyCauses?: Array<{
+    id: string;
+    title: string;
+    confidence: number;
+  }> | null;
+}
+
 /** Run with monitor (and site), audits, and insights — for run detail page */
 export type RunForPage = RunPageScalars & {
   monitor: Prisma.MonitorGetPayload<{ include: { site: true } }>;
   audits: RunPageAudit[];
   insights: RunPageInsight[];
+  regressionAlerts?: RunPageRegressionAlert[];
 };
 
 export type MonitorWithSiteAndRuns = Prisma.MonitorGetPayload<{
