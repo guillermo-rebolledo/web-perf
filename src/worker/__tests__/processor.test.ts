@@ -208,6 +208,12 @@ describe("processAuditJob", () => {
             description: "All good.",
             score: 1,
           },
+          "mainthread-work-breakdown": {
+            id: "mainthread-work-breakdown",
+            title: "Minimize main-thread work",
+            description: "All good.",
+            score: 1,
+          },
         },
       },
     });

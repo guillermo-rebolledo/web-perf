@@ -257,22 +257,22 @@ async function main() {
   });
 
   if (lcpRun) {
-    const regressions = await detectRegressions(lcpRun as any, prisma);
+    const regressions = await detectRegressions(lcpRun, prisma);
     console.log(`   Detected ${regressions.length} regression(s)`);
 
     for (const regression of regressions) {
       const causes = await analyzeRootCauses(
         regression.metricName,
-        lcpRun as any,
+        lcpRun,
         prisma,
       );
-      const diffSummary = await calculateDiffSummary(lcpRun as any, prisma);
+      const diffSummary = await calculateDiffSummary(lcpRun, prisma);
 
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as any,
-          diffSummary: diffSummary as any,
+          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
         },
       });
 
@@ -361,22 +361,22 @@ async function main() {
   });
 
   if (tbtRun) {
-    const regressions = await detectRegressions(tbtRun as any, prisma);
+    const regressions = await detectRegressions(tbtRun, prisma);
     console.log(`   Detected ${regressions.length} regression(s)`);
 
     for (const regression of regressions) {
       const causes = await analyzeRootCauses(
         regression.metricName,
-        tbtRun as any,
+        tbtRun,
         prisma,
       );
-      const diffSummary = await calculateDiffSummary(tbtRun as any, prisma);
+      const diffSummary = await calculateDiffSummary(tbtRun, prisma);
 
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as any,
-          diffSummary: diffSummary as any,
+          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
         },
       });
 
@@ -445,22 +445,22 @@ async function main() {
   });
 
   if (clsRun) {
-    const regressions = await detectRegressions(clsRun as any, prisma);
+    const regressions = await detectRegressions(clsRun, prisma);
     console.log(`   Detected ${regressions.length} regression(s)`);
 
     for (const regression of regressions) {
       const causes = await analyzeRootCauses(
         regression.metricName,
-        clsRun as any,
+        clsRun,
         prisma,
       );
-      const diffSummary = await calculateDiffSummary(clsRun as any, prisma);
+      const diffSummary = await calculateDiffSummary(clsRun, prisma);
 
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as any,
-          diffSummary: diffSummary as any,
+          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
         },
       });
 

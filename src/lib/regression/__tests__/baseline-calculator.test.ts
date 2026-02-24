@@ -73,7 +73,7 @@ describe("Baseline Calculator", () => {
 
   it("should handle null values correctly", async () => {
     const mockRuns = Array.from({ length: 10 }, (_, i) => ({
-      lcp: i < 5 ? 2000 + i * 100 : null, // Half null
+      lcp: i < 5 ? 2000 + i * 100 : null, // 5 valid LCP values
       tbt: 300 + i * 10,
       cls: null,
       inp: null,
@@ -85,9 +85,8 @@ describe("Baseline Calculator", () => {
 
     await calculateBaselines("monitor-123", mockPrisma);
 
-    // LCP should be skipped (only 5 valid values)
-    // TBT should be calculated (10 valid values)
-    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledTimes(1);
+    // LCP has 5 valid values (min), TBT has 10 — both get a baseline
+    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledTimes(2);
 
     expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -99,13 +98,26 @@ describe("Baseline Calculator", () => {
         },
       })
     );
+    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          monitorId_metricName: {
+            monitorId: "monitor-123",
+            metricName: "lcp",
+          },
+        },
+      })
+    );
   });
 
   it("should calculate median correctly for even number of values", async () => {
+    // 6 runs with 6 valid LCP values → median of [1000, 2000, 2000, 3000, 4000, 4000] = (2000 + 3000) / 2 = 2500
     const mockRuns = [
       { lcp: 1000, tbt: null, cls: null, inp: null, fcp: null, ttfb: null },
       { lcp: 2000, tbt: null, cls: null, inp: null, fcp: null, ttfb: null },
+      { lcp: 2000, tbt: null, cls: null, inp: null, fcp: null, ttfb: null },
       { lcp: 3000, tbt: null, cls: null, inp: null, fcp: null, ttfb: null },
+      { lcp: 4000, tbt: null, cls: null, inp: null, fcp: null, ttfb: null },
       { lcp: 4000, tbt: null, cls: null, inp: null, fcp: null, ttfb: null },
     ];
 
@@ -113,7 +125,7 @@ describe("Baseline Calculator", () => {
 
     await calculateBaselines("monitor-123", mockPrisma);
 
-    // Median of [1000, 2000, 3000, 4000] = (2000 + 3000) / 2 = 2500
+    // Median of even count (6) = (2000 + 3000) / 2 = 2500
     expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({

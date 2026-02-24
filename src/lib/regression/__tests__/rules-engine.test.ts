@@ -17,15 +17,16 @@ describe("Rules Engine", () => {
   });
 
   it("should analyze root causes and rank by confidence × impact × evidence", async () => {
-    // Mock baseline run
+    // Mock baseline run (include insights for calculateDiffSummary)
     (mockPrisma.run.findFirst as any).mockResolvedValue({
       id: "baseline-run",
       lcp: 2000,
       totalByteWeight: 1000000,
       completedAt: new Date("2024-01-01"),
+      insights: [],
     });
 
-    // Mock insights
+    // Mock insights (mainthread-work-breakdown gives scriptingTimeDelta so js-bloat rule fires)
     (mockPrisma.insight.findMany as any).mockImplementation(({ where }: any) => {
       if (where.runId === "current-run") {
         return Promise.resolve([
@@ -41,6 +42,14 @@ describe("Rules Engine", () => {
             score: 0.6,
             sources: [
               { url: "https://analytics.example.com", blockingTime: 300 },
+            ],
+          },
+          {
+            insightId: "mainthread-work-breakdown",
+            score: 0.5,
+            sources: [
+              { group: "scriptEvaluation", duration: 200 },
+              { group: "styleLayout", duration: 50 },
             ],
           },
         ]);
@@ -85,6 +94,7 @@ describe("Rules Engine", () => {
       id: "baseline-run",
       cls: 0.05,
       completedAt: new Date("2024-01-01"),
+      insights: [],
     });
 
     (mockPrisma.insight.findMany as any).mockResolvedValue([
@@ -135,6 +145,7 @@ describe("Rules Engine", () => {
       id: "baseline-run",
       lcp: 2000,
       completedAt: new Date("2024-01-01"),
+      insights: [],
     });
 
     (mockPrisma.insight.findMany as any).mockResolvedValue([
