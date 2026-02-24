@@ -37,6 +37,8 @@ import { DescriptionWithParsedLink } from "@/components/description-with-parsed-
 import { formatBytes } from "@/lib/utils";
 import { extractFilename } from "@/lib/url-utils";
 import { MetricCard } from "@/components/metric-card";
+import { RegressionAlertCard } from "@/components/regression-alert-card";
+import { AlertTriangle } from "lucide-react";
 
 export default async function RunPage({
   params,
@@ -56,6 +58,7 @@ export default async function RunPage({
       monitor: { include: { site: true } },
       audits: { orderBy: { score: "asc" } },
       insights: { orderBy: { score: "asc" } },
+      regressionAlerts: { orderBy: { severity: "desc" } },
     },
   } as never)) as RunForPage | null;
 
@@ -335,6 +338,31 @@ export default async function RunPage({
               />
             </div>
           </div>
+
+          {/* Regression Alerts Section */}
+          {run.regressionAlerts && run.regressionAlerts.length > 0 && (
+            <>
+              <hr className="border-border" />
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
+                  <div className="flex flex-col tracking-tighter">
+                    <h3 className="text-lg font-semibold leading-none text-destructive">
+                      Performance Regressions Detected
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {run.regressionAlerts.length} metric{run.regressionAlerts.length > 1 ? 's' : ''} regressed compared to baseline
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {run.regressionAlerts.map((alert) => (
+                    <RegressionAlertCard key={alert.id} alert={alert} />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
 
           <hr className="border-border spave-y-4" />
 

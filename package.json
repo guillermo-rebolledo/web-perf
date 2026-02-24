@@ -21,7 +21,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "postinstall": "prisma generate",
-    "cleanup:screenshots": "node scripts/cleanup-screenshots.js"
+    "cleanup:screenshots": "node scripts/cleanup-screenshots.js",
+    "seed:regressions": "tsx prisma/seed-regressions.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

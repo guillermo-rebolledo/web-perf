@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client"
@@ -11,8 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Core application models
-
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -21,86 +16,74 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  sites    Site[]
-  accounts Account[]
-  sessions Session[]
+  accounts      Account[]
+  sessions      Session[]
+  sites         Site[]
 }
 
 model Site {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   name      String
   url       String
   userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  monitors Monitor[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  monitors  Monitor[]
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model Monitor {
-  id             String    @id @default(cuid())
-  siteId         String
-  cadenceMinutes Int       @default(1440)
-  strategy       String    @default("mobile") // "mobile" or "desktop"
-  isActive       Boolean   @default(true)
-  nextRunAt      DateTime  @default(now())
-  lastRunAt      DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  site Site  @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  runs Run[]
+  id                  String               @id @default(cuid())
+  siteId              String
+  cadenceMinutes      Int                  @default(1440)
+  strategy            String               @default("mobile")
+  isActive            Boolean              @default(true)
+  nextRunAt           DateTime             @default(now())
+  lastRunAt           DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  site                Site                 @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  runs                Run[]
+  regressionBaselines RegressionBaseline[]
 
   @@index([siteId])
   @@index([isActive, nextRunAt])
 }
 
 model Run {
-  id       String    @id @default(cuid())
-  monitorId String
-  status    String    @default("queued") // "queued", "running", "success", "failed"
-  jobId     String?   @unique
-  queuedAt  DateTime  @default(now())
-  startedAt DateTime?
-  completedAt DateTime?
-  errorMessage String?
-
-  // Performance scores (0-100)
+  id                 String              @id @default(cuid())
+  monitorId          String
+  status             String              @default("queued")
+  jobId              String?             @unique
+  queuedAt           DateTime            @default(now())
+  startedAt          DateTime?
+  completedAt        DateTime?
+  errorMessage       String?
   performanceScore   Float?
   accessibilityScore Float?
   bestPracticesScore Float?
   seoScore           Float?
-
-  // Core Web Vitals and metrics (milliseconds or unitless)
-  lcp  Float? // Largest Contentful Paint (ms)
-  inp  Float? // Interaction to Next Paint (ms)
-  tbt  Float? // Total Blocking Time (ms) - fallback if INP not available
-  cls  Float? // Cumulative Layout Shift (unitless)
-  fcp  Float? // First Contentful Paint (ms)
-  ttfb Float? // Time to First Byte (ms)
-
-  // Run metadata
-  lighthouseVersion String?
-  finalUrl          String?
-  runWarnings       String[] // Postgres array
-
-  // Extra performance metrics
-  speedIndex      Float? // ms
-  tti             Float? // Time to Interactive (ms)
-  totalByteWeight Int?   // bytes
-  numRequests     Int?   // request count
-  mainThreadWork  Float? // ms
-
-  // Screenshot from PageSpeed Insights
-  screenshotData String? @db.Text // Base64-encoded JPEG
-
-  audits   Audit[]
-  insights Insight[]
-  monitor  Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  lcp                Float?
+  inp                Float?
+  tbt                Float?
+  cls                Float?
+  fcp                Float?
+  ttfb               Float?
+  lighthouseVersion  String?
+  finalUrl           String?
+  runWarnings        String[]
+  speedIndex         Float?
+  tti                Float?
+  totalByteWeight    Int?
+  numRequests        Int?
+  mainThreadWork     Float?
+  screenshotData     String?
+  audits             Audit[]
+  insights           Insight[]
+  regressionAlerts   RegressionAlert[]
+  monitor            Monitor             @relation(fields: [monitorId], references: [id], onDelete: Cascade)
 
   @@index([monitorId, completedAt])
   @@index([status])
@@ -109,36 +92,33 @@ model Run {
 model Audit {
   id           String  @id @default(cuid())
   runId        String
-  auditId      String // The audit identifier from PageSpeed Insights
+  auditId      String
   title        String
-  score        Float? // 0-1 scale
+  score        Float?
   displayValue String?
   numericValue Float?
-  scored       Boolean @default(true) // Whether this audit contributes to a category score
-
-  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+  scored       Boolean @default(true)
+  details      Json?
+  run          Run     @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([runId])
 }
 
 model Insight {
-  id           String  @id @default(cuid())
-  runId        String
-  insightId    String  // e.g. "image-delivery-insight"
-  title        String
-  description  String  @db.Text
-  score        Float?  // 0-1
-  displayValue String?
-  scored       Boolean @default(false) // Whether this insight contributes to a category score
-  metricSavings Json?  // { LCP: 50, FCP: 0 } — flexible structure
-  sources       Json?  // Per-resource details from audit items
-
-  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+  id            String  @id @default(cuid())
+  runId         String
+  insightId     String
+  title         String
+  description   String
+  score         Float?
+  displayValue  String?
+  metricSavings Json?
+  sources       Json?
+  scored        Boolean @default(false)
+  run           Run     @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([runId])
 }
-
-// NextAuth models
 
 model Account {
   id                String  @id @default(cuid())
@@ -153,8 +133,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -176,4 +155,51 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Regression detection models
+
+model RegressionBaseline {
+  id           String   @id @default(cuid())
+  monitorId    String
+  metricName   String   // "lcp", "tbt", "cls", "inp", "fcp", "ttfb"
+  medianValue  Float    // Rolling median value for this metric
+  sampleSize   Int      // Number of runs used to calculate baseline
+  calculatedAt DateTime @default(now())
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@unique([monitorId, metricName])
+  @@index([monitorId])
+}
+
+model RegressionAlert {
+  id             String   @id @default(cuid())
+  runId          String
+  metricName     String   // "lcp", "tbt", "cls", "inp", "fcp", "ttfb"
+  baselineValue  Float    // Baseline median value
+  actualValue    Float    // Actual value in this run
+  delta          Float    // Absolute difference (actualValue - baselineValue)
+  percentChange  Float    // Percentage change ((actualValue - baselineValue) / baselineValue * 100)
+  severity       String   // "minor", "moderate", "critical"
+  confidence     String   // "low", "medium", "high" (based on consecutive regressions)
+
+  // JSON fields for detailed analysis
+  likelyCauses Json? // Array of ranked root causes with evidence
+  diffSummary  Json? // Before/after deltas across network/mainThread/rendering/backend
+
+  // Status tracking
+  status         String    @default("open") // "open", "acknowledged", "resolved"
+  acknowledgedAt DateTime?
+  acknowledgedBy String?
+  notes          String?   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@index([status])
+  @@index([severity])
 }

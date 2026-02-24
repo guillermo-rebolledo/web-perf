@@ -6,6 +6,10 @@ import { fetchPageSpeedInsights, parsePSIResponse } from "@/lib/psi-parser";
 import { env } from "@/env";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { detectRegressions } from "@/lib/regression/detector";
+import { calculateBaselines } from "@/lib/regression/baseline-calculator";
+import { analyzeRootCauses } from "@/lib/regression/rules-engine";
+import { calculateDiffSummary } from "@/lib/regression/diff-engine";
 
 /** Enabled when NODE_ENV is not production and --debug-psi is passed as a CLI argument */
 const PSI_DEBUG_ENABLED =
@@ -127,6 +131,74 @@ export async function processAuditJob(job: Job<AuditJobData>) {
         });
       }
     });
+
+    // Regression detection (Phase 2)
+    try {
+      // Fetch the updated run with monitor relation
+      const updatedRun = await prisma.run.findUnique({
+        where: { id: runId },
+        include: { monitor: true },
+      });
+
+      if (updatedRun && updatedRun.monitor) {
+        // Detect regressions for this run
+        const regressions = await detectRegressions(updatedRun);
+
+        if (regressions.length > 0) {
+          console.log(
+            `[Worker] Detected ${regressions.length} regression(s) for run ${runId}`,
+          );
+
+          // Analyze root causes and calculate diff summary for each regression
+          const enrichedRegressions = await Promise.all(
+            regressions.map(async (regression) => {
+              try {
+                const [causes, diffSummary] = await Promise.all([
+                  analyzeRootCauses(regression.metricName, updatedRun, prisma),
+                  calculateDiffSummary(updatedRun, prisma),
+                ]);
+
+                return {
+                  ...regression,
+                  likelyCauses: causes as unknown as Prisma.InputJsonValue,
+                  diffSummary: diffSummary as unknown as Prisma.InputJsonValue,
+                };
+              } catch (err) {
+                console.error(
+                  `[Worker] Error analyzing root causes for ${regression.metricName}:`,
+                  err,
+                );
+                // Return regression without analysis if it fails
+                return regression;
+              }
+            }),
+          );
+
+          // Save regression alerts with root cause analysis
+          await prisma.regressionAlert.createMany({
+            data: enrichedRegressions,
+          });
+
+          console.log(
+            `[Worker] Saved ${enrichedRegressions.length} regression alert(s) with root cause analysis`,
+          );
+        }
+
+        // Asynchronously recalculate baselines (don't await - fire and forget)
+        void calculateBaselines(updatedRun.monitor.id, prisma).catch((err) => {
+          console.error(
+            `[Worker] Error calculating baselines for monitor ${updatedRun.monitor.id}:`,
+            err,
+          );
+        });
+      }
+    } catch (error) {
+      console.error(
+        `[Worker] Error during regression detection for run ${runId}:`,
+        error,
+      );
+      // Don't fail the job if regression detection fails
+    }
 
     // Update monitor lastRunAt
     await prisma.monitor.update({
