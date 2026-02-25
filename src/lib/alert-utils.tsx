@@ -1,3 +1,4 @@
+import type React from "react";
 import type { BadgeProps } from "@/components/ui/badge";
 import { AlertTriangle, BadgeInfo, CircleAlert } from "lucide-react";
 
@@ -29,7 +30,6 @@ export interface SeverityInfo {
   iconClassName: string;
   borderClassName: string;
   icon: React.ReactNode;
-  badgeClassName: string;
 }
 
 export const severityConfig: Record<SeverityLevel, SeverityInfo> = {
@@ -40,8 +40,6 @@ export const severityConfig: Record<SeverityLevel, SeverityInfo> = {
     iconClassName: "text-destructive",
     borderClassName:
       "border-l-4 border-destructive/50 hover:border-destructive/70 focus:border-destructive/70",
-    badgeClassName:
-      "text-destructive bg-destructive/10 border border-destructive tracking-tighter px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono",
     icon: (
       <span className="text-destructive bg-destructive/10 p-2 rounded">
         <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
@@ -56,8 +54,6 @@ export const severityConfig: Record<SeverityLevel, SeverityInfo> = {
     iconClassName: "text-score-warning",
     borderClassName:
       "border-l-4 border-score-warning/50 hover:border-score-warning/70 focus:border-score-warning/70",
-    badgeClassName:
-      "text-score-warning bg-score-warning/10 border border-score-warning tracking-tighter px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono",
     icon: (
       <span className="text-score-warning bg-score-warning/10 p-2 rounded">
         <CircleAlert className="h-5 w-5 shrink-0 text-score-warning" />
@@ -72,8 +68,6 @@ export const severityConfig: Record<SeverityLevel, SeverityInfo> = {
     iconClassName: "text-score-warning",
     borderClassName:
       "border-l-4 border-score-warning/40 hover:border-score-warning/60 focus:border-score-warning/60",
-    badgeClassName:
-      "text-score-warning bg-score-warning/10 border border-score-warning tracking-tighter px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono",
     icon: (
       <span className="text-score-warning bg-score-warning/10 p-2 rounded">
         <BadgeInfo className="h-5 w-5 shrink-0 text-score-warning" />
@@ -84,24 +78,21 @@ export const severityConfig: Record<SeverityLevel, SeverityInfo> = {
 
 interface ConfidenceInfo {
   label: string;
-  className: string;
+  variant: BadgeProps["variant"];
 }
 
 export const confidenceConfig: Record<ConfidenceLevel, ConfidenceInfo> = {
   high: {
     label: "High",
-    className:
-      "text-score-good bg-score-good/10 border border-score-good tracking-tighter px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono",
+    variant: "success",
   },
   medium: {
     label: "Medium",
-    className:
-      "text-score-warning bg-score-warning/10 border border-score-warning tracking-tighter px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono",
+    variant: "warningMinor",
   },
   low: {
     label: "Low",
-    className:
-      "text-neutral-500 bg-neutral-500/10 border border-neutral-500 tracking-tighter px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono",
+    variant: "outline",
   },
 };
 
@@ -127,9 +118,12 @@ export function isConfidenceLevel(value: string): value is ConfidenceLevel {
 
 // Safe getters with fallbacks
 export function getSeverityInfo(severity: string): SeverityInfo {
-  return isSeverityLevel(severity)
-    ? severityConfig[severity]
-    : severityConfig.minor; // fallback
+  if (isSeverityLevel(severity)) {
+    return severityConfig[severity];
+  }
+
+  // Fallback: use minor config but with a neutral outline badge
+  return { ...severityConfig.minor, variant: "outline" };
 }
 
 export function getConfidenceInfo(confidence: string): ConfidenceInfo {

@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback } from "react";
 import { AlertCard, type RegressionAlertWithDetails } from "./alert-card";
 import { Skeleton } from "./ui/skeleton";
 import { TrendingUp, AlertCircle } from "lucide-react";
 import type { AlertsApiResponse } from "@/app/api/alerts/route";
+import { useCursorPagination } from "@/hooks/use-cursor-pagination";
 
 interface AlertsListProps {
   initialAlerts: RegressionAlertWithDetails[];
@@ -12,86 +13,34 @@ interface AlertsListProps {
   severity?: string;
 }
 
+function deriveInitialCursor(alerts: RegressionAlertWithDetails[]): string | null {
+  if (alerts.length < 20) return null;
+  const last = alerts[alerts.length - 1];
+  return `${last.severity}_${new Date(last.createdAt).toISOString()}_${last.id}`;
+}
+
 export function AlertsList({ initialAlerts, days, severity }: AlertsListProps) {
-  const [alerts, setAlerts] = useState<RegressionAlertWithDetails[]>(initialAlerts);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const observerTarget = useRef<HTMLDivElement>(null);
-
-  const fetchMoreAlerts = useCallback(async () => {
-    if (isLoading || !hasMore) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
-        days: days.toString(),
-        limit: "20",
-      });
-
-      if (severity) {
-        params.set("severity", severity);
-      }
-
-      if (nextCursor) {
-        params.set("cursor", nextCursor);
-      }
+  const fetcher = useCallback(
+    async (cursor: string | null) => {
+      const params = new URLSearchParams({ days: days.toString(), limit: "20" });
+      if (severity) params.set("severity", severity);
+      if (cursor) params.set("cursor", cursor);
 
       const response = await fetch(`/api/alerts?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch alerts");
-      }
+      if (!response.ok) throw new Error("Failed to fetch alerts");
 
       const data: AlertsApiResponse = await response.json();
+      return { items: data.alerts, nextCursor: data.nextCursor, hasMore: data.hasMore };
+    },
+    [days, severity]
+  );
 
-      setAlerts((prev) => [...prev, ...data.alerts]);
-      setNextCursor(data.nextCursor);
-      setHasMore(data.hasMore);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load more alerts");
-      console.error("Error fetching more alerts:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoading, hasMore, nextCursor, days, severity]);
-
-  // Intersection Observer for infinite scroll
-  useEffect(() => {
-    const currentTarget = observerTarget.current;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
-          fetchMoreAlerts();
-        }
-      },
-      {
-        threshold: 0.1,
-        rootMargin: "100px", // Start loading 100px before reaching the bottom
-      }
-    );
-
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
-    };
-  }, [fetchMoreAlerts, hasMore, isLoading]);
-
-  // Reset alerts when filters change
-  useEffect(() => {
-    setAlerts(initialAlerts);
-    setNextCursor(null);
-    setHasMore(initialAlerts.length >= 20);
-  }, [initialAlerts, days, severity]);
+  const { items: alerts, isLoading, hasMore, error, loadMore, observerRef } =
+    useCursorPagination({
+      initialItems: initialAlerts,
+      initialCursor: deriveInitialCursor(initialAlerts),
+      fetcher,
+    });
 
   if (alerts.length === 0 && !isLoading) {
     return null; // Let the parent component handle empty state
@@ -128,17 +77,14 @@ export function AlertsList({ initialAlerts, days, severity }: AlertsListProps) {
         <div className="flex items-center justify-center gap-2 p-4 text-sm text-destructive bg-destructive/10 rounded-lg">
           <AlertCircle className="h-4 w-4" />
           <span>{error}</span>
-          <button
-            onClick={fetchMoreAlerts}
-            className="ml-2 underline hover:no-underline"
-          >
+          <button onClick={loadMore} className="ml-2 underline hover:no-underline">
             Retry
           </button>
         </div>
       )}
 
       {/* Intersection observer target */}
-      {hasMore && !error && <div ref={observerTarget} className="h-4" />}
+      {hasMore && !error && <div ref={observerRef} className="h-4" />}
 
       {/* End of list indicator */}
       {!hasMore && alerts.length > 0 && (

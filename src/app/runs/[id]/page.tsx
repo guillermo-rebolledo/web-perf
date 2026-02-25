@@ -526,9 +526,7 @@ export default async function RunPage({
                             <ScoreBadge score={insight.score * 100} />
                           )}
                           {insight.displayValue && (
-                            <Badge variant="secondary" className="text-xs">
-                              {insight.displayValue}
-                            </Badge>
+                            <Badge>{insight.displayValue}</Badge>
                           )}
                           {insight.metricSavings &&
                             typeof insight.metricSavings === "object" &&

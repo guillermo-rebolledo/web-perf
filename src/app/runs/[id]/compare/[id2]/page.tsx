@@ -39,7 +39,7 @@ import { format } from "date-fns";
 
 function StatusBadge({ metric }: { metric: MetricDelta }) {
   if (metric.significance === "none") {
-    return <Badge variant="neutral">No change</Badge>;
+    return <Badge>No change</Badge>;
   }
 
   if (metric.significance === "minor") {
@@ -127,7 +127,9 @@ export default async function CompareRunsPage({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/runs/${run2.id}`}>Run Details</BreadcrumbLink>
+            <BreadcrumbLink href={`/runs/${run2.id}`}>
+              Run Details
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -241,7 +243,7 @@ export default async function CompareRunsPage({
             </TableHeader>
             <TableBody>
               {comparison.scores.map((score, index) => (
-                <TableRow 
+                <TableRow
                   key={score.name}
                   className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
                 >
@@ -288,7 +290,7 @@ export default async function CompareRunsPage({
             </TableHeader>
             <TableBody>
               {comparison.metrics.map((metric, index) => (
-                <TableRow 
+                <TableRow
                   key={metric.name}
                   className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
                 >
@@ -322,9 +324,7 @@ export default async function CompareRunsPage({
         <Card>
           <CardHeader>
             <CardTitle>Audits Comparison</CardTitle>
-            <CardDescription>
-              Audits that changed between runs
-            </CardDescription>
+            <CardDescription>Audits that changed between runs</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -338,9 +338,11 @@ export default async function CompareRunsPage({
               </TableHeader>
               <TableBody>
                 {comparison.audits.map((audit, index) => (
-                  <TableRow 
+                  <TableRow
                     key={audit.auditId}
-                    className={index % 2 === 0 ? "bg-background" : "bg-muted/50"}
+                    className={
+                      index % 2 === 0 ? "bg-background" : "bg-muted/50"
+                    }
                   >
                     <TableCell className="font-medium">{audit.title}</TableCell>
                     <TableCell>

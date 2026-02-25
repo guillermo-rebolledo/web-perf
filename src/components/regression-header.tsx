@@ -4,6 +4,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   getSeverityInfo,
   getConfidenceInfo,
@@ -43,12 +44,12 @@ export function RegressionHeader({
           <span className="text-3xl font-extrabold tracking-tighter">
             {metricName.toUpperCase()} Regression Detected
           </span>
-          <span className="bg-red-50 text-red-500 border border-red-500 px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono">
+          <Badge variant={severityInfo.variant}>
             {severityInfo.label} Severity
-          </span>
-          <span className="bg-background text-foreground border border-foreground px-1 rounded-md text-[10px] font-bold uppercase w-fit select-none font-geist-mono">
+          </Badge>
+          <Badge variant={confidenceInfo.variant}>
             {confidenceInfo.label} Confidence
-          </span>
+          </Badge>
         </div>
         <CardDescription>
           Performance degradation analysis and root cause investigation

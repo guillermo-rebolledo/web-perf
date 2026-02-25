@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AlertsList } from "../alerts-list";
 import type { RegressionAlertWithDetails } from "../alert-card";
@@ -65,7 +65,7 @@ describe("AlertsList", () => {
       rootMargin = "";
       thresholds = [];
       takeRecords = () => [];
-    } as any;
+    } as unknown as typeof IntersectionObserver;
   });
 
   afterEach(() => {
@@ -86,8 +86,9 @@ describe("AlertsList", () => {
         expect(screen.getByTestId(`alert-${alert.id}`)).toBeInTheDocument();
       });
 
-      // Should set up IntersectionObserver
-      expect(mockObserve).toHaveBeenCalled();
+      // With fewer than 20 alerts hasMore is false, so no sentinel is rendered
+      // and the observer has nothing to observe
+      expect(mockObserve).not.toHaveBeenCalled();
     });
 
     it("should show 'end of list' message when hasMore is false", async () => {
@@ -146,10 +147,12 @@ describe("AlertsList", () => {
 
       // Trigger intersection (simulate scrolling to bottom)
       const observerTarget = mockObserve.mock.calls[0][0];
-      intersectionObserverCallback(
-        [{ isIntersecting: true, target: observerTarget }] as any,
-        {} as any
-      );
+      act(() => {
+        intersectionObserverCallback(
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
+        );
+      });
 
       // Should fetch more alerts
       await waitFor(() => {
@@ -201,10 +204,12 @@ describe("AlertsList", () => {
 
       // Trigger intersection
       const observerTarget = mockObserve.mock.calls[0][0];
-      intersectionObserverCallback(
-        [{ isIntersecting: true, target: observerTarget }] as any,
-        {} as any
-      );
+      act(() => {
+        intersectionObserverCallback(
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
+        );
+      });
 
       // Should show loading skeletons
       await waitFor(() => {
@@ -254,10 +259,12 @@ describe("AlertsList", () => {
 
       // Trigger first intersection (load page 2)
       const observerTarget = mockObserve.mock.calls[0][0];
-      intersectionObserverCallback(
-        [{ isIntersecting: true, target: observerTarget }] as any,
-        {} as any
-      );
+      act(() => {
+        intersectionObserverCallback(
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
+        );
+      });
 
       // Wait for page 2 to load
       await waitFor(() => {
@@ -265,10 +272,12 @@ describe("AlertsList", () => {
       });
 
       // Trigger second intersection (load page 3)
-      intersectionObserverCallback(
-        [{ isIntersecting: true, target: observerTarget }] as any,
-        {} as any
-      );
+      act(() => {
+        intersectionObserverCallback(
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
+        );
+      });
 
       // Wait for page 3 to load
       await waitFor(() => {
@@ -299,10 +308,12 @@ describe("AlertsList", () => {
 
       // Trigger intersection
       const observerTarget = mockObserve.mock.calls[0][0];
-      intersectionObserverCallback(
-        [{ isIntersecting: true, target: observerTarget }] as any,
-        {} as any
-      );
+      act(() => {
+        intersectionObserverCallback(
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
+        );
+      });
 
       // Should show error message
       await waitFor(() => {
@@ -342,10 +353,12 @@ describe("AlertsList", () => {
 
       // Trigger intersection (should fail)
       const observerTarget = mockObserve.mock.calls[0][0];
-      intersectionObserverCallback(
-        [{ isIntersecting: true, target: observerTarget }] as any,
-        {} as any
-      );
+      act(() => {
+        intersectionObserverCallback(
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
+        );
+      });
 
       // Wait for error
       await waitFor(() => {
@@ -432,20 +445,16 @@ describe("AlertsList", () => {
 
       render(<AlertsList initialAlerts={initialAlerts} days={30} />);
 
-      const observerTarget = mockObserve.mock.calls[0][0];
-
-      // Trigger intersection when there's no more data
-      intersectionObserverCallback(
-        [{ isIntersecting: true, target: observerTarget }] as any,
-        {} as any
-      );
-
-      // Should not fetch
+      // With fewer than 20 items hasMore is false: no sentinel is rendered so
+      // the IntersectionObserver is never set up and no fetch can be triggered.
+      expect(mockObserve).not.toHaveBeenCalled();
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it("should cleanup observer on unmount", () => {
-      const initialAlerts = Array.from({ length: 10 }, (_, i) =>
+      // Use 20 alerts so hasMore is true, the sentinel is rendered, and the
+      // observer is set up — giving us something to verify on unmount.
+      const initialAlerts = Array.from({ length: 20 }, (_, i) =>
         createMockAlert(`alert-${i}`)
       );
 
@@ -457,7 +466,7 @@ describe("AlertsList", () => {
 
       unmount();
 
-      // Should unobserve
+      // Should unobserve the sentinel element
       expect(mockUnobserve).toHaveBeenCalledWith(observerTarget);
     });
   });
@@ -489,10 +498,12 @@ describe("AlertsList", () => {
 
       // Trigger intersection
       const observerTarget = mockObserve.mock.calls[0][0];
-      intersectionObserverCallback(
-        [{ isIntersecting: true, target: observerTarget }] as any,
-        {} as any
-      );
+      act(() => {
+        intersectionObserverCallback(
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
+        );
+      });
 
       // Should include severity in request
       await waitFor(() => {
