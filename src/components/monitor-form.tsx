@@ -32,6 +32,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import posthog from "posthog-js";
+import { AnalyticsEvent } from "@/lib/analytics-events";
 
 const monitorSchema = z.object({
   siteId: z.string(),
@@ -121,6 +123,11 @@ export function MonitorForm({
         throw new Error(errorData.error || "Failed to create monitor");
       }
 
+      posthog.capture(AnalyticsEvent.monitor_add, {
+        monitor_site: siteId,
+        monitor_cadence: data.cadenceMinutes,
+        monitor_strategy: data.strategy,
+      });
       reset();
       setOpen(false);
       onSuccess?.();

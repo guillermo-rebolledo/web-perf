@@ -20,6 +20,8 @@ import {
 import { canonicalizeUrl } from "@/lib/url-utils";
 import { CirclePlus, FolderPen, Lightbulb, Link } from "lucide-react";
 import { cn } from "@/lib/utils";
+import posthog from "posthog-js";
+import { AnalyticsEvent } from "@/lib/analytics-events";
 
 const siteSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -81,7 +83,7 @@ export function SiteForm({ onSuccess, triggerButton }: SiteFormProps) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to create site");
       }
-
+      posthog.capture(AnalyticsEvent.site_add, { site_name: data.name, site_url: data.url });
       reset();
       setOpen(false);
       onSuccess?.();

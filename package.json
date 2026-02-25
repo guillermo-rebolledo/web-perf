@@ -54,6 +54,7 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.1",
     "pg": "^8.18.0",
+    "posthog-js": "^1.354.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
