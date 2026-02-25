@@ -22,13 +22,18 @@
  * - Detects regressions
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { calculateBaselines } from "../src/lib/regression/baseline-calculator";
 import { detectRegressions } from "../src/lib/regression/detector";
 import { analyzeRootCauses } from "../src/lib/regression/rules-engine";
 import { calculateDiffSummary } from "../src/lib/regression/diff-engine";
 
 const prisma = new PrismaClient();
+
+// Helper to safely convert data to Prisma JSON value
+function toJsonValue(data: unknown): Prisma.InputJsonValue {
+  return data as Prisma.InputJsonValue;
+}
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -301,8 +306,8 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
           createdAt: lcpRun.completedAt || new Date(),
           updatedAt: lcpRun.completedAt || new Date(),
         },
@@ -407,8 +412,8 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
           createdAt: tbtRun.completedAt || new Date(),
           updatedAt: tbtRun.completedAt || new Date(),
         },
@@ -493,8 +498,8 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
           createdAt: clsRun.completedAt || new Date(),
           updatedAt: clsRun.completedAt || new Date(),
         },
@@ -592,8 +597,8 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
           createdAt: fcpRun.completedAt || new Date(),
           updatedAt: fcpRun.completedAt || new Date(),
         },
@@ -687,8 +692,8 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
           createdAt: siRun.completedAt || new Date(),
           updatedAt: siRun.completedAt || new Date(),
         },
@@ -781,8 +786,8 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
           createdAt: ttfbRun.completedAt || new Date(),
           updatedAt: ttfbRun.completedAt || new Date(),
         },
@@ -877,8 +882,8 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
           createdAt: inpRun.completedAt || new Date(),
           updatedAt: inpRun.completedAt || new Date(),
         },
@@ -1008,8 +1013,8 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
           createdAt: multiRun.completedAt || new Date(),
           updatedAt: multiRun.completedAt || new Date(),
         },
