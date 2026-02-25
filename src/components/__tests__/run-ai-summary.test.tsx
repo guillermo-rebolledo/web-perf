@@ -9,6 +9,13 @@ vi.mock("@ai-sdk/react", () => ({
   useCompletion: vi.fn(),
 }));
 
+// Render raw markdown text synchronously to avoid act() warnings from the
+// async marked.parse / sanitize-html pipeline inside MarkdownSnippet.
+// Markdown-specific rendering is covered by markdown-snippet.test.tsx.
+vi.mock("@/components/markdown-snippet", () => ({
+  MarkdownSnippet: ({ md }: { md: string }) => <div>{md}</div>,
+}));
+
 import { useCompletion } from "@ai-sdk/react";
 
 // ---------------------------------------------------------------------------
@@ -102,9 +109,9 @@ describe("RunAISummary", () => {
       expect(screen.getByText(/Generated/i)).toBeInTheDocument();
     });
 
-    it("shows the model name in the label", () => {
+    it("does not show the model name (removed from UI)", () => {
       render(<RunAISummary {...summaryProps} />);
-      expect(screen.getByText(/gpt-4o-mini/i)).toBeInTheDocument();
+      expect(screen.queryByText(/gpt-4o-mini/i)).not.toBeInTheDocument();
     });
   });
 
@@ -147,7 +154,10 @@ describe("RunAISummary", () => {
       render(<RunAISummary {...DEFAULT_PROPS} />);
 
       expect(screen.getByText(/Generating/i)).toBeInTheDocument();
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      // The CollapsibleTrigger is also a button; check that the action button is gone
+      expect(
+        screen.queryByRole("button", { name: /Generate AI Analysis|Regenerate/i })
+      ).not.toBeInTheDocument();
     });
 
     it("shows the skeleton placeholder when no text has arrived yet", () => {
@@ -324,7 +334,7 @@ describe("RunAISummary", () => {
           aiSummaryModel={null}
         />
       );
-      expect(screen.getByText("Executive Summary")).toBeInTheDocument();
+      expect(screen.getByText(/Executive Summary/i)).toBeInTheDocument();
       expect(screen.getByText(/Performance is good/i)).toBeInTheDocument();
     });
 
