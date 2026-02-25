@@ -448,6 +448,69 @@ pnpm tsc --noEmit
 pnpm lint
 ```
 
+## Analytics
+
+This project uses [PostHog](https://posthog.com) for product analytics. The client is initialized in `src/instrumentation-client.ts`, which Next.js 15.3+ loads automatically — no manual imports required.
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_POSTHOG_KEY` | Production | Your PostHog project API key |
+| `NEXT_PUBLIC_POSTHOG_HOST` | Production | PostHog ingestion host (e.g. `https://us.i.posthog.com`) |
+| `NEXT_PUBLIC_POSTHOG_ENABLED` | Dev only | Set to `"true"` to enable PostHog in local development |
+
+PostHog is always enabled in `production`. In other environments it only runs when `NEXT_PUBLIC_POSTHOG_ENABLED=true` is set in `.env.local`.
+
+### Event naming convention
+
+All event names must be **lowercase with underscores** (`snake_case`):
+
+```ts
+// good
+posthog.capture("site_created")
+posthog.capture("manual_run_triggered")
+
+// bad — don't use these patterns
+posthog.capture("siteCreated")
+posthog.capture("Site Created")
+posthog.capture("SITE_CREATED")
+```
+
+### Defining event names
+
+Prefer a `const` object with `as const` over a TypeScript `enum`. Enums compile to runtime JavaScript; `as const` is zero-cost and lets you derive a union type automatically:
+
+```ts
+// src/lib/analytics-events.ts
+export const AnalyticsEvent = {
+  site_created: "site_created",
+  site_deleted: "site_deleted",
+  monitor_created: "monitor_created",
+  manual_run_triggered: "manual_run_triggered",
+  alert_viewed: "alert_viewed",
+} as const;
+
+export type AnalyticsEventName = typeof AnalyticsEvent[keyof typeof AnalyticsEvent];
+```
+
+Then import and use it anywhere:
+
+```ts
+import posthog from "posthog-js";
+import { AnalyticsEvent } from "@/lib/analytics-events";
+
+posthog.capture(AnalyticsEvent.site_created, { url: site.url });
+```
+
+### Useful links
+
+- [PostHog Next.js integration guide](https://posthog.com/docs/libraries/next-js)
+- [posthog.capture() API reference](https://posthog.com/docs/libraries/js#capturing-events)
+- [Event properties best practices](https://posthog.com/docs/data/events)
+- [Feature flags](https://posthog.com/docs/feature-flags)
+- [Session replay](https://posthog.com/docs/session-replay)
+
 ## OAuth Setup
 
 ### Google
