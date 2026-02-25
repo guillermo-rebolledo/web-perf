@@ -25,6 +25,8 @@
     "seed:regressions": "tsx prisma/seed-regressions.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.33",
+    "@ai-sdk/react": "^3.0.102",
     "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.4.0",
@@ -40,6 +42,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@t3-oss/env-nextjs": "^0.13.10",
+    "ai": "^6.0.100",
     "bullmq": "^5.69.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -54,7 +57,8 @@
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.1",
     "pg": "^8.18.0",
-    "posthog-js": "^1.354.0",
+    "posthog-js": "^1.354.2",
+    "posthog-node": "^5.26.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",

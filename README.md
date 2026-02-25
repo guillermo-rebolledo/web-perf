@@ -17,6 +17,7 @@ A production-ready web performance monitoring application built with Next.js 15,
 - 🔄 **Automated Audits**: Background worker with cron scheduler for periodic testing
 - 🎯 **Manual Runs**: On-demand performance audits with rate limiting
 - 📉 **Run Comparison**: Side-by-side comparison of metrics, audits, and screenshots
+- 🤖 **AI Analysis**: GPT-4o-mini powered narrative summaries with prioritized action items for each run
 - 🔐 **Authentication**: Google, GitHub, and email magic link authentication via NextAuth
 - ⚡ **Queue System**: BullMQ-powered job processing with retry logic
 - 🧹 **Auto-Cleanup**: Automatic screenshot TTL policy to manage database size
@@ -43,7 +44,8 @@ A production-ready web performance monitoring application built with Next.js 15,
 - **Redis** - Queue backing store
 - **node-cron** - Scheduled job execution
 
-### Analytics & Validation
+### AI & Analytics
+- **OpenAI GPT-4o-mini** - AI-generated run summaries (via Vercel AI SDK)
 - **Google PageSpeed Insights API** - Performance audits
 - **Zod** - Runtime validation
 - **Recharts** - Data visualization
@@ -149,6 +151,9 @@ RATE_LIMIT_RUNS_PER_DAY="100"
 
 # Screenshot cleanup (TTL in days)
 SCREENSHOT_TTL_DAYS="30"
+
+# OpenAI (for AI run summaries)
+OPENAI_API_KEY="sk-..."
 
 # Environment
 NODE_ENV="development"
@@ -313,6 +318,7 @@ The worker's built-in cron scheduler runs every minute and:
 - `GET /api/runs?monitorId=X` - List runs
 - `GET /api/runs/[id]` - Get run details
 - `GET /api/runs/[id]/compare/[id2]` - Compare two runs
+- `POST /api/runs/[id]/ai-summary` - Generate (or regenerate) an AI summary for a run (streams response)
 
 ### Scheduler
 - `POST /api/scheduler/tick` - Trigger scheduler (requires `x-scheduler-secret` header)

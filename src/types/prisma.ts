@@ -123,6 +123,9 @@ interface RunPageScalars {
   numRequests: number | null;
   mainThreadWork: number | null;
   screenshotData: string | null;
+  aiSummary: string | null;
+  aiSummaryAt: Date | null;
+  aiSummaryModel: string | null;
 }
 
 /** Regression alert for run detail page */

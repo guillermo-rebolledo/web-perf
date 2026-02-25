@@ -86,6 +86,11 @@ model Run {
   benchmarkIndex        Float?
   emulatedFormFactor    String?
 
+  // AI-generated summary (cached after first generation)
+  aiSummary      String?   @db.Text
+  aiSummaryAt    DateTime?
+  aiSummaryModel String?
+
   audits             Audit[]
   insights           Insight[]
   regressionAlerts   RegressionAlert[]
