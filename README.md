@@ -5,11 +5,13 @@ A production-ready web performance monitoring application built with Next.js 15,
 > 📖 **For detailed architecture and implementation documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md)**
 >
 > 🧪 **For testing setup, tools, and conventions, see [TESTING.md](./TESTING.md)**
+>
+> 🗄️ **For database seed and cleanup scripts, see [DATABASE_SCRIPTS.md](./DATABASE_SCRIPTS.md)**
 
 ## Features
 
 - 🚀 **Site Monitoring**: Track multiple websites with customizable monitoring schedules
-- 📊 **Performance Metrics**: Core Web Vitals (LCP, INP, CLS, FCP, TTFB) and Lighthouse scores
+- 📊 **Performance Metrics**: Core Web Vitals (LCP, INP, CLS, FCP, TTFB), Lighthouse scores, and environment metadata (browser user agent, benchmark index, form factor)
 - 📸 **Visual Snapshots**: Capture and store page screenshots with each audit
 - 📈 **Trend Analysis**: Visualize performance over time with interactive charts
 - 🔄 **Automated Audits**: Background worker with cron scheduler for periodic testing
@@ -377,6 +379,23 @@ For production, deploy the application and worker as separate containers:
 - **Redis**: Use Redis Cluster for high availability
 
 ## Development
+
+### Database Seed and Cleanup Scripts
+
+For seeding test data and cleaning up the database during development, see **[DATABASE_SCRIPTS.md](./DATABASE_SCRIPTS.md)**.
+
+Quick reference:
+
+```bash
+# Seed test data with regression alerts
+pnpm tsx prisma/seed-regressions.ts your-email@example.com
+
+# Clean database (preserves users/sessions)
+pnpm tsx prisma/clean-db.ts
+
+# Fresh start: clean + seed
+pnpm tsx prisma/clean-db.ts && pnpm tsx prisma/seed-regressions.ts your-email@example.com
+```
 
 ### Database Changes
 

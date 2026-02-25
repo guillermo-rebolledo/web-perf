@@ -351,7 +351,9 @@ export default async function RunPage({
                       Performance Regressions Detected
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {run.regressionAlerts.length} metric{run.regressionAlerts.length > 1 ? 's' : ''} regressed compared to baseline
+                      {run.regressionAlerts.length} metric
+                      {run.regressionAlerts.length > 1 ? "s" : ""} regressed
+                      compared to baseline
                     </p>
                   </div>
                 </div>
@@ -450,8 +452,8 @@ export default async function RunPage({
                           index % 2 === 0 ? "bg-background" : "bg-muted/50"
                         }
                       >
-                        <TableCell className="font-medium">
-                          <span className="flex items-center gap-2">
+                        <TableCell>
+                          <span className="flex items-center gap-2 tracking-tighter">
                             {audit.title}
                             {!audit.scored && (
                               <Badge
@@ -464,7 +466,7 @@ export default async function RunPage({
                             )}
                           </span>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-sm text-muted-foreground tracking-tighter">
                           {audit.displayValue || "—"}
                         </TableCell>
                       </TableRow>
@@ -583,7 +585,7 @@ export default async function RunPage({
                                 {sources.map((source, idx) => (
                                   <TableRow key={idx}>
                                     <TableCell
-                                      className="max-w-[300px] truncate font-mono text-xs"
+                                      className="max-w-[300px] truncate font-geist-mono text-xs tracking-tighter"
                                       style={
                                         source.depth
                                           ? {

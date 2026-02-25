@@ -310,4 +310,71 @@ describe("parsePSIResponse", () => {
 
     expect(result.runWarnings).toEqual([]);
   });
+
+  describe("Environment and Configuration Extraction", () => {
+    it("should extract environment metadata", () => {
+      const response = createPSIResponse({
+        lighthouseResult: {
+          ...createPSIResponse().lighthouseResult,
+          environment: {
+            networkUserAgent: "Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36",
+            benchmarkIndex: 1500.0,
+          },
+        },
+      });
+
+      const metrics = parsePSIResponse(response);
+      expect(metrics.browserUserAgent).toBe("Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36");
+      expect(metrics.benchmarkIndex).toBe(1500.0);
+    });
+
+    it("should extract emulated form factor", () => {
+      const response = createPSIResponse({
+        lighthouseResult: {
+          ...createPSIResponse().lighthouseResult,
+          configSettings: {
+            emulatedFormFactor: "desktop",
+          },
+        },
+      });
+
+      const metrics = parsePSIResponse(response);
+      expect(metrics.emulatedFormFactor).toBe("desktop");
+    });
+
+    it("should handle missing environment data gracefully", () => {
+      const response = createPSIResponse({
+        lighthouseResult: {
+          ...createPSIResponse().lighthouseResult,
+          environment: undefined,
+          configSettings: undefined,
+        },
+      });
+
+      const metrics = parsePSIResponse(response);
+      expect(metrics.browserUserAgent).toBeUndefined();
+      expect(metrics.benchmarkIndex).toBeUndefined();
+      expect(metrics.emulatedFormFactor).toBeUndefined();
+    });
+
+    it("should handle partial environment data", () => {
+      const response = createPSIResponse({
+        lighthouseResult: {
+          ...createPSIResponse().lighthouseResult,
+          environment: {
+            networkUserAgent: "Custom UA",
+            // benchmarkIndex missing
+          },
+          configSettings: {
+            emulatedFormFactor: "desktop",
+          },
+        },
+      });
+
+      const metrics = parsePSIResponse(response);
+      expect(metrics.browserUserAgent).toBe("Custom UA");
+      expect(metrics.benchmarkIndex).toBeUndefined();
+      expect(metrics.emulatedFormFactor).toBe("desktop");
+    });
+  });
 });

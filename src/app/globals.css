@@ -8,10 +8,12 @@
   --font-inter: "Inter", sans-serif;
 }
 :root {
-  --background: oklch(1 0 0);
+  --background: oklch(0.9683 0.0069 247.9);
   --foreground: oklch(0.2046 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2046 0 0);
+  --card-muted-background: oklch(0.9842 0.0034 247.86);
+  --card-muted-border: oklch(0.9288 0.0126 255.51);
   --popover: oklch(0.9911 0 0);
   --popover-foreground: oklch(0.4386 0 0);
   --primary: oklch(0.5461 0.2152 262.88);
@@ -81,6 +83,8 @@
   --foreground: oklch(0.9288 0.0126 255.5078);
   --card: oklch(0.2046 0 0);
   --card-foreground: oklch(0.9288 0.0126 255.5078);
+  --card-muted-background: oklch(0.2795 0.0368 260.03 / 50.25%);
+  --card-muted-border: oklch(0.2795 0.0368 260.03);
   --popover: oklch(0.2603 0 0);
   --popover-foreground: oklch(0.7348 0 0);
   --primary: oklch(0.6011 0.1868 254.5);
@@ -149,6 +153,8 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-card-muted-background: var(--card-muted-background);
+  --color-card-muted-border: var(--card-muted-border);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);

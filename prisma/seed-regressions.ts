@@ -2,20 +2,27 @@
  * Seed script to create test data with regression detection
  *
  * Usage:
- *   pnpm tsx prisma/seed-regressions.ts
- *   IMPORTANT: Change the email and name to your own before running the script to avoid conflicts.
+ *   pnpm tsx prisma/seed-regressions.ts <email> [name]
+ *
+ * Arguments:
+ *   email - User email address (required)
+ *   name  - User display name (optional, defaults to "Test User")
+ *
+ * Examples:
+ *   pnpm tsx prisma/seed-regressions.ts user@example.com
+ *   pnpm tsx prisma/seed-regressions.ts user@example.com "John Doe"
  *
  * Creates:
- * - Test user
+ * - Test user with provided email
  * - Test site
  * - Test monitor
  * - 30 baseline runs (stable metrics)
- * - 3 regressed runs (LCP, TBT, CLS regressions)
+ * - 6 regressed runs distributed across time periods
  * - Calculates baselines
  * - Detects regressions
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { calculateBaselines } from "../src/lib/regression/baseline-calculator";
 import { detectRegressions } from "../src/lib/regression/detector";
 import { analyzeRootCauses } from "../src/lib/regression/rules-engine";
@@ -23,17 +30,45 @@ import { calculateDiffSummary } from "../src/lib/regression/diff-engine";
 
 const prisma = new PrismaClient();
 
+// Helper to safely convert data to Prisma JSON value
+function toJsonValue(data: unknown): Prisma.InputJsonValue {
+  return data as Prisma.InputJsonValue;
+}
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const userEmail = args[0];
+const userName = args[1] || "Test User";
+
+// Validate email argument
+if (!userEmail) {
+  console.error("❌ Error: Email argument is required\n");
+  console.log("Usage:");
+  console.log("  pnpm tsx prisma/seed-regressions.ts <email> [name]\n");
+  console.log("Examples:");
+  console.log('  pnpm tsx prisma/seed-regressions.ts user@example.com');
+  console.log('  pnpm tsx prisma/seed-regressions.ts user@example.com "John Doe"\n');
+  process.exit(1);
+}
+
+// Basic email validation
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+if (!emailRegex.test(userEmail)) {
+  console.error(`❌ Error: Invalid email format: ${userEmail}\n`);
+  process.exit(1);
+}
+
 async function main() {
   console.log("🌱 Seeding regression test data...\n");
 
   // 1. Create test user
   console.log("Creating test user...");
   const user = await prisma.user.upsert({
-    where: { email: "gortiz.dev@gmail.com" },
+    where: { email: userEmail },
     update: {},
     create: {
-      email: "gortiz.dev@gmail.com",
-      name: "Test User",
+      email: userEmail,
+      name: userName,
     },
   });
   console.log(`✅ User created: ${user.email}\n`);
@@ -271,8 +306,10 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
+          createdAt: lcpRun.completedAt || new Date(),
+          updatedAt: lcpRun.completedAt || new Date(),
         },
       });
 
@@ -375,8 +412,10 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
+          createdAt: tbtRun.completedAt || new Date(),
+          updatedAt: tbtRun.completedAt || new Date(),
         },
       });
 
@@ -459,8 +498,525 @@ async function main() {
       await prisma.regressionAlert.create({
         data: {
           ...regression,
-          likelyCauses: causes as unknown as import("@prisma/client").Prisma.InputJsonValue,
-          diffSummary: diffSummary as unknown as import("@prisma/client").Prisma.InputJsonValue,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
+          createdAt: clsRun.completedAt || new Date(),
+          updatedAt: clsRun.completedAt || new Date(),
+        },
+      });
+
+      console.log(
+        `   ✅ ${regression.metricName.toUpperCase()}: ${regression.severity} (${regression.confidence} confidence)`,
+      );
+      if (causes.length > 0) {
+        console.log(
+          `      Top cause: ${causes[0].title} (${causes[0].confidence}% confidence)`,
+        );
+      }
+    }
+  }
+  console.log();
+
+  // Regression 4: FCP regression (2 days ago - image optimization issue)
+  console.log("Creating Regression 4: FCP regression (2 days ago)...");
+  const fcpRegression = await prisma.run.create({
+    data: {
+      monitorId: monitor.id,
+      status: "success",
+      queuedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      startedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 10000),
+
+      performanceScore: 80,
+      accessibilityScore: 95,
+      bestPracticesScore: 90,
+      seoScore: 92,
+
+      lcp: 2200,
+      inp: 200,
+      tbt: 280,
+      cls: 0.09,
+      fcp: 2100, // +40% from baseline (~1500ms) - MODERATE
+      ttfb: 550,
+
+      speedIndex: 3300,
+      tti: 3800,
+      totalByteWeight: 1350000, // +350KB
+      numRequests: 58,
+      mainThreadWork: 2300,
+    },
+  });
+
+  await prisma.insight.createMany({
+    data: [
+      {
+        runId: fcpRegression.id,
+        insightId: "offscreen-images",
+        title: "Defer offscreen images",
+        description: "Consider lazy-loading offscreen images",
+        score: 0.6,
+        sources: [
+          { url: "https://example.com/hero.jpg", wastedMs: 180 },
+          { url: "https://example.com/banner.jpg", wastedMs: 120 },
+        ],
+      },
+      {
+        runId: fcpRegression.id,
+        insightId: "uses-optimized-images",
+        title: "Optimize images",
+        description: "Images not properly sized or compressed",
+        score: 0.55,
+        sources: [
+          {
+            url: "https://example.com/hero.jpg",
+            wastedBytes: 250000,
+            totalBytes: 450000,
+          },
+        ],
+      },
+    ],
+  });
+
+  const fcpRun = await prisma.run.findUnique({
+    where: { id: fcpRegression.id },
+    include: { monitor: true },
+  });
+
+  if (fcpRun) {
+    const regressions = await detectRegressions(fcpRun, prisma);
+    console.log(`   Detected ${regressions.length} regression(s)`);
+
+    for (const regression of regressions) {
+      const causes = await analyzeRootCauses(
+        regression.metricName,
+        fcpRun,
+        prisma,
+      );
+      const diffSummary = await calculateDiffSummary(fcpRun, prisma);
+
+      await prisma.regressionAlert.create({
+        data: {
+          ...regression,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
+          createdAt: fcpRun.completedAt || new Date(),
+          updatedAt: fcpRun.completedAt || new Date(),
+        },
+      });
+
+      console.log(
+        `   ✅ ${regression.metricName.toUpperCase()}: ${regression.severity} (${regression.confidence} confidence)`,
+      );
+      if (causes.length > 0) {
+        console.log(
+          `      Top cause: ${causes[0].title} (${causes[0].confidence}% confidence)`,
+        );
+      }
+    }
+  }
+  console.log();
+
+  // Regression 5: Speed Index regression (3 days ago - rendering delay)
+  console.log("Creating Regression 5: Speed Index regression (3 days ago)...");
+  const siRegression = await prisma.run.create({
+    data: {
+      monitorId: monitor.id,
+      status: "success",
+      queuedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      startedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 10000),
+
+      performanceScore: 77,
+      accessibilityScore: 95,
+      bestPracticesScore: 88,
+      seoScore: 92,
+
+      lcp: 2250,
+      inp: 210,
+      tbt: 300,
+      cls: 0.09,
+      fcp: 1650,
+      ttfb: 550,
+
+      speedIndex: 4100, // +37% from baseline (~3000ms) - MODERATE
+      tti: 3900,
+      totalByteWeight: 1200000,
+      numRequests: 62,
+      mainThreadWork: 2500,
+    },
+  });
+
+  await prisma.insight.createMany({
+    data: [
+      {
+        runId: siRegression.id,
+        insightId: "render-blocking-resources",
+        title: "Eliminate render-blocking resources",
+        description: "Resources blocking first paint",
+        score: 0.55,
+        sources: [
+          { url: "https://example.com/styles.css", wastedMs: 280 },
+          { url: "https://example.com/fonts.css", wastedMs: 150 },
+        ],
+      },
+      {
+        runId: siRegression.id,
+        insightId: "unminified-css",
+        title: "Minify CSS",
+        description: "CSS files not minified",
+        score: 0.7,
+        sources: [
+          { url: "https://example.com/main.css", wastedBytes: 45000 },
+        ],
+      },
+    ],
+  });
+
+  const siRun = await prisma.run.findUnique({
+    where: { id: siRegression.id },
+    include: { monitor: true },
+  });
+
+  if (siRun) {
+    const regressions = await detectRegressions(siRun, prisma);
+    console.log(`   Detected ${regressions.length} regression(s)`);
+
+    for (const regression of regressions) {
+      const causes = await analyzeRootCauses(
+        regression.metricName,
+        siRun,
+        prisma,
+      );
+      const diffSummary = await calculateDiffSummary(siRun, prisma);
+
+      await prisma.regressionAlert.create({
+        data: {
+          ...regression,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
+          createdAt: siRun.completedAt || new Date(),
+          updatedAt: siRun.completedAt || new Date(),
+        },
+      });
+
+      console.log(
+        `   ✅ ${regression.metricName.toUpperCase()}: ${regression.severity} (${regression.confidence} confidence)`,
+      );
+      if (causes.length > 0) {
+        console.log(
+          `      Top cause: ${causes[0].title} (${causes[0].confidence}% confidence)`,
+        );
+      }
+    }
+  }
+  console.log();
+
+  // Regression 6: TTFB/FCP regression (5 days ago - backend slowdown)
+  console.log("Creating Regression 6: TTFB regression (5 days ago)...");
+  const ttfbRegression = await prisma.run.create({
+    data: {
+      monitorId: monitor.id,
+      status: "success",
+      queuedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      startedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 10000),
+
+      performanceScore: 72,
+      accessibilityScore: 95,
+      bestPracticesScore: 88,
+      seoScore: 92,
+
+      lcp: 2300,
+      inp: 200,
+      tbt: 280,
+      cls: 0.09,
+      fcp: 2100, // +40% from baseline (~1500ms) - MODERATE
+      ttfb: 900, // +80% from baseline (~500ms) - CRITICAL
+
+      speedIndex: 3500,
+      tti: 4100,
+      totalByteWeight: 1050000,
+      numRequests: 55,
+      mainThreadWork: 2200,
+    },
+  });
+
+  await prisma.insight.createMany({
+    data: [
+      {
+        runId: ttfbRegression.id,
+        insightId: "server-response-time",
+        title: "Server response time",
+        description: "Reduce server response time",
+        score: 0.4,
+        sources: [
+          { url: "https://example.com", responseTime: 900 },
+        ],
+      },
+      {
+        runId: ttfbRegression.id,
+        insightId: "network-server-latency",
+        title: "Network server latency",
+        description: "High server latency detected",
+        score: 0.5,
+        sources: [
+          { url: "https://example.com/api/data", serverLatency: 400 },
+        ],
+      },
+    ],
+  });
+
+  const ttfbRun = await prisma.run.findUnique({
+    where: { id: ttfbRegression.id },
+    include: { monitor: true },
+  });
+
+  if (ttfbRun) {
+    const regressions = await detectRegressions(ttfbRun, prisma);
+    console.log(`   Detected ${regressions.length} regression(s)`);
+
+    for (const regression of regressions) {
+      const causes = await analyzeRootCauses(
+        regression.metricName,
+        ttfbRun,
+        prisma,
+      );
+      const diffSummary = await calculateDiffSummary(ttfbRun, prisma);
+
+      await prisma.regressionAlert.create({
+        data: {
+          ...regression,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
+          createdAt: ttfbRun.completedAt || new Date(),
+          updatedAt: ttfbRun.completedAt || new Date(),
+        },
+      });
+
+      console.log(
+        `   ✅ ${regression.metricName.toUpperCase()}: ${regression.severity} (${regression.confidence} confidence)`,
+      );
+      if (causes.length > 0) {
+        console.log(
+          `      Top cause: ${causes[0].title} (${causes[0].confidence}% confidence)`,
+        );
+      }
+    }
+  }
+  console.log();
+
+  // Regression 7: INP regression (10 days ago - interaction delay)
+  console.log("Creating Regression 7: INP regression (10 days ago)...");
+  const inpRegression = await prisma.run.create({
+    data: {
+      monitorId: monitor.id,
+      status: "success",
+      queuedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      startedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 10000),
+
+      performanceScore: 76,
+      accessibilityScore: 95,
+      bestPracticesScore: 88,
+      seoScore: 92,
+
+      lcp: 2150,
+      inp: 350, // +94% from baseline (~180ms) - CRITICAL
+      tbt: 290,
+      cls: 0.09,
+      fcp: 1600,
+      ttfb: 550,
+
+      speedIndex: 3400,
+      tti: 3950,
+      totalByteWeight: 1150000,
+      numRequests: 58,
+      mainThreadWork: 2600,
+    },
+  });
+
+  await prisma.insight.createMany({
+    data: [
+      {
+        runId: inpRegression.id,
+        insightId: "long-tasks",
+        title: "Long tasks",
+        description: "Avoid long main-thread tasks",
+        score: 0.5,
+        sources: [
+          { url: "https://example.com/event-handlers.js", duration: 280 },
+          { url: "https://example.com/app.js", duration: 220 },
+        ],
+      },
+      {
+        runId: inpRegression.id,
+        insightId: "bootup-time",
+        title: "JavaScript execution time",
+        description: "Reduce JavaScript execution time",
+        score: 0.65,
+        sources: [
+          { url: "https://example.com/event-handlers.js", wastedMs: 380 },
+          { url: "https://example.com/app.js", wastedMs: 250 },
+        ],
+      },
+    ],
+  });
+
+  const inpRun = await prisma.run.findUnique({
+    where: { id: inpRegression.id },
+    include: { monitor: true },
+  });
+
+  if (inpRun) {
+    const regressions = await detectRegressions(inpRun, prisma);
+    console.log(`   Detected ${regressions.length} regression(s)`);
+
+    for (const regression of regressions) {
+      const causes = await analyzeRootCauses(
+        regression.metricName,
+        inpRun,
+        prisma,
+      );
+      const diffSummary = await calculateDiffSummary(inpRun, prisma);
+
+      await prisma.regressionAlert.create({
+        data: {
+          ...regression,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
+          createdAt: inpRun.completedAt || new Date(),
+          updatedAt: inpRun.completedAt || new Date(),
+        },
+      });
+
+      console.log(
+        `   ✅ ${regression.metricName.toUpperCase()}: ${regression.severity} (${regression.confidence} confidence)`,
+      );
+      if (causes.length > 0) {
+        console.log(
+          `      Top cause: ${causes[0].title} (${causes[0].confidence}% confidence)`,
+        );
+      }
+    }
+  }
+  console.log();
+
+  // Regression 8: Multi-metric regression (30 days ago - severe deployment issue)
+  console.log(
+    "Creating Regression 8: Multi-metric regression (30 days ago)...",
+  );
+  const multiRegression = await prisma.run.create({
+    data: {
+      monitorId: monitor.id,
+      status: "success",
+      queuedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      startedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000 + 10000),
+
+      performanceScore: 65,
+      accessibilityScore: 95,
+      bestPracticesScore: 85,
+      seoScore: 90,
+
+      lcp: 3500, // +67% from baseline - CRITICAL
+      inp: 280,
+      tbt: 420, // +68% from baseline - CRITICAL
+      cls: 0.15, // +67% from baseline - CRITICAL
+      fcp: 2000,
+      ttfb: 750,
+
+      speedIndex: 4200,
+      tti: 4800,
+      totalByteWeight: 1800000, // +800KB
+      numRequests: 75, // +25 requests
+      mainThreadWork: 3500, // +1500ms
+    },
+  });
+
+  await prisma.insight.createMany({
+    data: [
+      {
+        runId: multiRegression.id,
+        insightId: "bootup-time",
+        title: "JavaScript execution time",
+        description: "Reduce JavaScript execution time",
+        score: 0.45,
+        sources: [
+          { url: "https://example.com/bundle.js", wastedMs: 650 },
+          { url: "https://example.com/vendor.js", wastedMs: 450 },
+          { url: "https://cdn.newframework.com/core.js", wastedMs: 520 },
+        ],
+      },
+      {
+        runId: multiRegression.id,
+        insightId: "third-party-summary",
+        title: "Third-party code",
+        description: "Third-party scripts blocking the main thread",
+        score: 0.4,
+        sources: [
+          {
+            url: "https://cdn.newframework.com",
+            blockingTime: 520,
+            transferSize: 380000,
+          },
+        ],
+      },
+      {
+        runId: multiRegression.id,
+        insightId: "layout-shift-elements",
+        title: "Layout shift elements",
+        description: "Elements causing layout shifts",
+        score: 0.35,
+        sources: [
+          { node: '{"selector": "div.banner"}', score: 0.06 },
+          { node: '{"selector": "img.hero"}', score: 0.05 },
+          { node: '{"selector": "div.widget"}', score: 0.04 },
+        ],
+      },
+      {
+        runId: multiRegression.id,
+        insightId: "network-requests",
+        title: "Network requests",
+        description: "Minimize network requests",
+        score: 0.65,
+        sources: Array.from({ length: 75 }, (_, idx) => ({
+          url:
+            idx >= 70
+              ? `https://cdn.newframework.com/module${idx}.js`
+              : `https://example.com/resource${idx}.js`,
+          transferSize:
+            idx >= 70 ? 50000 + Math.random() * 30000 : 10000 + Math.random() * 50000,
+          resourceType:
+            idx % 3 === 0 ? "script" : idx % 3 === 1 ? "stylesheet" : "image",
+        })),
+      },
+    ],
+  });
+
+  const multiRun = await prisma.run.findUnique({
+    where: { id: multiRegression.id },
+    include: { monitor: true },
+  });
+
+  if (multiRun) {
+    const regressions = await detectRegressions(multiRun, prisma);
+    console.log(`   Detected ${regressions.length} regression(s)`);
+
+    for (const regression of regressions) {
+      const causes = await analyzeRootCauses(
+        regression.metricName,
+        multiRun,
+        prisma,
+      );
+      const diffSummary = await calculateDiffSummary(multiRun, prisma);
+
+      await prisma.regressionAlert.create({
+        data: {
+          ...regression,
+          likelyCauses: toJsonValue(causes),
+          diffSummary: toJsonValue(diffSummary),
+          createdAt: multiRun.completedAt || new Date(),
+          updatedAt: multiRun.completedAt || new Date(),
         },
       });
 
@@ -484,17 +1040,36 @@ async function main() {
   console.log(`   - Site: ${site.name}`);
   console.log(`   - Monitor: ${monitor.id}`);
   console.log(`   - Baseline runs: 30`);
-  console.log(`   - Regressed runs: 3`);
+  console.log(`   - Regressed runs: 8`);
   console.log(`   - Regression alerts: Check database\n`);
 
   const alerts = await prisma.regressionAlert.findMany({
     where: { run: { monitorId: monitor.id } },
+    orderBy: { createdAt: "asc" },
   });
   console.log(`Total regression alerts created: ${alerts.length}`);
+
+  // Group alerts by time period
+  const now = Date.now();
+  const alertsByPeriod = {
+    "1d": alerts.filter((a) => now - a.createdAt.getTime() <= 1 * 24 * 60 * 60 * 1000).length,
+    "3d": alerts.filter((a) => now - a.createdAt.getTime() <= 3 * 24 * 60 * 60 * 1000).length,
+    "5d": alerts.filter((a) => now - a.createdAt.getTime() <= 5 * 24 * 60 * 60 * 1000).length,
+    "10d": alerts.filter((a) => now - a.createdAt.getTime() <= 10 * 24 * 60 * 60 * 1000).length,
+    "30d": alerts.filter((a) => now - a.createdAt.getTime() <= 30 * 24 * 60 * 60 * 1000).length,
+  };
+
+  console.log("\nAlerts by time period:");
+  console.log(`   - Last 1 day:   ${alertsByPeriod["1d"]} alerts`);
+  console.log(`   - Last 3 days:  ${alertsByPeriod["3d"]} alerts`);
+  console.log(`   - Last 5 days:  ${alertsByPeriod["5d"]} alerts`);
+  console.log(`   - Last 10 days: ${alertsByPeriod["10d"]} alerts`);
+  console.log(`   - Last 30 days: ${alertsByPeriod["30d"]} alerts`);
+
   console.log("\nTo view in UI:");
   console.log(`   1. Sign in as: ${user.email}`);
-  console.log(`   2. Navigate to site: ${site.name}`);
-  console.log(`   3. Click on any of the last 3 runs to see regressions\n`);
+  console.log(`   2. Navigate to "Regression Alerts" in the sidebar`);
+  console.log(`   3. Switch between time period tabs to see alerts\n`);
   console.log("=".repeat(60));
 }
 

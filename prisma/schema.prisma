@@ -80,6 +80,12 @@ model Run {
   numRequests        Int?
   mainThreadWork     Float?
   screenshotData     String?
+
+  // Environment & Configuration Metadata
+  browserUserAgent      String?
+  benchmarkIndex        Float?
+  emulatedFormFactor    String?
+
   audits             Audit[]
   insights           Insight[]
   regressionAlerts   RegressionAlert[]

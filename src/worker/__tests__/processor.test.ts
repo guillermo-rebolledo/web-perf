@@ -259,6 +259,31 @@ describe("processAuditJob", () => {
     expect(data.mainThreadWork).toBe(2800);
   });
 
+  it("saves environment and configuration metadata", async () => {
+    vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
+    vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });
+    vi.mocked(prismaMock.insight.createMany).mockResolvedValue({ count: 4 });
+    vi.mocked(prismaMock.monitor.update).mockResolvedValue(createMonitor());
+
+    await processAuditJob(createMockJob(jobData));
+
+    type RunUpdateData = Record<string, unknown>;
+    const runUpdateMock = vi.mocked(prismaMock.run.update);
+    const transactionUpdateCall = runUpdateMock.mock.calls.find(
+      (call: Parameters<typeof prismaMock.run.update>) =>
+        call[0].data &&
+        "performanceScore" in (call[0].data as RunUpdateData)
+    );
+
+    expect(transactionUpdateCall).toBeDefined();
+    const data = transactionUpdateCall![0].data as RunUpdateData;
+
+    // Environment metadata
+    expect(data.browserUserAgent).toEqual(expect.stringContaining("Mozilla"));
+    expect(data.benchmarkIndex).toBe(1234.5);
+    expect(data.emulatedFormFactor).toBe("mobile");
+  });
+
   it("updates monitor lastRunAt", async () => {
     vi.mocked(prismaMock.run.update).mockResolvedValue(createRun());
     vi.mocked(prismaMock.audit.createMany).mockResolvedValue({ count: 5 });

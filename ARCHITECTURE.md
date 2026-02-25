@@ -399,7 +399,18 @@ model Run {
   cls  Float?  // Cumulative Layout Shift
   fcp  Float?  // First Contentful Paint (ms)
   ttfb Float?  // Time to First Byte (ms)
-  
+
+  // Environment & Configuration Metadata
+  browserUserAgent      String?  // Browser/device user agent
+  benchmarkIndex        Float?   // Performance benchmark score
+  emulatedFormFactor    String?  // "mobile" or "desktop"
+  screenWidth           Int?     // Emulated screen width (px)
+  screenHeight          Int?     // Emulated screen height (px)
+  devicePixelRatio      Float?   // Device scale factor
+  throttlingRtt         Int?     // Network RTT (ms)
+  throttlingThroughput  Float?   // Network throughput (Kbps)
+  cpuSlowdown           Float?   // CPU throttling multiplier
+
   monitor Monitor @relation(fields: [monitorId], references: [id])
   audits  Audit[]
 }

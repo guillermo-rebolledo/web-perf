@@ -66,6 +66,11 @@ export async function processAuditJob(job: Job<AuditJobData>) {
       lcp: metrics.lcp,
       cls: metrics.cls,
     });
+    console.log(`[Worker] Environment metadata:`, {
+      browserUserAgent: metrics.browserUserAgent,
+      benchmarkIndex: metrics.benchmarkIndex,
+      emulatedFormFactor: metrics.emulatedFormFactor,
+    });
 
     // Update run with results and create audits
     await prisma.$transaction(async (tx) => {
@@ -88,6 +93,9 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           lighthouseVersion: metrics.lighthouseVersion,
           finalUrl: metrics.finalUrl,
           runWarnings: metrics.runWarnings,
+          browserUserAgent: metrics.browserUserAgent,
+          benchmarkIndex: metrics.benchmarkIndex,
+          emulatedFormFactor: metrics.emulatedFormFactor,
           speedIndex: metrics.speedIndex,
           tti: metrics.tti,
           totalByteWeight: metrics.totalByteWeight,

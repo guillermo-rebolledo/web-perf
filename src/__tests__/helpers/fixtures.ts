@@ -72,6 +72,9 @@ export function createRun(overrides: Partial<Run> = {}): Run {
     numRequests: null,
     mainThreadWork: null,
     screenshotData: null,
+    browserUserAgent: "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36",
+    benchmarkIndex: 1234.5,
+    emulatedFormFactor: "mobile",
     ...overrides,
   };
 }
@@ -312,6 +315,16 @@ export function createPSIResponse(
       finalUrl: "https://example.com/",
       runWarnings: [],
       fetchTime: "2025-01-01T00:00:00Z",
+      environment: {
+        networkUserAgent: "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36",
+        hostUserAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+        benchmarkIndex: 1234.5,
+      },
+      configSettings: {
+        emulatedFormFactor: "mobile",
+        formFactor: "mobile",
+        locale: "en-US",
+      },
     },
     ...overrides,
   };
