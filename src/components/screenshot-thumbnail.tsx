@@ -43,7 +43,7 @@ export function ScreenshotThumbnail({
             unoptimized
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
-            <Button variant="secondary" size={compact ? "icon" : "sm"}>
+            <Button size={compact ? "icon" : "sm"}>
               {compact ? (
                 <ZoomIn className="h-4 w-4" />
               ) : (

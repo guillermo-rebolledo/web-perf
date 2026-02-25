@@ -71,18 +71,18 @@ export async function GET(request: NextRequest) {
     // Add cursor condition for pagination
     if (cursor) {
       try {
-        const [cursorDate, cursorId] = cursor.split("_");
+        const parts = cursor.split("_");
+        const [cursorSeverity, cursorDate, cursorId] = parts;
+        if (parts.length !== 3 || !cursorSeverity || !cursorDate || !cursorId) {
+          throw new Error("Invalid cursor");
+        }
         where.OR = [
+          { severity: { lt: cursorSeverity } },
+          { severity: cursorSeverity, createdAt: { lt: new Date(cursorDate) } },
           {
-            createdAt: {
-              lt: new Date(cursorDate),
-            },
-          },
-          {
+            severity: cursorSeverity,
             createdAt: new Date(cursorDate),
-            id: {
-              lt: cursorId,
-            },
+            id: { lt: cursorId },
           },
         ];
       } catch {
@@ -116,9 +116,10 @@ export async function GET(request: NextRequest) {
     const returnedAlerts = hasMore ? alerts.slice(0, limit) : alerts;
 
     // Generate next cursor from the last returned alert
+    // Format: severity_createdAt_id (all 3 sort keys must be encoded)
     const nextCursor =
       hasMore && returnedAlerts.length > 0
-        ? `${returnedAlerts[returnedAlerts.length - 1].createdAt.toISOString()}_${returnedAlerts[returnedAlerts.length - 1].id}`
+        ? `${returnedAlerts[returnedAlerts.length - 1].severity}_${returnedAlerts[returnedAlerts.length - 1].createdAt.toISOString()}_${returnedAlerts[returnedAlerts.length - 1].id}`
         : null;
 
     return NextResponse.json({

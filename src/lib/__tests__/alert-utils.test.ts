@@ -82,8 +82,13 @@ describe("getSeverityInfo", () => {
   });
 
   it("returns minor config as fallback for invalid severity", () => {
-    expect(getSeverityInfo("invalid")).toEqual(severityConfig.minor);
-    expect(getSeverityInfo("")).toEqual(severityConfig.minor);
+    const fallbackInvalid = getSeverityInfo("invalid");
+    const fallbackEmpty = getSeverityInfo("");
+
+    expect(fallbackInvalid.label).toBe(severityConfig.minor.label);
+    expect(fallbackEmpty.label).toBe(severityConfig.minor.label);
+    expect(fallbackInvalid.variant).toBe("outline");
+    expect(fallbackEmpty.variant).toBe("outline");
   });
 
   it("returns correct badge variant for each severity", () => {
@@ -103,6 +108,12 @@ describe("getConfidenceInfo", () => {
   it("returns low config as fallback for invalid confidence", () => {
     expect(getConfidenceInfo("invalid")).toEqual(confidenceConfig.low);
     expect(getConfidenceInfo("")).toEqual(confidenceConfig.low);
+  });
+
+  it("returns correct badge variant for each confidence level", () => {
+    expect(getConfidenceInfo("high").variant).toBe("success");
+    expect(getConfidenceInfo("medium").variant).toBe("warningMinor");
+    expect(getConfidenceInfo("low").variant).toBe("outline");
   });
 });
 

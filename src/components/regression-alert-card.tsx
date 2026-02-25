@@ -64,9 +64,9 @@ export function RegressionAlertCard({
           </div>
           <div className="flex gap-2">
             <Badge variant={severityInfo.variant}>{severityInfo.label}</Badge>
-            <span className={confidenceInfo.className}>
+            <Badge variant={confidenceInfo.variant}>
               {confidenceInfo.label} Confidence
-            </span>
+            </Badge>
           </div>
         </div>
       </CardHeader>

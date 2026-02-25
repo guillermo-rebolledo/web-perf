@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 import {
   getSeverityInfo,
@@ -59,12 +60,12 @@ export function AlertCard({ alert }: AlertCardProps) {
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="flex flex-col gap-2 flex-1 min-w-0">
                 <div className="flex gap-2">
-                  <span className={severityInfo.badgeClassName}>
+                  <Badge variant={severityInfo.variant}>
                     {severityInfo.label} Severity
-                  </span>
-                  <span className={confidenceInfo.className}>
+                  </Badge>
+                  <Badge variant={confidenceInfo.variant}>
                     {confidenceInfo.label} Confidence
-                  </span>
+                  </Badge>
                 </div>
                 <CardTitle className="font-bold truncate">
                   {alert.run.monitor.site.name}
