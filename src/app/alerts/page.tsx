@@ -2,18 +2,18 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, TrendingUp } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TIME_PERIODS, type TimePeriodValue } from "@/lib/alert-utils";
-import {
-  AlertCard,
-  type RegressionAlertWithDetails,
-} from "@/components/alert-card";
+import { type RegressionAlertWithDetails } from "@/components/alert-card";
 import { EmptyAlerts } from "@/components/empty-alerts";
 import { Button } from "@/components/ui/button";
+import { AlertsList } from "@/components/alerts-list";
 
-async function getAlertsForPeriod(
+const INITIAL_LOAD_LIMIT = 20;
+
+async function getInitialAlertsForPeriod(
   userId: string,
   days: number,
   severity?: string,
@@ -46,7 +46,29 @@ async function getAlertsForPeriod(
         },
       },
     },
-    orderBy: [{ severity: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ severity: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+    take: INITIAL_LOAD_LIMIT,
+  });
+}
+
+async function getAlertsCount(userId: string, days: number, severity?: string) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  return await prisma.regressionAlert.count({
+    where: {
+      createdAt: {
+        gte: startDate,
+      },
+      ...(severity && { severity }),
+      run: {
+        monitor: {
+          site: {
+            userId,
+          },
+        },
+      },
+    },
   });
 }
 
@@ -64,14 +86,14 @@ export default async function AlertsPage({
   const params = await searchParams;
   const severityFilter = params.severity;
 
-  // Fetch alerts for all time periods in parallel
+  // Fetch initial alerts for all time periods in parallel
   const [alerts1d, alerts3d, alerts5d, alerts10d, alerts30d] =
     await Promise.all([
-      getAlertsForPeriod(session.user.id, 1, severityFilter),
-      getAlertsForPeriod(session.user.id, 3, severityFilter),
-      getAlertsForPeriod(session.user.id, 5, severityFilter),
-      getAlertsForPeriod(session.user.id, 10, severityFilter),
-      getAlertsForPeriod(session.user.id, 30, severityFilter),
+      getInitialAlertsForPeriod(session.user.id, 1, severityFilter),
+      getInitialAlertsForPeriod(session.user.id, 3, severityFilter),
+      getInitialAlertsForPeriod(session.user.id, 5, severityFilter),
+      getInitialAlertsForPeriod(session.user.id, 10, severityFilter),
+      getInitialAlertsForPeriod(session.user.id, 30, severityFilter),
     ]);
 
   const alertsByPeriod: Record<TimePeriodValue, RegressionAlertWithDetails[]> =
@@ -84,15 +106,34 @@ export default async function AlertsPage({
     };
 
   // Get counts from unfiltered 30d data for stats
-  const [allAlerts30d] = await Promise.all([
-    getAlertsForPeriod(session.user.id, 30),
-  ]);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const totalAlerts = allAlerts30d.length;
-  const criticalCount = allAlerts30d.filter(
-    (a) => a.severity === "critical",
-  ).length;
-  const openCount = allAlerts30d.filter((a) => a.status === "open").length;
+  const [totalAlerts, criticalCount, openCount] = await Promise.all([
+    getAlertsCount(session.user.id, 30),
+    prisma.regressionAlert.count({
+      where: {
+        createdAt: { gte: thirtyDaysAgo },
+        severity: "critical",
+        run: {
+          monitor: {
+            site: { userId: session.user.id },
+          },
+        },
+      },
+    }),
+    prisma.regressionAlert.count({
+      where: {
+        createdAt: { gte: thirtyDaysAgo },
+        status: "open",
+        run: {
+          monitor: {
+            site: { userId: session.user.id },
+          },
+        },
+      },
+    }),
+  ]);
 
   return (
     <div className="container mx-auto py-8 flex flex-col gap-8">
@@ -188,20 +229,11 @@ export default async function AlertsPage({
               {alerts.length === 0 ? (
                 <EmptyAlerts days={period.days} />
               ) : (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
-                    <TrendingUp className="h-4 w-4" />
-                    <span className="tracking-tighter">
-                      {alerts.length} alert{alerts.length !== 1 ? "s" : ""} in
-                      the last {period.days} day{period.days > 1 ? "s" : ""}
-                    </span>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {alerts.map((alert) => (
-                      <AlertCard key={alert.id} alert={alert} />
-                    ))}
-                  </div>
-                </div>
+                <AlertsList
+                  initialAlerts={alerts}
+                  days={period.days}
+                  severity={severityFilter}
+                />
               )}
             </TabsContent>
           );
