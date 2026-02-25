@@ -2,14 +2,13 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { calculateBaselines } from "../baseline-calculator";
 import { PrismaClient } from "@prisma/client";
 
-// Mock Prisma
+// Mock Prisma — keep references to vi.fn() so we can call mock methods directly
+const mockRunFindMany = vi.fn();
+const mockBaselineUpsert = vi.fn();
+
 const mockPrisma = {
-  run: {
-    findMany: vi.fn(),
-  },
-  regressionBaseline: {
-    upsert: vi.fn(),
-  },
+  run: { findMany: mockRunFindMany },
+  regressionBaseline: { upsert: mockBaselineUpsert },
 } as unknown as PrismaClient;
 
 describe("Baseline Calculator", () => {
@@ -28,15 +27,15 @@ describe("Baseline Calculator", () => {
       ttfb: 500 + i * 25,
     }));
 
-    (mockPrisma.run.findMany as any).mockResolvedValue(mockRuns);
+    mockRunFindMany.mockResolvedValue(mockRuns);
 
     await calculateBaselines("monitor-123", mockPrisma);
 
     // Should create 6 baselines (one for each metric)
-    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledTimes(6);
+    expect(mockBaselineUpsert).toHaveBeenCalledTimes(6);
 
     // Check LCP baseline (median of 2000-2900 = 2450)
-    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledWith(
+    expect(mockBaselineUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           monitorId_metricName: {
@@ -63,12 +62,12 @@ describe("Baseline Calculator", () => {
       ttfb: null,
     }));
 
-    (mockPrisma.run.findMany as any).mockResolvedValue(mockRuns);
+    mockRunFindMany.mockResolvedValue(mockRuns);
 
     await calculateBaselines("monitor-123", mockPrisma);
 
     // Should not create any baselines
-    expect(mockPrisma.regressionBaseline.upsert).not.toHaveBeenCalled();
+    expect(mockBaselineUpsert).not.toHaveBeenCalled();
   });
 
   it("should handle null values correctly", async () => {
@@ -81,14 +80,14 @@ describe("Baseline Calculator", () => {
       ttfb: null,
     }));
 
-    (mockPrisma.run.findMany as any).mockResolvedValue(mockRuns);
+    mockRunFindMany.mockResolvedValue(mockRuns);
 
     await calculateBaselines("monitor-123", mockPrisma);
 
     // LCP has 5 valid values (min), TBT has 10 — both get a baseline
-    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledTimes(2);
+    expect(mockBaselineUpsert).toHaveBeenCalledTimes(2);
 
-    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledWith(
+    expect(mockBaselineUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           monitorId_metricName: {
@@ -98,7 +97,7 @@ describe("Baseline Calculator", () => {
         },
       })
     );
-    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledWith(
+    expect(mockBaselineUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
           monitorId_metricName: {
@@ -121,12 +120,12 @@ describe("Baseline Calculator", () => {
       { lcp: 4000, tbt: null, cls: null, inp: null, fcp: null, ttfb: null },
     ];
 
-    (mockPrisma.run.findMany as any).mockResolvedValue(mockRuns);
+    mockRunFindMany.mockResolvedValue(mockRuns);
 
     await calculateBaselines("monitor-123", mockPrisma);
 
     // Median of even count (6) = (2000 + 3000) / 2 = 2500
-    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledWith(
+    expect(mockBaselineUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({
           medianValue: 2500,
@@ -144,12 +143,12 @@ describe("Baseline Calculator", () => {
       { lcp: 5000, tbt: null, cls: null, inp: null, fcp: null, ttfb: null },
     ];
 
-    (mockPrisma.run.findMany as any).mockResolvedValue(mockRuns);
+    mockRunFindMany.mockResolvedValue(mockRuns);
 
     await calculateBaselines("monitor-123", mockPrisma);
 
     // Median of [1000, 2000, 3000, 4000, 5000] = 3000
-    expect(mockPrisma.regressionBaseline.upsert).toHaveBeenCalledWith(
+    expect(mockBaselineUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({
           medianValue: 3000,

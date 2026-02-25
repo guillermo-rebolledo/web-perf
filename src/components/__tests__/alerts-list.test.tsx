@@ -65,7 +65,7 @@ describe("AlertsList", () => {
       rootMargin = "";
       thresholds = [];
       takeRecords = () => [];
-    } as any;
+    } as unknown as typeof IntersectionObserver;
   });
 
   afterEach(() => {
@@ -149,8 +149,8 @@ describe("AlertsList", () => {
       const observerTarget = mockObserve.mock.calls[0][0];
       act(() => {
         intersectionObserverCallback(
-          [{ isIntersecting: true, target: observerTarget }] as any,
-          {} as any
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
         );
       });
 
@@ -206,8 +206,8 @@ describe("AlertsList", () => {
       const observerTarget = mockObserve.mock.calls[0][0];
       act(() => {
         intersectionObserverCallback(
-          [{ isIntersecting: true, target: observerTarget }] as any,
-          {} as any
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
         );
       });
 
@@ -261,8 +261,8 @@ describe("AlertsList", () => {
       const observerTarget = mockObserve.mock.calls[0][0];
       act(() => {
         intersectionObserverCallback(
-          [{ isIntersecting: true, target: observerTarget }] as any,
-          {} as any
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
         );
       });
 
@@ -274,8 +274,8 @@ describe("AlertsList", () => {
       // Trigger second intersection (load page 3)
       act(() => {
         intersectionObserverCallback(
-          [{ isIntersecting: true, target: observerTarget }] as any,
-          {} as any
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
         );
       });
 
@@ -310,8 +310,8 @@ describe("AlertsList", () => {
       const observerTarget = mockObserve.mock.calls[0][0];
       act(() => {
         intersectionObserverCallback(
-          [{ isIntersecting: true, target: observerTarget }] as any,
-          {} as any
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
         );
       });
 
@@ -355,8 +355,8 @@ describe("AlertsList", () => {
       const observerTarget = mockObserve.mock.calls[0][0];
       act(() => {
         intersectionObserverCallback(
-          [{ isIntersecting: true, target: observerTarget }] as any,
-          {} as any
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
         );
       });
 
@@ -500,8 +500,8 @@ describe("AlertsList", () => {
       const observerTarget = mockObserve.mock.calls[0][0];
       act(() => {
         intersectionObserverCallback(
-          [{ isIntersecting: true, target: observerTarget }] as any,
-          {} as any
+          [{ isIntersecting: true, target: observerTarget } as unknown as IntersectionObserverEntry],
+          {} as unknown as IntersectionObserver
         );
       });
 

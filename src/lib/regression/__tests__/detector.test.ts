@@ -1,15 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { detectRegressions } from "../detector";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Run } from "@prisma/client";
+
+// Mock Prisma — keep references to vi.fn() so we can call mock methods directly
+const mockBaselineFindMany = vi.fn();
+const mockRunFindMany = vi.fn();
 
 const mockPrisma = {
-  regressionBaseline: {
-    findMany: vi.fn(),
-  },
-  run: {
-    findMany: vi.fn(),
-  },
+  regressionBaseline: { findMany: mockBaselineFindMany },
+  run: { findMany: mockRunFindMany },
 } as unknown as PrismaClient;
+
+// Shorthand for the run type expected by detectRegressions
+type TestRun = Run & { monitor: { id: string } };
 
 describe("Regression Detector", () => {
   beforeEach(() => {
@@ -18,11 +21,11 @@ describe("Regression Detector", () => {
 
   it("should detect LCP regression when threshold exceeded", async () => {
     // Setup: baseline LCP = 2000ms
-    (mockPrisma.regressionBaseline.findMany as any).mockResolvedValue([
+    mockBaselineFindMany.mockResolvedValue([
       { metricName: "lcp", medianValue: 2000 },
     ]);
 
-    (mockPrisma.run.findMany as any).mockResolvedValue([]);
+    mockRunFindMany.mockResolvedValue([]);
 
     const run = {
       id: "run-123",
@@ -33,7 +36,7 @@ describe("Regression Detector", () => {
       inp: null,
       fcp: null,
       ttfb: null,
-    } as any;
+    } as unknown as TestRun;
 
     const regressions = await detectRegressions(run, mockPrisma);
 
@@ -52,11 +55,11 @@ describe("Regression Detector", () => {
 
   it("should NOT detect regression when percent threshold met but absolute not met", async () => {
     // LCP needs BOTH 15% AND 300ms
-    (mockPrisma.regressionBaseline.findMany as any).mockResolvedValue([
+    mockBaselineFindMany.mockResolvedValue([
       { metricName: "lcp", medianValue: 1000 },
     ]);
 
-    (mockPrisma.run.findMany as any).mockResolvedValue([]);
+    mockRunFindMany.mockResolvedValue([]);
 
     const run = {
       id: "run-123",
@@ -67,7 +70,7 @@ describe("Regression Detector", () => {
       inp: null,
       fcp: null,
       ttfb: null,
-    } as any;
+    } as unknown as TestRun;
 
     const regressions = await detectRegressions(run, mockPrisma);
 
@@ -75,18 +78,18 @@ describe("Regression Detector", () => {
   });
 
   it("should classify severity correctly", async () => {
-    (mockPrisma.regressionBaseline.findMany as any).mockResolvedValue([
+    mockBaselineFindMany.mockResolvedValue([
       { metricName: "lcp", medianValue: 2000 },
     ]);
 
-    (mockPrisma.run.findMany as any).mockResolvedValue([]);
+    mockRunFindMany.mockResolvedValue([]);
 
     // Test critical (>50%)
     const criticalRun = {
       id: "run-critical",
       monitor: { id: "monitor-123" },
       lcp: 3200, // +60%
-    } as any;
+    } as unknown as TestRun;
 
     const criticalRegressions = await detectRegressions(criticalRun, mockPrisma);
     expect(criticalRegressions[0].severity).toBe("critical");
@@ -96,7 +99,7 @@ describe("Regression Detector", () => {
       id: "run-moderate",
       monitor: { id: "monitor-123" },
       lcp: 2600, // +30%
-    } as any;
+    } as unknown as TestRun;
 
     const moderateRegressions = await detectRegressions(moderateRun, mockPrisma);
     expect(moderateRegressions[0].severity).toBe("moderate");
@@ -106,19 +109,19 @@ describe("Regression Detector", () => {
       id: "run-minor",
       monitor: { id: "monitor-123" },
       lcp: 2350, // +17.5%
-    } as any;
+    } as unknown as TestRun;
 
     const minorRegressions = await detectRegressions(minorRun, mockPrisma);
     expect(minorRegressions[0].severity).toBe("minor");
   });
 
   it("should calculate confidence based on consecutive regressions", async () => {
-    (mockPrisma.regressionBaseline.findMany as any).mockResolvedValue([
+    mockBaselineFindMany.mockResolvedValue([
       { metricName: "lcp", medianValue: 2000 },
     ]);
 
     // Mock 2 previous runs with regressions
-    (mockPrisma.run.findMany as any).mockResolvedValue([
+    mockRunFindMany.mockResolvedValue([
       {
         regressionAlerts: [{ metricName: "lcp" }],
       },
@@ -131,7 +134,7 @@ describe("Regression Detector", () => {
       id: "run-123",
       monitor: { id: "monitor-123" },
       lcp: 2500, // +25%
-    } as any;
+    } as unknown as TestRun;
 
     const regressions = await detectRegressions(run, mockPrisma);
 
@@ -140,17 +143,17 @@ describe("Regression Detector", () => {
   });
 
   it("should handle CLS regression with correct thresholds", async () => {
-    (mockPrisma.regressionBaseline.findMany as any).mockResolvedValue([
+    mockBaselineFindMany.mockResolvedValue([
       { metricName: "cls", medianValue: 0.1 },
     ]);
 
-    (mockPrisma.run.findMany as any).mockResolvedValue([]);
+    mockRunFindMany.mockResolvedValue([]);
 
     const run = {
       id: "run-123",
       monitor: { id: "monitor-123" },
       cls: 0.2, // +100% but only +0.1 (needs 25% AND 0.05)
-    } as any;
+    } as unknown as TestRun;
 
     const regressions = await detectRegressions(run, mockPrisma);
 
@@ -159,13 +162,13 @@ describe("Regression Detector", () => {
   });
 
   it("should detect multiple regressions in single run", async () => {
-    (mockPrisma.regressionBaseline.findMany as any).mockResolvedValue([
+    mockBaselineFindMany.mockResolvedValue([
       { metricName: "lcp", medianValue: 2000 },
       { metricName: "tbt", medianValue: 200 },
       { metricName: "cls", medianValue: 0.05 },
     ]);
 
-    (mockPrisma.run.findMany as any).mockResolvedValue([]);
+    mockRunFindMany.mockResolvedValue([]);
 
     const run = {
       id: "run-123",
@@ -176,7 +179,7 @@ describe("Regression Detector", () => {
       inp: null,
       fcp: null,
       ttfb: null,
-    } as any;
+    } as unknown as TestRun;
 
     const regressions = await detectRegressions(run, mockPrisma);
 

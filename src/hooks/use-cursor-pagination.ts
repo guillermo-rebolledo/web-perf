@@ -14,7 +14,7 @@ interface UseCursorPaginationOptions<T> {
   fetcher: (cursor: string | null) => Promise<PaginatedResult<T>>;
 }
 
-interface UseCursorPaginationResult<T> {
+export interface UseCursorPaginationResult<T> {
   items: T[];
   isLoading: boolean;
   hasMore: boolean;

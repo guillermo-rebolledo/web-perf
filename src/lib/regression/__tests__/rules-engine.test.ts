@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { analyzeRootCauses } from "../rules-engine";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Run } from "@prisma/client";
+
+// Mock Prisma — keep references to vi.fn() so we can call mock methods directly
+const mockRunFindFirst = vi.fn();
+const mockInsightFindMany = vi.fn();
 
 const mockPrisma = {
-  run: {
-    findFirst: vi.fn(),
-  },
-  insight: {
-    findMany: vi.fn(),
-  },
+  run: { findFirst: mockRunFindFirst },
+  insight: { findMany: mockInsightFindMany },
 } as unknown as PrismaClient;
 
 describe("Rules Engine", () => {
@@ -18,7 +18,7 @@ describe("Rules Engine", () => {
 
   it("should analyze root causes and rank by confidence × impact × evidence", async () => {
     // Mock baseline run (include insights for calculateDiffSummary)
-    (mockPrisma.run.findFirst as any).mockResolvedValue({
+    mockRunFindFirst.mockResolvedValue({
       id: "baseline-run",
       lcp: 2000,
       totalByteWeight: 1000000,
@@ -27,7 +27,7 @@ describe("Rules Engine", () => {
     });
 
     // Mock insights (mainthread-work-breakdown gives scriptingTimeDelta so js-bloat rule fires)
-    (mockPrisma.insight.findMany as any).mockImplementation(({ where }: any) => {
+    mockInsightFindMany.mockImplementation(({ where }: { where: { runId: string } }) => {
       if (where.runId === "current-run") {
         return Promise.resolve([
           {
@@ -69,7 +69,7 @@ describe("Rules Engine", () => {
       lcp: 2600,
       totalByteWeight: 1200000,
       completedAt: new Date("2024-01-02"),
-    } as any;
+    } as unknown as Run;
 
     const causes = await analyzeRootCauses("lcp", currentRun, mockPrisma);
 
@@ -90,14 +90,14 @@ describe("Rules Engine", () => {
   });
 
   it("should only apply rules for the regressed metric", async () => {
-    (mockPrisma.run.findFirst as any).mockResolvedValue({
+    mockRunFindFirst.mockResolvedValue({
       id: "baseline-run",
       cls: 0.05,
       completedAt: new Date("2024-01-01"),
       insights: [],
     });
 
-    (mockPrisma.insight.findMany as any).mockResolvedValue([
+    mockInsightFindMany.mockResolvedValue([
       {
         insightId: "layout-shift-elements",
         score: 0.8,
@@ -110,7 +110,7 @@ describe("Rules Engine", () => {
       monitorId: "monitor-123",
       cls: 0.15,
       completedAt: new Date("2024-01-02"),
-    } as any;
+    } as unknown as Run;
 
     const causes = await analyzeRootCauses("cls", currentRun, mockPrisma);
 
@@ -123,15 +123,15 @@ describe("Rules Engine", () => {
   });
 
   it("should handle missing baseline gracefully", async () => {
-    (mockPrisma.run.findFirst as any).mockResolvedValue(null);
-    (mockPrisma.insight.findMany as any).mockResolvedValue([]);
+    mockRunFindFirst.mockResolvedValue(null);
+    mockInsightFindMany.mockResolvedValue([]);
 
     const currentRun = {
       id: "current-run",
       monitorId: "monitor-123",
       lcp: 2600,
       completedAt: new Date("2024-01-02"),
-    } as any;
+    } as unknown as Run;
 
     const causes = await analyzeRootCauses("lcp", currentRun, mockPrisma);
 
@@ -141,14 +141,14 @@ describe("Rules Engine", () => {
   });
 
   it("should limit results to top 5 causes", async () => {
-    (mockPrisma.run.findFirst as any).mockResolvedValue({
+    mockRunFindFirst.mockResolvedValue({
       id: "baseline-run",
       lcp: 2000,
       completedAt: new Date("2024-01-01"),
       insights: [],
     });
 
-    (mockPrisma.insight.findMany as any).mockResolvedValue([
+    mockInsightFindMany.mockResolvedValue([
       // Provide insights that trigger multiple rules
       { insightId: "bootup-time", score: 0.5, sources: [] },
       { insightId: "third-party-summary", score: 0.5, sources: [] },
@@ -161,7 +161,7 @@ describe("Rules Engine", () => {
       monitorId: "monitor-123",
       lcp: 3000, // Significant regression
       completedAt: new Date("2024-01-02"),
-    } as any;
+    } as unknown as Run;
 
     const causes = await analyzeRootCauses("lcp", currentRun, mockPrisma);
 

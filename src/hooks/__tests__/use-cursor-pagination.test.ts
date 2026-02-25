@@ -1,10 +1,15 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
-import { useCursorPagination } from "../use-cursor-pagination";
+import { useCursorPagination, type UseCursorPaginationResult } from "../use-cursor-pagination";
 
 interface Item {
   id: string;
 }
+
+type PaginationProps = {
+  items: Item[];
+  cursor: string | null;
+};
 
 function makeItems(count: number, offset = 0): Item[] {
   return Array.from({ length: count }, (_, i) => ({ id: `item-${i + offset}` }));
@@ -242,7 +247,7 @@ describe("useCursorPagination", () => {
       );
 
       await act(async () => {
-        intersectionObserverCallback([{ isIntersecting: true }] as any, {} as any);
+        intersectionObserverCallback([{ isIntersecting: true } as unknown as IntersectionObserverEntry], {} as unknown as IntersectionObserver);
       });
 
       expect(fetcher).toHaveBeenCalledWith("cursor-1");
@@ -256,7 +261,7 @@ describe("useCursorPagination", () => {
       );
 
       act(() => {
-        intersectionObserverCallback([{ isIntersecting: false }] as any, {} as any);
+        intersectionObserverCallback([{ isIntersecting: false } as unknown as IntersectionObserverEntry], {} as unknown as IntersectionObserver);
       });
 
       expect(fetcher).not.toHaveBeenCalled();
@@ -270,7 +275,7 @@ describe("useCursorPagination", () => {
       );
 
       act(() => {
-        intersectionObserverCallback([{ isIntersecting: true }] as any, {} as any);
+        intersectionObserverCallback([{ isIntersecting: true } as unknown as IntersectionObserverEntry], {} as unknown as IntersectionObserver);
       });
 
       expect(fetcher).not.toHaveBeenCalled();
@@ -285,8 +290,8 @@ describe("useCursorPagination", () => {
       const newItems = makeItems(5, 100);
       const fetcher = vi.fn();
 
-      const { result, rerender } = renderHook(
-        ({ items, cursor }: { items: Item[]; cursor: string | null }) =>
+      const { result, rerender } = renderHook<UseCursorPaginationResult<Item>, PaginationProps>(
+        ({ items, cursor }) =>
           useCursorPagination({ initialItems: items, initialCursor: cursor, fetcher }),
         { initialProps: { items: originalItems, cursor: "cursor-1" } }
       );
@@ -307,8 +312,8 @@ describe("useCursorPagination", () => {
       const newItems = makeItems(20, 50);
       const fetcher = vi.fn().mockResolvedValue({ items: [], nextCursor: null, hasMore: false });
 
-      const { result, rerender } = renderHook(
-        ({ items, cursor }: { items: Item[]; cursor: string | null }) =>
+      const { result, rerender } = renderHook<UseCursorPaginationResult<Item>, PaginationProps>(
+        ({ items, cursor }) =>
           useCursorPagination({ initialItems: items, initialCursor: cursor, fetcher }),
         { initialProps: { items: originalItems, cursor: "cursor-old" } }
       );
