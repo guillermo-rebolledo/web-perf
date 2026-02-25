@@ -208,4 +208,6 @@ model RegressionAlert {
   @@index([runId])
   @@index([status])
   @@index([severity])
+  @@index([createdAt, severity])
+  @@index([createdAt, status])
 }
