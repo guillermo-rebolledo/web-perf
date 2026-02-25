@@ -11,10 +11,11 @@ export interface RateLimitResult {
 
 export async function checkRateLimit(
   userId: string,
-  limit: number = env.RATE_LIMIT_RUNS_PER_DAY
+  limit: number = env.RATE_LIMIT_RUNS_PER_DAY,
+  keyPrefix: string = "run"
 ): Promise<RateLimitResult> {
   const today = format(new Date(), "yyyy-MM-dd");
-  const key = `rate-limit:run:${userId}:${today}`;
+  const key = `rate-limit:${keyPrefix}:${userId}:${today}`;
 
   try {
     const current = await redis.incr(key);
@@ -54,10 +55,11 @@ export async function checkRateLimit(
 
 export async function getRateLimitInfo(
   userId: string,
-  limit: number = env.RATE_LIMIT_RUNS_PER_DAY
+  limit: number = env.RATE_LIMIT_RUNS_PER_DAY,
+  keyPrefix: string = "run"
 ): Promise<RateLimitResult> {
   const today = format(new Date(), "yyyy-MM-dd");
-  const key = `rate-limit:run:${userId}:${today}`;
+  const key = `rate-limit:${keyPrefix}:${userId}:${today}`;
 
   try {
     const current = await redis.get(key);

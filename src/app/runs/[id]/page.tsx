@@ -38,7 +38,9 @@ import { formatBytes } from "@/lib/utils";
 import { extractFilename } from "@/lib/url-utils";
 import { MetricCard } from "@/components/metric-card";
 import { RegressionAlertCard } from "@/components/regression-alert-card";
-import { AlertTriangle } from "lucide-react";
+import { RunAISummary } from "@/components/run-ai-summary";
+import { isFeatureEnabled } from "@/lib/posthog-server";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 
 export default async function RunPage({
   params,
@@ -68,20 +70,21 @@ export default async function RunPage({
 
   // Only look for runs completed *before* this one so the first-ever run
   // doesn't incorrectly show a "Compare with Previous" button.
-  const previousRun = run.completedAt
-    ? await prisma.run.findFirst({
-        where: {
-          monitorId: run.monitorId,
-          id: { not: id },
-          status: "success",
-          completedAt: { not: null, lt: run.completedAt },
-        },
-        orderBy: {
-          completedAt: "desc",
-        },
-        select: { id: true },
-      })
-    : null;
+  const [previousRun, aiSummaryEnabled] = await Promise.all([
+    run.completedAt
+      ? prisma.run.findFirst({
+          where: {
+            monitorId: run.monitorId,
+            id: { not: id },
+            status: "success",
+            completedAt: { not: null, lt: run.completedAt },
+          },
+          orderBy: { completedAt: "desc" },
+          select: { id: true },
+        })
+      : null,
+    isFeatureEnabled(FEATURE_FLAGS.RUN_AI_SUMMARY, session.user.id),
+  ]);
 
   const strategy = run.monitor.strategy === "desktop" ? "desktop" : "mobile";
   const t = getThresholds(strategy);
@@ -281,6 +284,15 @@ export default async function RunPage({
             </CardContent>
           </Card>
 
+          {aiSummaryEnabled && (
+            <RunAISummary
+              runId={run.id}
+              initialSummary={run.aiSummary}
+              aiSummaryAt={run.aiSummaryAt}
+              aiSummaryModel={run.aiSummaryModel}
+            />
+          )}
+
           <hr className="border-border spave-y-4" />
 
           <div className="flex flex-col gap-4">
@@ -344,24 +356,21 @@ export default async function RunPage({
             <>
               <hr className="border-border" />
               <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                  <div className="flex flex-col tracking-tighter">
-                    <h3 className="text-lg font-semibold leading-none text-destructive">
-                      Performance Regressions Detected
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {run.regressionAlerts.length} metric
-                      {run.regressionAlerts.length > 1 ? "s" : ""} regressed
-                      compared to baseline
-                    </p>
-                  </div>
+                <div className="flex flex-col tracking-tighter">
+                  <h3 className="text-lg font-semibold leading-none">
+                    Performance Regressions Detected
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {run.regressionAlerts.length} metric
+                    {run.regressionAlerts.length > 1 ? "s" : ""} regressed
+                    compared to baseline
+                  </p>
                 </div>
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {run.regressionAlerts.map((alert) => (
-                    <RegressionAlertCard key={alert.id} alert={alert} />
-                  ))}
-                </div>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {run.regressionAlerts.map((alert) => (
+                  <RegressionAlertCard key={alert.id} alert={alert} />
+                ))}
               </div>
             </>
           )}
@@ -516,7 +525,6 @@ export default async function RunPage({
                           {!insight.scored && (
                             <Badge
                               variant="outline"
-                              className="text-[10px] text-muted-foreground"
                               title="This insight is a recommendation and does not affect your performance score"
                             >
                               Unscored

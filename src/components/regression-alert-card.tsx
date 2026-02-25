@@ -1,4 +1,3 @@
-import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,44 +50,57 @@ export function RegressionAlertCard({
   const unit = getMetricUnit(alert.metricName);
 
   return (
-    <Card className={cn("transition-colors", severityInfo.cardClassName)}>
-      <CardHeader className="pb-3">
+    <Card
+      className={cn(
+        "border-0 transition-colors",
+        severityInfo.cardClassName,
+        severityInfo.borderClassName,
+      )}
+    >
+      <CardHeader className="pb-3 tracking-tighter">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <AlertTriangle
-              className={cn("h-5 w-5", severityInfo.iconClassName)}
-            />
-            <CardTitle className="text-lg">
-              {alert.metricName.toUpperCase()} Regression
-            </CardTitle>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+              <div className="flex gap-2">
+                <Badge variant={severityInfo.variant}>
+                  {severityInfo.label}
+                </Badge>
+                <Badge variant={confidenceInfo.variant}>
+                  {confidenceInfo.label} Confidence
+                </Badge>
+              </div>
+              <CardTitle className="font-bold truncate">
+                {alert.metricName.toUpperCase()} Regression
+              </CardTitle>
+              {topCause && (
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  Likely Cause:{" "}
+                  <span className="font-medium">{topCause.title}</span>
+                </p>
+              )}
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Badge variant={severityInfo.variant}>{severityInfo.label}</Badge>
-            <Badge variant={confidenceInfo.variant}>
-              {confidenceInfo.label} Confidence
-            </Badge>
-          </div>
+          {severityInfo.icon}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Metric change */}
-        <div className="grid grid-cols-3 gap-4 text-sm">
+      <CardContent>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-3 bg-card-muted-background border-card-muted-border divide-y divide-x-0 lg:divide-x lg:divide-y-0 divide-card-muted-border p-2 shadow-2xs text-sm">
           <div>
-            <div className="text-muted-foreground text-xs">Baseline</div>
+            <div className="text-xs text-muted-foreground">Baseline</div>
             <div className="font-mono font-semibold">
               {formatMetricValue(alert.baselineValue)}
               <span className="text-muted-foreground ml-1">{unit}</span>
             </div>
           </div>
           <div>
-            <div className="text-muted-foreground text-xs">Current</div>
+            <div className="text-xs text-muted-foreground">Current</div>
             <div className="font-mono font-semibold">
               {formatMetricValue(alert.actualValue)}
               <span className="text-muted-foreground ml-1">{unit}</span>
             </div>
           </div>
           <div>
-            <div className="text-muted-foreground text-xs">Change</div>
+            <div className="text-xs text-muted-foreground">Change</div>
             <div
               className={cn(
                 "font-mono font-semibold",
@@ -104,20 +116,9 @@ export function RegressionAlertCard({
           </div>
         </div>
 
-        {/* Top cause */}
-        {topCause && (
-          <div className="pt-2 border-t">
-            <div className="text-xs text-muted-foreground mb-1">
-              Likely Cause:
-            </div>
-            <div className="text-sm font-medium">{topCause.title}</div>
-          </div>
-        )}
-
-        {/* View details button */}
         {showViewDetails && (
-          <div className="pt-2">
-            <Button variant="outline" size="sm" asChild className="w-full">
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" asChild>
               <Link href={`/runs/${alert.runId}/regressions/${alert.id}`}>
                 View Root Cause Analysis →
               </Link>

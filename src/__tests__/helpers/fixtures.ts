@@ -75,6 +75,9 @@ export function createRun(overrides: Partial<Run> = {}): Run {
     browserUserAgent: "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36",
     benchmarkIndex: 1234.5,
     emulatedFormFactor: "mobile",
+    aiSummary: null,
+    aiSummaryAt: null,
+    aiSummaryModel: null,
     ...overrides,
   };
 }

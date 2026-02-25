@@ -32,6 +32,7 @@ export const env = createEnv({
     SCHEDULER_SECRET: z.string().min(32),
     RATE_LIMIT_RUNS_PER_DAY: z.coerce.number().default(100),
     SCREENSHOT_TTL_DAYS: z.coerce.number().default(30),
+    OPENAI_API_KEY: z.string().min(1),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -68,6 +69,7 @@ export const env = createEnv({
     SCHEDULER_SECRET: process.env.SCHEDULER_SECRET,
     RATE_LIMIT_RUNS_PER_DAY: process.env.RATE_LIMIT_RUNS_PER_DAY,
     SCREENSHOT_TTL_DAYS: process.env.SCREENSHOT_TTL_DAYS,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
