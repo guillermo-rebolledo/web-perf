@@ -13,7 +13,7 @@ export default defineConfig({
     globals: true,
     environment: "happy-dom",
     setupFiles: ["src/__tests__/helpers/setup.ts"],
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "prisma/**/*.test.ts"],
     exclude: ["node_modules", ".next", "e2e"],
     coverage: {
       provider: "v8",
