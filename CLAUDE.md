@@ -154,6 +154,16 @@ Use the `web-design-guidelines` skill (`/web-design-guidelines`) to audit UI fil
 > Full design reference: `.agents/skills/frontend-design/SKILL.md`
 > Web interface guidelines skill: `.agents/skills/web-design-guidelines/SKILL.md`
 
+## Copywriting
+
+When writing or improving marketing copy — homepage, landing pages, pricing, feature pages, or any product page — use the `copywriting` skill (`/copywriting`).
+
+Before writing, check for `.claude/product-marketing-context.md`. If it exists, read it first to get product/audience context without asking redundant questions.
+
+> Full copywriting guide: `.agents/skills/copywriting/SKILL.md`
+> Copy frameworks reference: `.agents/skills/copywriting/references/copy-frameworks.md`
+> Natural transitions reference: `.agents/skills/copywriting/references/natural-transitions.md`
+
 ## React & Next.js Performance (Vercel Guidelines)
 
 Apply these rules when writing or reviewing React components, Next.js pages, data fetching, or anything that affects bundle size or runtime performance.
