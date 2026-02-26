@@ -22,7 +22,9 @@
     "test:e2e:ui": "playwright test --ui",
     "postinstall": "prisma generate",
     "cleanup:screenshots": "node scripts/cleanup-screenshots.js",
-    "seed:regressions": "tsx prisma/seed-regressions.ts"
+    "seed:clean": "tsx prisma/clean-db.ts",
+    "seed:regressions": "tsx prisma/seed-regressions.ts",
+    "seed:failed-runs": "tsx prisma/seed-failed-runs.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.33",

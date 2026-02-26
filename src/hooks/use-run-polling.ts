@@ -3,6 +3,7 @@
 import { useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { RunStatus } from "@/types/prisma";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -30,12 +31,12 @@ export function useRunPolling() {
 
       const data = await res.json();
 
-      if (data.status === "success") {
+      if (data.status === RunStatus.success) {
         stopPolling();
         onSettledRef.current?.();
         router.refresh();
         toast.success("Run completed successfully");
-      } else if (data.status === "failed") {
+      } else if (data.status === RunStatus.failed) {
         stopPolling();
         onSettledRef.current?.();
         router.refresh();

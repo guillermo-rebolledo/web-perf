@@ -55,7 +55,7 @@ model Monitor {
 model Run {
   id                 String              @id @default(cuid())
   monitorId          String
-  status             String              @default("queued")
+  status             RunStatus           @default(queued)
   jobId              String?             @unique
   queuedAt           DateTime            @default(now())
   startedAt          DateTime?
@@ -166,6 +166,13 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+enum RunStatus {
+  queued
+  running
+  success
+  failed
 }
 
 // Regression detection models

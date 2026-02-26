@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import type { TooltipContentProps } from "recharts/types/component/Tooltip";
 import { format } from "date-fns";
-import { Run } from "@prisma/client";
+import { Run, RunStatus } from "@prisma/client";
 
 interface MetricsChartProps {
   runs: (Run & { monitor: { strategy: string } })[];
@@ -60,7 +60,7 @@ export function MetricsChart({
 }: MetricsChartProps) {
   const chartData = useMemo(() => {
     return runs
-      .filter((run) => run.status === "success" && run.completedAt)
+      .filter((run) => run.status === RunStatus.success && run.completedAt)
       .sort(
         (a, b) =>
           new Date(a.completedAt!).getTime() -

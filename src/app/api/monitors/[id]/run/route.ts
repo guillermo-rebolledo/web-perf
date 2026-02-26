@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob } from "@/lib/queue";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { RunStatus } from "@prisma/client";
 
 // POST /api/monitors/[id]/run - Trigger on-demand run
 export async function POST(
@@ -70,7 +71,7 @@ export async function POST(
     const run = await prisma.run.create({
       data: {
         monitorId: monitor.id,
-        status: "queued",
+        status: RunStatus.queued,
         queuedAt: new Date(),
       },
     });

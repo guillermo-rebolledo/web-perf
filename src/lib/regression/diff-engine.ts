@@ -1,4 +1,4 @@
-import { PrismaClient, Run } from "@prisma/client";
+import { PrismaClient, Run, RunStatus } from "@prisma/client";
 import type { InsightSource } from "@/lib/psi-parser";
 
 const prisma = new PrismaClient();
@@ -158,7 +158,7 @@ export async function calculateDiffSummary(
   const baselineRun = await db.run.findFirst({
     where: {
       monitorId: currentRun.monitorId,
-      status: "success",
+      status: RunStatus.success,
       completedAt: { lt: currentRun.completedAt || new Date() },
     },
     orderBy: {

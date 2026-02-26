@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { SiteForm } from "@/components/site-form";
 import { EmptySites } from "@/components/empty-sites";
 import { SiteCard } from "@/components/ui/site-card";
-import type { SiteWithMonitorsAndRuns } from "@/types/prisma";
+import { RunStatus, type SiteWithMonitorsAndRuns } from "@/types/prisma";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -21,7 +21,7 @@ export default async function DashboardPage() {
         include: {
           runs: {
             where: {
-              status: "success",
+              status: RunStatus.success,
             },
             orderBy: {
               completedAt: "desc",

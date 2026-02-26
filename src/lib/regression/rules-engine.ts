@@ -1,4 +1,4 @@
-import { PrismaClient, Run } from "@prisma/client";
+import { PrismaClient, Run, RunStatus } from "@prisma/client";
 import type { DiffSummary } from "./diff-engine";
 import { calculateDiffSummary } from "./diff-engine";
 
@@ -81,7 +81,7 @@ export async function analyzeRootCauses(
   const baselineRun = await db.run.findFirst({
     where: {
       monitorId: currentRun.monitorId,
-      status: "success",
+      status: RunStatus.success,
       completedAt: { lt: currentRun.completedAt || new Date() },
     },
     orderBy: {

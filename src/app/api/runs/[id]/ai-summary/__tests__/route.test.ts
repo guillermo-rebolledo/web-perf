@@ -6,6 +6,7 @@ import {
 } from "@/__tests__/helpers/auth-mock";
 import { prismaMock } from "@/__tests__/helpers/prisma-mock";
 import { createRun, createMonitor, createSite } from "@/__tests__/helpers/fixtures";
+import { RunStatus } from "@prisma/client";
 import type { Monitor, Site } from "@prisma/client";
 
 // --- Mock external dependencies before importing the route ---
@@ -60,7 +61,7 @@ function createRunWithIncludes(
 ) {
   const { monitorOverrides, siteOverrides, ...runOverrides } = overrides;
   return {
-    ...createRun({ status: "success", ...runOverrides }),
+    ...createRun({ status: RunStatus.success, ...runOverrides }),
     monitor: {
       ...createMonitor(monitorOverrides),
       site: createSite(siteOverrides),
@@ -111,7 +112,7 @@ describe("POST /api/runs/[id]/ai-summary", () => {
 
   it("returns 422 when the run did not succeed", async () => {
     vi.mocked(prismaMock.run.findFirst).mockResolvedValue(
-      createRunWithIncludes({ status: "failed" }) as never
+      createRunWithIncludes({ status: RunStatus.failed }) as never
     );
     const res = await POST(makeRequest(), makeParams("r1"));
     expect(res.status).toBe(422);

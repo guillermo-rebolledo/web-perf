@@ -5,6 +5,7 @@ import {
   mockUnauthenticated,
 } from "@/__tests__/helpers/auth-mock";
 import { prismaMock } from "@/__tests__/helpers/prisma-mock";
+import { RunStatus } from "@prisma/client";
 import type { Monitor, Run, Site } from "@prisma/client";
 import {
   createMonitor,
@@ -90,7 +91,7 @@ describe("POST /api/monitors/[id]/run", () => {
     vi.mocked(prismaMock.monitor.findFirst).mockResolvedValue({
       ...createMonitor(),
       site: createSite(),
-      runs: [createRun({ status: "running" })],
+      runs: [createRun({ status: RunStatus.running })],
     } as Monitor & { site: Site; runs: Run[] });
 
     const res = await POST(
@@ -107,7 +108,7 @@ describe("POST /api/monitors/[id]/run", () => {
       runs: [],
     } as Monitor & { site: Site; runs: Run[] });
     vi.mocked(prismaMock.run.create).mockResolvedValue(
-      createRun({ id: "new-run", status: "queued" })
+      createRun({ id: "new-run", status: RunStatus.queued })
     );
     vi.mocked(prismaMock.run.update).mockResolvedValue(
       createRun({ id: "new-run", jobId: "mock-job-id" })

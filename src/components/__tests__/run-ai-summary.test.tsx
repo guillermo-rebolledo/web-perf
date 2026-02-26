@@ -20,6 +20,14 @@ import { useCompletion } from "@ai-sdk/react";
 
 // ---------------------------------------------------------------------------
 
+/** Click the collapsible trigger to reveal the content panel. */
+async function openCollapsible() {
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: /^AI Analysis/i }));
+}
+
+// ---------------------------------------------------------------------------
+
 const FIXED_NOW = new Date("2025-06-01T12:00:00Z");
 
 /** Default hook return — no loading, no error, no completion */
@@ -62,8 +70,9 @@ describe("RunAISummary", () => {
   // --- Initial state: no summary ---
 
   describe("when there is no existing summary", () => {
-    it("shows the placeholder description", () => {
+    it("shows the placeholder description", async () => {
       render(<RunAISummary {...DEFAULT_PROPS} />);
+      await openCollapsible();
       expect(
         screen.getByText(/AI-powered narrative summary/i)
       ).toBeInTheDocument();
@@ -92,8 +101,9 @@ describe("RunAISummary", () => {
       aiSummaryModel: "gpt-4o-mini",
     };
 
-    it("renders the summary text", () => {
+    it("renders the summary text", async () => {
       render(<RunAISummary {...summaryProps} />);
+      await openCollapsible();
       expect(screen.getByText(/The site is performing well/i)).toBeInTheDocument();
     });
 
@@ -169,11 +179,12 @@ describe("RunAISummary", () => {
       expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
     });
 
-    it("shows streaming text as it arrives", () => {
+    it("shows streaming text as it arrives", async () => {
       vi.mocked(useCompletion).mockReturnValue(
         defaultHook({ isLoading: true, completion: "Executive Summary in progress…" })
       );
       render(<RunAISummary {...DEFAULT_PROPS} />);
+      await openCollapsible();
       expect(screen.getByText(/Executive Summary in progress/i)).toBeInTheDocument();
     });
   });
@@ -198,6 +209,7 @@ describe("RunAISummary", () => {
       });
 
       rerender(<RunAISummary {...DEFAULT_PROPS} />);
+      await openCollapsible();
 
       expect(screen.getByText(/Final generated summary/i)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /Regenerate/i })).toBeInTheDocument();
@@ -207,11 +219,12 @@ describe("RunAISummary", () => {
   // --- Error states ---
 
   describe("error states", () => {
-    it("shows a generic error message for non-rate-limit errors", () => {
+    it("shows a generic error message for non-rate-limit errors", async () => {
       vi.mocked(useCompletion).mockReturnValue(
         defaultHook({ error: new Error("Something went wrong") })
       );
       render(<RunAISummary {...DEFAULT_PROPS} />);
+      await openCollapsible();
       expect(screen.getByText(/Failed to generate analysis/i)).toBeInTheDocument();
     });
 
@@ -233,12 +246,13 @@ describe("RunAISummary", () => {
       });
 
       rerender(<RunAISummary {...DEFAULT_PROPS} />);
+      await openCollapsible();
 
       expect(screen.getByText(/Daily limit/i)).toBeInTheDocument();
       expect(screen.queryByText(/Failed to generate analysis/i)).not.toBeInTheDocument();
     });
 
-    it("shows the generic error message for a cooldown error (button already disabled)", () => {
+    it("shows the generic error message for a cooldown error (button already disabled)", async () => {
       // cooldown errors are handled client-side by disabling the button;
       // if somehow a cooldown 429 reaches the hook, it should not show a red error
       const cooldownError = new Error('{"error":"cooldown","retryAfterSeconds":1800}');
@@ -258,6 +272,7 @@ describe("RunAISummary", () => {
       });
 
       rerender(<RunAISummary {...DEFAULT_PROPS} />);
+      await openCollapsible();
 
       // rateLimitError is "cooldown", not "daily_limit", so generic error shows
       expect(screen.getByText(/Failed to generate analysis/i)).toBeInTheDocument();
@@ -323,7 +338,7 @@ describe("RunAISummary", () => {
   // --- Markdown rendering ---
 
   describe("markdown rendering", () => {
-    it("renders heading text from a summary with markdown headings", () => {
+    it("renders heading text from a summary with markdown headings", async () => {
       // Use expression syntax so \n is a real newline, not a literal backslash-n
       const summary = "### Executive Summary\n\nPerformance is good.\n\n### Priority Action Items\n\n- Fix images";
       render(
@@ -334,11 +349,12 @@ describe("RunAISummary", () => {
           aiSummaryModel={null}
         />
       );
+      await openCollapsible();
       expect(screen.getByText(/Executive Summary/i)).toBeInTheDocument();
       expect(screen.getByText(/Performance is good/i)).toBeInTheDocument();
     });
 
-    it("renders bold text from a summary", () => {
+    it("renders bold text from a summary", async () => {
       render(
         <RunAISummary
           runId="run-1"
@@ -347,6 +363,7 @@ describe("RunAISummary", () => {
           aiSummaryModel={null}
         />
       );
+      await openCollapsible();
       // dangerouslySetInnerHTML renders the <strong> tag; text should be findable
       expect(screen.getByText(/LCP/)).toBeInTheDocument();
     });

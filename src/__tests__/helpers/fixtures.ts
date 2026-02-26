@@ -1,4 +1,5 @@
 import type { User, Site, Monitor, Run, Audit } from "@prisma/client";
+import { RunStatus } from "@prisma/client";
 import type { PSIResponse } from "@/lib/psi-parser";
 
 // ---- Entity factories ----
@@ -47,7 +48,7 @@ export function createRun(overrides: Partial<Run> = {}): Run {
   return {
     id: "test-run-id",
     monitorId: "test-monitor-id",
-    status: "success",
+    status: RunStatus.success,
     jobId: "test-job-id",
     queuedAt: new Date("2025-01-01T00:00:00Z"),
     startedAt: new Date("2025-01-01T00:00:01Z"),

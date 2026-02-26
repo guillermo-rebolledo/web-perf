@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob } from "@/lib/queue";
 import { z } from "zod";
+import { RunStatus } from "@prisma/client";
 
 const createMonitorSchema = z.object({
   siteId: z.string().cuid(),
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       include: {
         runs: {
           where: {
-            status: "success",
+            status: RunStatus.success,
           },
           orderBy: {
             completedAt: "desc",
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
     const run = await prisma.run.create({
       data: {
         monitorId: monitor.id,
-        status: "queued",
+        status: RunStatus.queued,
         queuedAt: new Date(),
       },
     });

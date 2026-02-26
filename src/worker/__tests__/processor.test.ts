@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { RunStatus } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
 import { prismaMock } from "@/__tests__/helpers/prisma-mock";
 import { createPSIResponse, createRun, createMonitor } from "@/__tests__/helpers/fixtures";
@@ -71,7 +72,7 @@ describe("processAuditJob", () => {
     expect(prismaMock.run.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "run-1" },
-        data: expect.objectContaining({ status: "running" }),
+        data: expect.objectContaining({ status: RunStatus.running }),
       })
     );
   });
@@ -110,7 +111,7 @@ describe("processAuditJob", () => {
 
     expect(transactionUpdateCall).toBeDefined();
     const updateData = transactionUpdateCall![0].data as RunUpdateData;
-    expect(updateData.status).toBe("success");
+    expect(updateData.status).toBe(RunStatus.success);
     expect(updateData.performanceScore).toBe(85);
     expect(updateData.lcp).toBe(2500);
   });
@@ -314,7 +315,7 @@ describe("processAuditJob", () => {
     const runUpdateMock = vi.mocked(prismaMock.run.update);
     const failCall = runUpdateMock.mock.calls.find(
       (call: Parameters<typeof prismaMock.run.update>) =>
-        (call[0].data as RunUpdateData)?.status === "failed"
+        (call[0].data as RunUpdateData)?.status === RunStatus.failed
     );
     expect(failCall).toBeDefined();
     expect((failCall![0].data as RunUpdateData).errorMessage).toBe("API error");
