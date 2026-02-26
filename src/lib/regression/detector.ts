@@ -1,4 +1,4 @@
-import { PrismaClient, Run } from "@prisma/client";
+import { PrismaClient, Run, RunStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -62,7 +62,7 @@ async function calculateConfidence(
   const recentRuns = await prismaClient.run.findMany({
     where: {
       monitorId,
-      status: "success",
+      status: RunStatus.success,
       id: { not: currentRunId },
     },
     orderBy: {

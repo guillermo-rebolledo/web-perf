@@ -1,4 +1,6 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, RunStatus } from "@prisma/client";
+
+export { RunStatus };
 
 // Infer types from Prisma queries
 export type SiteWithMonitorsAndRuns = Prisma.SiteGetPayload<{
@@ -98,7 +100,7 @@ export interface RunPageInsight {
 interface RunPageScalars {
   id: string;
   monitorId: string;
-  status: string;
+  status: RunStatus;
   jobId: string | null;
   queuedAt: Date;
   startedAt: Date | null;

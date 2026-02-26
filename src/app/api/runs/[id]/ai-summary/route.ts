@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { RunStatus } from "@prisma/client";
 import { buildRunAnalysisPrompt } from "@/lib/ai/prompt-builder";
 import { AI_SUMMARY } from "@/lib/ai/constants";
 import { isFeatureEnabled } from "@/lib/posthog-server";
@@ -53,7 +54,7 @@ export async function POST(
     });
   }
 
-  if (run.status !== "success") {
+  if (run.status !== RunStatus.success) {
     return new Response(
       JSON.stringify({ error: "AI analysis is only available for successful runs" }),
       { status: 422, headers: { "Content-Type": "application/json" } }

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { canonicalizeUrl } from "@/lib/url-utils";
+import { RunStatus } from "@prisma/client";
 
 const createSiteSchema = z.object({
   name: z.string().min(1).max(100),
@@ -26,7 +27,7 @@ export async function GET(_request: NextRequest) {
           include: {
             runs: {
               where: {
-                status: "success",
+                status: RunStatus.success,
               },
               orderBy: {
                 completedAt: "desc",

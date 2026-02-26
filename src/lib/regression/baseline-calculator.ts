@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, RunStatus } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -54,7 +54,7 @@ export async function calculateBaselines(
   const runs = await db.run.findMany({
     where: {
       monitorId,
-      status: "success",
+      status: RunStatus.success,
     },
     orderBy: {
       completedAt: "desc",

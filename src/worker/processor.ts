@@ -1,6 +1,6 @@
 import type { Job } from "bullmq";
 import type { AuditJobData } from "@/lib/queue";
-import { Prisma } from "@prisma/client";
+import { Prisma, RunStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fetchPageSpeedInsights, parsePSIResponse } from "@/lib/psi-parser";
 import { env } from "@/env";
@@ -42,7 +42,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
     await prisma.run.update({
       where: { id: runId },
       data: {
-        status: "running",
+        status: RunStatus.running,
         startedAt: new Date(),
       },
     });
@@ -78,7 +78,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
       await tx.run.update({
         where: { id: runId },
         data: {
-          status: "success",
+          status: RunStatus.success,
           completedAt: new Date(),
           performanceScore: metrics.performanceScore,
           accessibilityScore: metrics.accessibilityScore,
@@ -224,7 +224,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
     await prisma.run.update({
       where: { id: runId },
       data: {
-        status: "failed",
+        status: RunStatus.failed,
         completedAt: new Date(),
         errorMessage: error instanceof Error ? error.message : String(error),
       },

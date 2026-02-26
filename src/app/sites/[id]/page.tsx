@@ -30,7 +30,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MonitorForm } from "@/components/monitor-form";
 import { RunButton } from "@/components/run-button";
-import { RunStatusBadge, type RunStatus } from "@/components/run-status-badge";
+import { RunStatusBadge } from "@/components/run-status-badge";
+import { RunStatus } from "@/types/prisma";
 import { ScoreBadge } from "@/components/score-badge";
 import { MetricsChart } from "@/components/metrics-chart";
 import { formatDistanceToNow } from "date-fns";
@@ -89,7 +90,7 @@ export default async function SitePage({
 
   const allRuns = site.monitors
     .flatMap((m) => m.runs)
-    .filter((r) => r.status === "success")
+    .filter((r) => r.status === RunStatus.success)
     .sort(
       (a, b) =>
         new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime(),
@@ -186,7 +187,7 @@ export default async function SitePage({
                           activeRunId={
                             monitor.runs.find(
                               (r) =>
-                                r.status === "queued" || r.status === "running",
+                                r.status === RunStatus.queued || r.status === RunStatus.running,
                             )?.id
                           }
                         />
@@ -213,8 +214,8 @@ export default async function SitePage({
                           <TableBody>
                             {recentRuns.map((run) => {
                               const isPending =
-                                run.status === "queued" ||
-                                run.status === "running";
+                                run.status === RunStatus.queued ||
+                                run.status === RunStatus.running;
                               if (isPending) {
                                 return (
                                   <TableRow key={run.id}>
@@ -279,7 +280,7 @@ export default async function SitePage({
                                         )}
                                   </TableCell>
                                   <TableCell>
-                                    {run.status === "success" && (
+                                    {run.status === RunStatus.success && (
                                       <Link href={`/runs/${run.id}`}>
                                         <Button size="sm" variant="muted">
                                           View Details

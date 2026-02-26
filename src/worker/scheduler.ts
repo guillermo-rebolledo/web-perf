@@ -4,6 +4,7 @@ import { enqueueAuditJob } from "@/lib/queue";
 import { cleanupOldScreenshots } from "@/lib/screenshot-cleanup";
 import { env } from "@/env";
 import { addMinutes } from "date-fns";
+import { RunStatus } from "@prisma/client";
 
 export function startScheduler() {
   console.log("[Scheduler] Starting cron scheduler (runs every minute)");
@@ -72,7 +73,7 @@ export async function processDueMonitors() {
       const run = await prisma.run.create({
         data: {
           monitorId: monitor.id,
-          status: "queued",
+          status: RunStatus.queued,
           queuedAt: now,
         },
       });

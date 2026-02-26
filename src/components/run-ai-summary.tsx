@@ -45,7 +45,7 @@ export function RunAISummary({
   );
   const [displayAt, setDisplayAt] = useState<Date | null>(aiSummaryAt);
   const [rateLimitError, setRateLimitError] = useState<RateLimitError>(null);
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   const { complete, completion, isLoading, error } = useCompletion({
     api: `/api/runs/${runId}/ai-summary`,

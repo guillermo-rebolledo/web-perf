@@ -51,11 +51,7 @@ export function RegressionAlertCard({
 
   return (
     <Card
-      className={cn(
-        "border-0 transition-colors",
-        severityInfo.cardClassName,
-        severityInfo.borderClassName,
-      )}
+      className={cn("border-0 transition-colors", severityInfo.borderClassName)}
     >
       <CardHeader className="pb-3 tracking-tighter">
         <div className="flex items-start justify-between gap-4">

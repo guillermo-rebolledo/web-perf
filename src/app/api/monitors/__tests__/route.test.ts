@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { RunStatus } from "@prisma/client";
 import type { Monitor, Run } from "@prisma/client";
 import { NextRequest } from "next/server";
 import {
@@ -111,7 +112,7 @@ describe("POST /api/monitors", () => {
     vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
     vi.mocked(prismaMock.monitor.create).mockResolvedValue(createMonitor());
     vi.mocked(prismaMock.run.create).mockResolvedValue(
-      createRun({ id: "new-run", status: "queued" })
+      createRun({ id: "new-run", status: RunStatus.queued })
     );
     vi.mocked(prismaMock.run.update).mockResolvedValue(
       createRun({ id: "new-run", jobId: "mock-job-id" })
