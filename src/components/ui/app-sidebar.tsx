@@ -12,6 +12,7 @@ import {
   Sun,
   Monitor,
   AlertTriangle,
+  Settings2,
 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 import {
@@ -45,6 +46,11 @@ const navItems = [
     title: "Regression Alerts",
     url: "/alerts",
     icon: AlertTriangle,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Settings2,
   },
 ];
 

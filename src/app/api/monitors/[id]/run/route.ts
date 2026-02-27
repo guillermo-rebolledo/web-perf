@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob } from "@/lib/queue";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { RunStatus } from "@prisma/client";
+import { resolveUser } from "@/lib/resolve-user";
 
 // POST /api/monitors/[id]/run - Trigger on-demand run
 export async function POST(
@@ -12,13 +12,13 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Check rate limit
-    const rateLimit = await checkRateLimit(session.user.id);
+    const rateLimit = await checkRateLimit(userId);
     if (!rateLimit.success) {
       return NextResponse.json(
         {
@@ -49,7 +49,7 @@ export async function POST(
       },
     });
 
-    if (!monitor || monitor.site.userId !== session.user.id) {
+    if (!monitor || monitor.site.userId !== userId) {
       return NextResponse.json(
         { error: "Monitor not found" },
         { status: 404 }

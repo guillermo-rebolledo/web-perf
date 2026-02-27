@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { canonicalizeUrl } from "@/lib/url-utils";
 import { RunStatus } from "@prisma/client";
+import { resolveUser } from "@/lib/resolve-user";
 
 const createSiteSchema = z.object({
   name: z.string().min(1).max(100),
@@ -11,16 +11,16 @@ const createSiteSchema = z.object({
 });
 
 // GET /api/sites - List user's sites (request not needed for list)
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const sites = await prisma.site.findMany({
       where: {
-        userId: session.user.id,
+        userId,
       },
       include: {
         monitors: {
@@ -55,8 +55,8 @@ export async function GET(_request: NextRequest) {
 // POST /api/sites - Create a new site
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     // Check if site already exists for this user
     const existing = await prisma.site.findFirst({
       where: {
-        userId: session.user.id,
+        userId,
         url: canonicalUrl,
       },
     });
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       data: {
         name: validated.name,
         url: canonicalUrl,
-        userId: session.user.id,
+        userId,
       },
     });
 

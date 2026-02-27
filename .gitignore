@@ -13,6 +13,10 @@
 # pnpm
 .pnpm-store/
 
+# CLI workspace
+cli/node_modules/
+cli/dist/
+
 # testing
 /coverage
 /playwright-report/

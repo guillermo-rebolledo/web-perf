@@ -1,18 +1,18 @@
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { resolveUser } from "@/lib/resolve-user";
 
 /**
  * GET /api/runs/[id]/regressions
  * Get all regression alerts for a run
  */
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -30,7 +30,7 @@ export async function GET(
       },
     });
 
-    if (!run || run.monitor.site.userId !== session.user.id) {
+    if (!run || run.monitor.site.userId !== userId) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
