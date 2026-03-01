@@ -18,6 +18,7 @@ A production-ready web performance monitoring application built with Next.js 15,
 - 🎯 **Manual Runs**: On-demand performance audits with rate limiting
 - 📉 **Run Comparison**: Side-by-side comparison of metrics, audits, and screenshots
 - 🤖 **AI Analysis**: GPT-4o-mini powered narrative summaries with prioritized action items for each run
+- 💻 **CLI**: Terminal client for triggering runs, inspecting results, and managing sites without leaving the terminal
 - 🔐 **Authentication**: Google, GitHub, and email magic link authentication via NextAuth
 - ⚡ **Queue System**: BullMQ-powered job processing with retry logic
 - 🧹 **Auto-Cleanup**: Automatic screenshot TTL policy to manage database size
@@ -216,19 +217,34 @@ You'll be redirected to the sign-in page. Enter your email to receive a magic li
 
 ```
 /
+├── cli/                       # Terminal CLI (pnpm workspace package)
+│   ├── src/
+│   │   ├── index.ts           # Command entry point
+│   │   ├── client.ts          # HTTP client (Bearer auth)
+│   │   ├── config.ts          # Persistent config (~/.config/side-cli/)
+│   │   ├── format.ts          # Output formatters
+│   │   ├── ui.tsx             # ink terminal components
+│   │   └── commands/          # auth, sites, monitors, run
+│   └── README.md              # Full CLI documentation
 ├── prisma/
 │   └── schema.prisma          # Database schema
 ├── src/
 │   ├── app/
 │   │   ├── api/               # API routes
 │   │   │   ├── auth/          # NextAuth endpoints
+│   │   │   ├── cli/           # CLI device-flow auth (login/poll)
+│   │   │   ├── keys/          # API key management
 │   │   │   ├── sites/         # Site CRUD
 │   │   │   ├── monitors/      # Monitor CRUD + run trigger
 │   │   │   ├── runs/          # Run details + comparison
 │   │   │   └── scheduler/     # Scheduler trigger endpoint
-│   │   ├── dashboard/         # Main dashboard page
-│   │   ├── sites/[id]/        # Site detail page
-│   │   ├── runs/[id]/         # Run detail + comparison pages
+│   │   ├── (app)/             # Sidebar layout group
+│   │   │   ├── dashboard/     # Main dashboard page
+│   │   │   ├── sites/[id]/    # Site detail page
+│   │   │   ├── runs/[id]/     # Run detail + comparison pages
+│   │   │   ├── alerts/        # Regression alerts
+│   │   │   └── settings/      # API key management UI
+│   │   ├── cli/authorize/     # Browser authorization page (device flow)
 │   │   └── auth/              # Auth pages (signin, verify)
 │   ├── components/
 │   │   ├── ui/                # shadcn/ui components
@@ -242,17 +258,17 @@ You'll be redirected to the sign-in page. Enter your email to receive a magic li
 │   │   ├── prisma.ts          # Prisma client
 │   │   ├── redis.ts           # Redis client
 │   │   ├── queue.ts           # BullMQ queue setup
-│   │   ├── url-utils.ts       # URL canonicalization
-│   │   ├── rate-limit.ts      # Rate limiting logic
+│   │   ├── api-key-auth.ts    # API key generation and hashing
+│   │   ├── resolve-user.ts    # Bearer token + session resolution
 │   │   ├── psi-parser.ts      # PageSpeed Insights parser
-│   │   └── metrics-compare.ts # Run comparison logic
+│   │   └── regression/        # Regression detection engine
 │   ├── worker/
 │   │   ├── index.ts           # Worker entry point
 │   │   ├── processor.ts       # Job processing logic
 │   │   └── scheduler.ts       # Cron scheduler
 │   ├── types/
-│   │   ├── next-auth.d.ts     # NextAuth type extensions
-│   │   └── prisma.ts          # Prisma query types
+│   │   ├── api.ts             # Shared API response types (used by CLI too)
+│   │   └── next-auth.d.ts     # NextAuth type extensions
 │   └── env.js                 # Environment validation
 ├── docker-compose.yml         # Postgres + Redis
 ├── .env.example               # Environment template
@@ -323,6 +339,15 @@ The worker's built-in cron scheduler runs every minute and:
 ### Scheduler
 - `POST /api/scheduler/tick` - Trigger scheduler (requires `x-scheduler-secret` header)
 
+### CLI Auth (device flow)
+- `POST /api/cli/login` - Start device flow; returns `{ loginCode, authorizeUrl }`
+- `GET /api/cli/login?code=X` - Poll for authorization status; returns raw API key once on success
+
+### API Keys
+- `GET /api/keys` - List API keys for the authenticated user
+- `POST /api/keys` - Create a named API key (returns raw key once)
+- `DELETE /api/keys/[id]` - Revoke a key
+
 ## Rate Limiting
 
 Manual runs are rate limited per user per day:
@@ -384,6 +409,49 @@ For production, deploy the application and worker as separate containers:
 - **Database**: Use connection pooling (Prisma supports this)
 - **Redis**: Use Redis Cluster for high availability
 
+## CLI
+
+The `cli/` directory is a pnpm workspace package (`@side/cli`) that provides a terminal interface to the web app's API. It has no direct database access — all operations go through the same API routes used by the web UI.
+
+```sh
+# Authenticate (opens browser, saves API key to ~/.config/side-cli/)
+side auth --url https://yourapp.com
+
+# List sites and their monitors
+side sites list
+
+# Create a site (--monitor also creates a default mobile monitor)
+side sites add https://example.com --name "Example" --monitor
+
+# Trigger an on-demand PSI run and stream results
+side run <monitorId>
+```
+
+**Setup:**
+
+```sh
+pnpm cli:build               # compile TypeScript
+node cli/dist/cli/src/index.js auth --url http://localhost:3000
+
+# or link globally:
+cd cli && pnpm link --global
+side auth
+```
+
+**All CLI scripts (run from repo root):**
+
+| Script | Description |
+|---|---|
+| `pnpm cli:build` | Compile TypeScript to `cli/dist/` |
+| `pnpm cli:dev` | Watch mode |
+| `pnpm cli:lint` | ESLint on `cli/src/` |
+| `pnpm cli:test` | Vitest unit tests |
+| `pnpm cli:test:watch` | Vitest watch mode |
+
+For full CLI documentation including all commands, auth flow, CI/CD usage, and shared types contract, see **[cli/README.md](./cli/README.md)**.
+
+---
+
 ## Development
 
 ### Database Seed and Cleanup Scripts
@@ -427,7 +495,7 @@ npx shadcn@latest add <component-name>
 ### Testing
 
 ```bash
-# Run unit / integration / component tests
+# Run unit / integration / component tests (web app)
 pnpm test
 
 # Watch mode
@@ -438,6 +506,10 @@ pnpm test:coverage
 
 # E2E tests (Playwright)
 pnpm test:e2e
+
+# CLI unit tests
+pnpm cli:test
+pnpm cli:test:watch
 ```
 
 For full details on the testing strategy, tools, and conventions, see **[TESTING.md](./TESTING.md)**.
@@ -445,13 +517,18 @@ For full details on the testing strategy, tools, and conventions, see **[TESTING
 ### Type Checking
 
 ```bash
+# Web app (cli/ is excluded)
 pnpm tsc --noEmit
 ```
 
 ### Linting
 
 ```bash
+# Web app (cli/ is excluded)
 pnpm lint
+
+# CLI
+pnpm cli:lint
 ```
 
 ## Analytics

@@ -1,0 +1,44 @@
+{
+  "name": "@perflabs/cli",
+  "version": "0.1.0",
+  "description": "CLI for Web Performance Lab",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "bin": {
+    "side": "./dist/index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src",
+    "prepublishOnly": "pnpm build",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "cac": "^6.7.14",
+    "conf": "^13.0.0",
+    "ink": "^5.0.1",
+    "open": "^10.1.0",
+    "picocolors": "^1.1.1",
+    "react": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.0",
+    "eslint": "^9",
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8",
+    "vitest": "^4"
+  }
+}

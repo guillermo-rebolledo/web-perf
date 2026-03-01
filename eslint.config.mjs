@@ -33,6 +33,8 @@ const eslintConfig = defineConfig([
     "dist/**",
     // Test coverage reports
     "coverage/**",
+    // CLI workspace — has its own tsconfig and is linted separately
+    "cli/**",
   ]),
 ]);
 

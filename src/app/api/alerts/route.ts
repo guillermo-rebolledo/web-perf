@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveUser } from "@/lib/resolve-user";
 
 export type AlertsApiResponse = {
   alerts: {
@@ -35,8 +35,8 @@ export type AlertsApiResponse = {
 // GET /api/alerts?days=30&severity=critical&limit=20&cursor=...
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       run: {
         monitor: {
           site: {
-            userId: session.user.id,
+            userId,
           },
         },
       },

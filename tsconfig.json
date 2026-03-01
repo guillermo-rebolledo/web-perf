@@ -26,6 +26,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@side/types/*": [
+        "./src/types/*"
       ]
     }
   },
@@ -41,6 +44,7 @@
     "node_modules",
     "e2e",
     ".next",
-    "coverage"
+    "coverage",
+    "cli"
   ]
 }

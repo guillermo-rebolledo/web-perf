@@ -24,7 +24,12 @@
     "cleanup:screenshots": "node scripts/cleanup-screenshots.js",
     "seed:clean": "tsx prisma/clean-db.ts",
     "seed:regressions": "tsx prisma/seed-regressions.ts",
-    "seed:failed-runs": "tsx prisma/seed-failed-runs.ts"
+    "seed:failed-runs": "tsx prisma/seed-failed-runs.ts",
+    "cli:build": "pnpm --filter @side/cli build",
+    "cli:dev": "pnpm --filter @side/cli dev",
+    "cli:lint": "pnpm --filter @side/cli lint",
+    "cli:test": "pnpm --filter @side/cli test",
+    "cli:test:watch": "pnpm --filter @side/cli test:watch"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.33",

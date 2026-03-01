@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob } from "@/lib/queue";
 import { z } from "zod";
 import { RunStatus } from "@prisma/client";
+import { resolveUser } from "@/lib/resolve-user";
 
 const createMonitorSchema = z.object({
   siteId: z.string().cuid(),
@@ -15,8 +15,8 @@ const createMonitorSchema = z.object({
 // GET /api/monitors?siteId=X - List monitors for a site
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const site = await prisma.site.findFirst({
       where: {
         id: siteId,
-        userId: session.user.id,
+        userId,
       },
     });
 
@@ -75,8 +75,8 @@ export async function GET(request: NextRequest) {
 // POST /api/monitors - Create a new monitor
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const site = await prisma.site.findFirst({
       where: {
         id: validated.siteId,
-        userId: session.user.id,
+        userId,
       },
     });
 

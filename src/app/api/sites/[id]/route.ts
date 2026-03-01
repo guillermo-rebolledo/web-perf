@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { canonicalizeUrl } from "@/lib/url-utils";
 import { RunStatus } from "@prisma/client";
+import { resolveUser } from "@/lib/resolve-user";
 
 const updateSiteSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -17,15 +17,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const site = await prisma.site.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId,
       },
       include: {
         monitors: {
@@ -65,8 +65,8 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -74,7 +74,7 @@ export async function PUT(
     const existing = await prisma.site.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId,
       },
     });
 
@@ -117,8 +117,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -126,7 +126,7 @@ export async function DELETE(
     const existing = await prisma.site.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId,
       },
     });
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveUser } from "@/lib/resolve-user";
 
 // GET /api/runs/[id]/status - Lightweight status check for polling
 export async function GET(
@@ -9,8 +9,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -29,7 +29,7 @@ export async function GET(
       },
     });
 
-    if (!run || run.monitor.site.userId !== session.user.id) {
+    if (!run || run.monitor.site.userId !== userId) {
       return NextResponse.json({ error: "Run not found" }, { status: 404 });
     }
 

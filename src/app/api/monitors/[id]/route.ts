@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { resolveUser } from "@/lib/resolve-user";
 
 const updateMonitorSchema = z.object({
   cadenceMinutes: z.number().int().min(30).max(43200).optional(),
@@ -16,8 +16,8 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -31,7 +31,7 @@ export async function PUT(
       },
     });
 
-    if (!existing || existing.site.userId !== session.user.id) {
+    if (!existing || existing.site.userId !== userId) {
       return NextResponse.json(
         { error: "Monitor not found" },
         { status: 404 }
@@ -69,8 +69,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const session = await auth();
-    if (!session?.user?.id) {
+    const userId = await resolveUser(request);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -84,7 +84,7 @@ export async function DELETE(
       },
     });
 
-    if (!existing || existing.site.userId !== session.user.id) {
+    if (!existing || existing.site.userId !== userId) {
       return NextResponse.json(
         { error: "Monitor not found" },
         { status: 404 }
