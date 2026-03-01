@@ -7,6 +7,8 @@ A production-ready web performance monitoring application built with Next.js 15,
 > 🧪 **For testing setup, tools, and conventions, see [TESTING.md](./TESTING.md)**
 >
 > 🗄️ **For database seed and cleanup scripts, see [DATABASE_SCRIPTS.md](./DATABASE_SCRIPTS.md)**
+>
+> 📈 **For the Run History page and its seed scripts, see [docs/RUN-HISTORY.md](./docs/RUN-HISTORY.md)**
 
 ## Features
 
@@ -16,6 +18,7 @@ A production-ready web performance monitoring application built with Next.js 15,
 - 📈 **Trend Analysis**: Visualize performance over time with interactive charts
 - 🔄 **Automated Audits**: Background worker with cron scheduler for periodic testing
 - 🎯 **Manual Runs**: On-demand performance audits with rate limiting
+- 📅 **Run History**: Dedicated history page with site/monitor selector, 7d/14d/30d date range, Scores and Core Web Vitals chart tabs, and a full-detail run table
 - 📉 **Run Comparison**: Side-by-side comparison of metrics, audits, and screenshots
 - 🤖 **AI Analysis**: GPT-4o-mini powered narrative summaries with prioritized action items for each run
 - 💻 **CLI**: Terminal client for triggering runs, inspecting results, and managing sites without leaving the terminal
@@ -303,6 +306,7 @@ You'll be redirected to the sign-in page. Enter your email to receive a magic li
 
 - **Dashboard**: Overview of all sites with latest scores
 - **Site Detail**: Timeline charts and run history per monitor
+- **Run History**: Cross-monitor history with date-range filtering and CWV chart tab
 - **Run Detail**: Complete metrics, scores, and audits
 - **Run Comparison**: Side-by-side comparison of two runs
 
@@ -461,14 +465,18 @@ For seeding test data and cleaning up the database during development, see **[DA
 Quick reference:
 
 ```bash
-# Seed test data with regression alerts
-pnpm tsx prisma/seed-regressions.ts your-email@example.com
+# Seed regression alerts
+pnpm seed:regressions your-email@example.com
+
+# Seed Run History test data (gradual decline / improvement)
+pnpm seed:decline your-email@example.com
+pnpm seed:improvement your-email@example.com
 
 # Clean database (preserves users/sessions)
-pnpm tsx prisma/clean-db.ts
+pnpm seed:clean
 
 # Fresh start: clean + seed
-pnpm tsx prisma/clean-db.ts && pnpm tsx prisma/seed-regressions.ts your-email@example.com
+pnpm seed:clean && pnpm seed:regressions your-email@example.com
 ```
 
 ### Database Changes

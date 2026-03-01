@@ -4,10 +4,17 @@ This guide covers the database utility scripts available for development and tes
 
 ## Overview
 
-The project includes two utility scripts to help you manage test data:
+The project includes several utility scripts to help you manage test data:
 
-- **`prisma/seed-regressions.ts`** - Seeds the database with realistic performance data and regression alerts
-- **`prisma/clean-db.ts`** - Cleans all performance data while preserving user sessions
+| Script | npm alias | Purpose |
+|---|---|---|
+| `prisma/seed-regressions.ts` | `pnpm seed:regressions` | Baseline + regressed runs with regression alerts |
+| `prisma/seed-decline.ts` | `pnpm seed:decline` | Runs that gradually decline over time (for Run History) |
+| `prisma/seed-improvement.ts` | `pnpm seed:improvement` | Runs that gradually improve over time (for Run History) |
+| `prisma/seed-failed-runs.ts` | `pnpm seed:failed-runs` | Failed, running, and queued run states |
+| `prisma/clean-db.ts` | `pnpm seed:clean` | Cleans all performance data while preserving user sessions |
+
+> **Run History seed scripts** (`seed-decline` / `seed-improvement`) are documented in detail in **[docs/RUN-HISTORY.md](./docs/RUN-HISTORY.md)**.
 
 ## Scripts
 

@@ -6,6 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import {
   Activity,
   ChevronsUpDown,
+  History,
   LayoutDashboard,
   LogOut,
   Moon,
@@ -52,6 +53,11 @@ const navItems = [
     url: "/settings",
     icon: Settings2,
   },
+  {
+    title: "Run History",
+    url: "/history",
+    icon: History,
+  },
 ];
 
 function ThemeItems() {
@@ -96,7 +102,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Activity className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">

@@ -29,7 +29,9 @@
     "cli:dev": "pnpm --filter @side/cli dev",
     "cli:lint": "pnpm --filter @side/cli lint",
     "cli:test": "pnpm --filter @side/cli test",
-    "cli:test:watch": "pnpm --filter @side/cli test:watch"
+    "cli:test:watch": "pnpm --filter @side/cli test:watch",
+    "seed:decline": "tsx prisma/seed-decline.ts",
+    "seed:improvement": "tsx prisma/seed-improvement.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.33",
