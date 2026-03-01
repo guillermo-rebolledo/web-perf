@@ -1,0 +1,83 @@
+/**
+ * Run History page — /history
+ *
+ * Shows a time-series view of performance scores and Core Web Vitals for a
+ * user-selected site + monitor pair over the last 7, 14, or 30 days.
+ *
+ * Architecture:
+ *  - Server component: fetches the user's sites + monitors for the selectors,
+ *    and loads the initial run dataset for the default monitor.
+ *  - Passes data to <HistoryView> (client) which handles filter state and
+ *    re-fetches via GET /api/runs when the user changes site, monitor, or range.
+ */
+
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { subDays } from "date-fns";
+import { HistoryView } from "@/components/history-view";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb";
+
+export default async function HistoryPage() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/auth/signin");
+  }
+
+  const sites = await prisma.site.findMany({
+    where: { userId: session.user.id },
+    include: {
+      monitors: { orderBy: { createdAt: "desc" } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const defaultSite = sites[0];
+  const defaultMonitor = defaultSite?.monitors[0];
+
+  const initialRuns = defaultMonitor
+    ? await prisma.run.findMany({
+        where: {
+          monitorId: defaultMonitor.id,
+          status: "success",
+          completedAt: { gte: subDays(new Date(), 30) },
+        },
+        orderBy: { completedAt: "desc" },
+        take: 100,
+      })
+    : [];
+
+  return (
+    <div className="container mx-auto py-8 flex flex-col gap-8">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbPage>Run History</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="flex flex-col">
+        <h1 className="text-3xl font-bold font-inter tracking-tighter">
+          Run History
+        </h1>
+        <p className="text-muted-foreground font-inter tracking-tighter -mt-2">
+          Performance scores and Core Web Vitals over time
+        </p>
+      </div>
+
+      <HistoryView
+        sites={sites}
+        initialRuns={initialRuns}
+        defaultSiteId={defaultSite?.id ?? null}
+        defaultMonitorId={defaultMonitor?.id ?? null}
+      />
+    </div>
+  );
+}
