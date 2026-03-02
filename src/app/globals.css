@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -232,6 +233,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter);
   background: var(--background);
+  letter-spacing: var(--tracking-tighter);
 }
 
 * {
