@@ -21,8 +21,39 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Web Performance Lab",
-  description: "Monitor and analyze your website performance",
+  metadataBase: new URL("https://perflabs.dev"),
+  title: {
+    default: "PerfLabs – Web Performance Lab",
+    template: "%s | PerfLabs",
+  },
+  description:
+    "PerfLabs continuously monitors your Core Web Vitals, detects performance regressions, and explains exactly what changed before your users feel it.",
+  keywords: [
+    "Core Web Vitals monitoring",
+    "performance regressions",
+    "Lighthouse scores",
+    "PageSpeed Insights",
+    "web performance monitoring",
+    "PerfLabs",
+  ],
+  openGraph: {
+    type: "website",
+    url: "/",
+    title: "PerfLabs – Catch performance regressions before your users do",
+    description:
+      "Monitor Core Web Vitals across all your sites, detect regressions with rolling baselines, and get AI-powered explanations for every slowdown.",
+    siteName: "PerfLabs",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PerfLabs – Web performance regression monitoring",
+    description:
+      "Detect Core Web Vitals regressions before your users feel them. Continuous audits, rolling baselines, and AI-powered summaries.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const themeScript = `
