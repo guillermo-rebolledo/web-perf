@@ -5,5 +5,3 @@
 export const FEATURE_FLAGS = {
   RUN_AI_SUMMARY: "run_ai_summary",
 } as const;
-
-type FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

@@ -21,57 +21,6 @@ export type SiteWithMonitorsAndRuns = Prisma.SiteGetPayload<{
   };
 }>;
 
-type SiteWithFullDetails = Prisma.SiteGetPayload<{
-  include: {
-    monitors: {
-      include: {
-        runs: {
-          where: {
-            status: {
-              in: ["success", "queued", "running"];
-            };
-          };
-          orderBy: {
-            queuedAt: "desc";
-          };
-          take: 30;
-        };
-      };
-    };
-  };
-}>;
-
-type RunWithDetails = Prisma.RunGetPayload<{
-  include: {
-    monitor: {
-      include: {
-        site: true;
-        runs: {
-          where: {
-            status: "success";
-            completedAt: {
-              lt: Date;
-            };
-          };
-          orderBy: {
-            completedAt: "desc";
-          };
-          take: 1;
-        };
-      };
-    };
-    audits: true;
-    insights: true;
-  };
-}>;
-
-type RunWithAudits = Prisma.RunGetPayload<{
-  include: {
-    audits: true;
-    insights: true;
-  };
-}>;
-
 /** Audit shape for run detail page */
 export interface RunPageAudit {
   id: string;
@@ -93,7 +42,12 @@ export interface RunPageInsight {
   scored: boolean;
   displayValue: string | null;
   metricSavings: MetricSavings | null;
-  sources: Array<{ url: string; totalBytes?: number; wastedBytes?: number; wastedMs?: number }> | null;
+  sources: Array<{
+    url: string;
+    totalBytes?: number;
+    wastedBytes?: number;
+    wastedMs?: number;
+  }> | null;
 }
 
 /** Run scalar fields used on run detail page (matches Prisma Run model) */
@@ -155,17 +109,3 @@ export type RunForPage = RunPageScalars & {
   insights: RunPageInsight[];
   regressionAlerts?: RunPageRegressionAlert[];
 };
-
-type MonitorWithSiteAndRuns = Prisma.MonitorGetPayload<{
-  include: {
-    site: true;
-    runs: {
-      where: {
-        status: {
-          in: ["queued", "running"];
-        };
-      };
-      take: 1;
-    };
-  };
-}>;
