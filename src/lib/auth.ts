@@ -19,10 +19,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientId: env.GITHUB_CLIENT_ID,
       clientSecret: env.GITHUB_CLIENT_SECRET,
     }),
-    ...(env.EMAIL_SERVER && env.EMAIL_FROM
+    ...(env.EMAIL_SERVER_HOST && env.EMAIL_FROM
       ? [
           EmailProvider({
-            server: env.EMAIL_SERVER,
+            server: {
+              host: env.EMAIL_SERVER_HOST,
+              port: env.EMAIL_SERVER_PORT,
+              auth: {
+                user: env.EMAIL_SERVER_USER,
+                pass: env.EMAIL_SERVER_PASSWORD,
+              },
+            },
             from: env.EMAIL_FROM,
           }),
         ]

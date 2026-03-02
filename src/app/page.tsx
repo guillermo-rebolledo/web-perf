@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Activity, Clock, Flag, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { TerminalWindow } from "@/components/terminal-window";
+import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Catch Web Vitals regressions before your users do",
@@ -26,7 +28,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+  if (session) redirect("/dashboard");
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur">
