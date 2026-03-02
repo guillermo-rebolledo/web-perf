@@ -6,7 +6,7 @@ import type { InsightSource } from "@/lib/psi-parser";
  * Detects regressions caused by legacy JavaScript (polyfills, transpiled code)
  * Applies to: TBT, INP
  */
-export const legacyJsRule: RegressionRule = {
+const legacyJsRule: RegressionRule = {
   id: "legacy-js",
   appliesTo: ["tbt", "inp"],
 

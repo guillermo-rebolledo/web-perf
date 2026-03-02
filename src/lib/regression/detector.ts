@@ -24,7 +24,7 @@ type Confidence = "low" | "medium" | "high";
 /**
  * Data structure for a regression alert (before saving to DB)
  */
-export interface RegressionAlertData {
+interface RegressionAlertData {
   runId: string;
   metricName: string;
   baselineValue: number;

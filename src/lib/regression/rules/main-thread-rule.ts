@@ -6,7 +6,7 @@ import type { InsightSource } from "@/lib/psi-parser";
  * Detects regressions caused by excessive main thread work
  * Applies to: TBT, INP
  */
-export const mainThreadRule: RegressionRule = {
+const mainThreadRule: RegressionRule = {
   id: "main-thread",
   appliesTo: ["tbt", "inp"],
 

@@ -6,7 +6,7 @@ import type { InsightSource } from "@/lib/psi-parser";
  * Detects regressions caused by increased JavaScript bundle size or execution time
  * Applies to: LCP, TBT, INP
  */
-export const jsBloatRule: RegressionRule = {
+const jsBloatRule: RegressionRule = {
   id: "js-bloat",
   appliesTo: ["lcp", "tbt", "inp"],
 

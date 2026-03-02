@@ -17,7 +17,7 @@ export interface MetricDelta {
   unit: string;
 }
 
-export interface AuditDelta {
+interface AuditDelta {
   auditId: string;
   title: string;
   beforeScore: number | null;
@@ -26,7 +26,7 @@ export interface AuditDelta {
   isRegression: boolean;
 }
 
-export interface RunComparison {
+interface RunComparison {
   scores: MetricDelta[];
   metrics: MetricDelta[];
   audits: AuditDelta[];

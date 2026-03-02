@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
  * This helps reduce database size by removing screenshots from runs older than the TTL
  */
 
-export interface CleanupStats {
+interface CleanupStats {
   runsProcessed: number;
   screenshotsDeleted: number;
   bytesFreed: number; // Approximate

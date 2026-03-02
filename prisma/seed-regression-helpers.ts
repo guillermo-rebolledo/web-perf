@@ -15,7 +15,7 @@ export type InsightData = {
   sources: unknown[];
 };
 
-export type InsightFactory = (runId: string, index: number) => InsightData;
+type InsightFactory = (runId: string, index: number) => InsightData;
 
 // ── Insight factories ────────────────────────────────────────────────────────
 // Each factory returns the data needed for prisma.insight.createMany given the
@@ -29,8 +29,14 @@ export const INSIGHT_FACTORIES: Record<string, InsightFactory> = {
     description: "Reduce JavaScript execution time",
     score: 0.5 + Math.random() * 0.2,
     sources: [
-      { url: "https://example.com/app.js", wastedMs: 300 + Math.random() * 200 },
-      { url: "https://example.com/vendor.js", wastedMs: 200 + Math.random() * 150 },
+      {
+        url: "https://example.com/app.js",
+        wastedMs: 300 + Math.random() * 200,
+      },
+      {
+        url: "https://example.com/vendor.js",
+        wastedMs: 200 + Math.random() * 150,
+      },
     ],
   }),
   "third-party-summary": (runId, index) => ({
@@ -62,15 +68,22 @@ export const INSIGHT_FACTORIES: Record<string, InsightFactory> = {
     description: "Avoid long main-thread tasks",
     score: 0.4 + Math.random() * 0.2,
     sources: [
-      { url: "https://example.com/app.js", duration: 250 + Math.random() * 100 },
-      { url: "https://example.com/handler.js", duration: 200 + Math.random() * 80 },
+      {
+        url: "https://example.com/app.js",
+        duration: 250 + Math.random() * 100,
+      },
+      {
+        url: "https://example.com/handler.js",
+        duration: 200 + Math.random() * 80,
+      },
     ],
   }),
   "mainthread-work-breakdown": (runId) => ({
     runId,
     insightId: "mainthread-work-breakdown",
     title: "Minimize main-thread work",
-    description: "Consider reducing the time spent parsing, compiling and executing JS",
+    description:
+      "Consider reducing the time spent parsing, compiling and executing JS",
     score: 0.5 + Math.random() * 0.2,
     sources: [
       { group: "Script Evaluation", duration: 1200 + Math.random() * 300 },
@@ -84,7 +97,10 @@ export const INSIGHT_FACTORIES: Record<string, InsightFactory> = {
     description: "Elements causing layout shifts",
     score: 0.3 + Math.random() * 0.2,
     sources: [
-      { node: `{"selector": "div.element-${index}"}`, score: 0.05 + Math.random() * 0.05 },
+      {
+        node: `{"selector": "div.element-${index}"}`,
+        score: 0.05 + Math.random() * 0.05,
+      },
       { node: '{"selector": "img.lazy"}', score: 0.03 + Math.random() * 0.03 },
     ],
   }),
@@ -95,7 +111,10 @@ export const INSIGHT_FACTORIES: Record<string, InsightFactory> = {
     description: "Consider lazy-loading offscreen images",
     score: 0.6 + Math.random() * 0.2,
     sources: [
-      { url: `https://example.com/image${index}.jpg`, wastedMs: 150 + Math.random() * 100 },
+      {
+        url: `https://example.com/image${index}.jpg`,
+        wastedMs: 150 + Math.random() * 100,
+      },
     ],
   }),
   "uses-optimized-images": (runId, index) => ({
@@ -118,8 +137,14 @@ export const INSIGHT_FACTORIES: Record<string, InsightFactory> = {
     description: "Resources are blocking the first paint of your page",
     score: 0.4 + Math.random() * 0.2,
     sources: [
-      { url: "https://example.com/styles.css", wastedMs: 300 + Math.random() * 150 },
-      { url: "https://example.com/fonts.css", wastedMs: 200 + Math.random() * 100 },
+      {
+        url: "https://example.com/styles.css",
+        wastedMs: 300 + Math.random() * 150,
+      },
+      {
+        url: "https://example.com/fonts.css",
+        wastedMs: 200 + Math.random() * 100,
+      },
     ],
   }),
   "unminified-css": (runId) => ({
@@ -129,7 +154,10 @@ export const INSIGHT_FACTORIES: Record<string, InsightFactory> = {
     description: "Minifying CSS files can reduce network payload sizes",
     score: 0.7 + Math.random() * 0.2,
     sources: [
-      { url: "https://example.com/styles.css", wastedBytes: 12000 + Math.random() * 5000 },
+      {
+        url: "https://example.com/styles.css",
+        wastedBytes: 12000 + Math.random() * 5000,
+      },
     ],
   }),
   "server-response-time": (runId) => ({
@@ -138,7 +166,9 @@ export const INSIGHT_FACTORIES: Record<string, InsightFactory> = {
     title: "Server response time",
     description: "Reduce server response time",
     score: 0.4 + Math.random() * 0.2,
-    sources: [{ url: "https://example.com", responseTime: 800 + Math.random() * 200 }],
+    sources: [
+      { url: "https://example.com", responseTime: 800 + Math.random() * 200 },
+    ],
   }),
   "network-server-latency": (runId) => ({
     runId,
@@ -146,7 +176,9 @@ export const INSIGHT_FACTORIES: Record<string, InsightFactory> = {
     title: "Network server latency",
     description: "Reduce the network round trip time",
     score: 0.5 + Math.random() * 0.2,
-    sources: [{ origin: "https://example.com", latency: 400 + Math.random() * 200 }],
+    sources: [
+      { origin: "https://example.com", latency: 400 + Math.random() * 200 },
+    ],
   }),
 };
 
@@ -200,5 +232,3 @@ export const REGRESSION_TYPES = [
     insights: ["long-tasks", "bootup-time"],
   },
 ] as const;
-
-export type RegressionType = (typeof REGRESSION_TYPES)[number];

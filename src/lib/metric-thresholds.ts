@@ -12,12 +12,12 @@
  *  - TTI: https://developer.chrome.com/docs/lighthouse/performance/interactive
  */
 
-export interface MetricThreshold {
+interface MetricThreshold {
   good: number;
   needsImprovement: number;
 }
 
-export interface StrategyThresholds {
+interface StrategyThresholds {
   lcp: MetricThreshold;
   inp: MetricThreshold;
   tbt: MetricThreshold;
