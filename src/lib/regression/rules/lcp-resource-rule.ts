@@ -5,7 +5,7 @@ import type { RegressionRule, RootCause } from "../rules-engine";
  * Detects regressions caused by changes to the LCP resource (image, video, text)
  * Applies to: LCP only
  */
-export const lcpResourceRule: RegressionRule = {
+const lcpResourceRule: RegressionRule = {
   id: "lcp-resource",
   appliesTo: ["lcp"],
 

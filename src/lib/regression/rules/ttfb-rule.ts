@@ -5,7 +5,7 @@ import type { RegressionRule, RootCause } from "../rules-engine";
  * Detects regressions caused by slow server response time
  * Applies to: LCP, FCP, TTFB
  */
-export const ttfbRule: RegressionRule = {
+const ttfbRule: RegressionRule = {
   id: "ttfb",
   appliesTo: ["lcp", "fcp", "ttfb"],
 

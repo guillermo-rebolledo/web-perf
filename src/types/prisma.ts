@@ -21,7 +21,7 @@ export type SiteWithMonitorsAndRuns = Prisma.SiteGetPayload<{
   };
 }>;
 
-export type SiteWithFullDetails = Prisma.SiteGetPayload<{
+type SiteWithFullDetails = Prisma.SiteGetPayload<{
   include: {
     monitors: {
       include: {
@@ -41,7 +41,7 @@ export type SiteWithFullDetails = Prisma.SiteGetPayload<{
   };
 }>;
 
-export type RunWithDetails = Prisma.RunGetPayload<{
+type RunWithDetails = Prisma.RunGetPayload<{
   include: {
     monitor: {
       include: {
@@ -65,7 +65,7 @@ export type RunWithDetails = Prisma.RunGetPayload<{
   };
 }>;
 
-export type RunWithAudits = Prisma.RunGetPayload<{
+type RunWithAudits = Prisma.RunGetPayload<{
   include: {
     audits: true;
     insights: true;
@@ -82,7 +82,7 @@ export interface RunPageAudit {
 }
 
 /** Metric name → savings in ms (from PageSpeed Insights) */
-export type MetricSavings = Record<string, number>;
+type MetricSavings = Record<string, number>;
 
 /** Insight shape for run detail page */
 export interface RunPageInsight {
@@ -156,7 +156,7 @@ export type RunForPage = RunPageScalars & {
   regressionAlerts?: RunPageRegressionAlert[];
 };
 
-export type MonitorWithSiteAndRuns = Prisma.MonitorGetPayload<{
+type MonitorWithSiteAndRuns = Prisma.MonitorGetPayload<{
   include: {
     site: true;
     runs: {

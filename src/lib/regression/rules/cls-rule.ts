@@ -6,7 +6,7 @@ import type { InsightSource } from "@/lib/psi-parser";
  * Detects regressions caused by layout shifts
  * Applies to: CLS only
  */
-export const clsRule: RegressionRule = {
+const clsRule: RegressionRule = {
   id: "cls",
   appliesTo: ["cls"],
 

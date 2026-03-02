@@ -75,7 +75,7 @@ export interface InsightSource {
   duration?: number;
 }
 
-export interface ParsedInsight {
+interface ParsedInsight {
   insightId: string;
   title: string;
   description: string;
@@ -86,7 +86,7 @@ export interface ParsedInsight {
   sources?: InsightSource[];
 }
 
-export interface ParsedMetrics {
+interface ParsedMetrics {
   // Scores (0-100)
   performanceScore: number;
   accessibilityScore: number;

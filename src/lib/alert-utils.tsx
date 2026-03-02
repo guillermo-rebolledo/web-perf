@@ -3,12 +3,12 @@ import type { BadgeProps } from "@/components/ui/badge";
 import { AlertTriangle, BadgeInfo, CircleAlert } from "lucide-react";
 
 // Type-safe severity and confidence levels
-export type SeverityLevel = "critical" | "moderate" | "minor";
-export type ConfidenceLevel = "high" | "medium" | "low";
+type SeverityLevel = "critical" | "moderate" | "minor";
+type ConfidenceLevel = "high" | "medium" | "low";
 export type TimePeriodValue = "1" | "3" | "5" | "10" | "30";
 
 // Time period configuration
-export interface TimePeriod {
+interface TimePeriod {
   label: string;
   value: TimePeriodValue;
   days: number;
@@ -23,7 +23,7 @@ export const TIME_PERIODS: readonly TimePeriod[] = [
 ] as const;
 
 // Severity configuration (uses Badge variants for consistent styling)
-export interface SeverityInfo {
+interface SeverityInfo {
   label: string;
   variant: BadgeProps["variant"];
   cardClassName: string;

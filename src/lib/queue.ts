@@ -17,7 +17,7 @@ const connection = {
 };
 
 // Create the audit queue
-export const auditQueue = new Queue<AuditJobData>("performance-audits", {
+const auditQueue = new Queue<AuditJobData>("performance-audits", {
   connection,
   defaultJobOptions: {
     attempts: 3,

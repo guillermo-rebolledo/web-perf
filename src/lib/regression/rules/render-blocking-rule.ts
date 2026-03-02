@@ -6,7 +6,7 @@ import type { InsightSource } from "@/lib/psi-parser";
  * Detects regressions caused by render-blocking CSS/JS
  * Applies to: FCP, LCP
  */
-export const renderBlockingRule: RegressionRule = {
+const renderBlockingRule: RegressionRule = {
   id: "render-blocking",
   appliesTo: ["fcp", "lcp"],
 

@@ -7,7 +7,7 @@ import type { JWT } from "next-auth/jwt";
 import { prisma } from "./prisma";
 import { env } from "@/env";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth } = NextAuth({
   trustHost: true,
   adapter: PrismaAdapter(prisma),
   providers: [

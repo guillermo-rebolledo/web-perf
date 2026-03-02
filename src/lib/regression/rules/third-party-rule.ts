@@ -6,7 +6,7 @@ import type { InsightSource } from "@/lib/psi-parser";
  * Detects regressions caused by third-party scripts (analytics, ads, widgets)
  * Applies to: LCP, TBT, INP, FCP
  */
-export const thirdPartyRule: RegressionRule = {
+const thirdPartyRule: RegressionRule = {
   id: "third-party",
   appliesTo: ["lcp", "tbt", "inp", "fcp"],
 

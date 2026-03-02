@@ -15,7 +15,7 @@ export type InsightData = {
   sources: unknown[];
 };
 
-export type InsightFactory = (runId: string, index: number) => InsightData;
+type InsightFactory = (runId: string, index: number) => InsightData;
 
 // ── Insight factories ────────────────────────────────────────────────────────
 // Each factory returns the data needed for prisma.insight.createMany given the
@@ -201,4 +201,4 @@ export const REGRESSION_TYPES = [
   },
 ] as const;
 
-export type RegressionType = (typeof REGRESSION_TYPES)[number];
+type RegressionType = (typeof REGRESSION_TYPES)[number];

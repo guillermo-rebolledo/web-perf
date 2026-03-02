@@ -1,4 +1,4 @@
-export type ScoreVariant = "good" | "warning" | "poor" | "neutral";
+type ScoreVariant = "good" | "warning" | "poor" | "neutral";
 
 export function getScoreVariant(score: number): ScoreVariant {
   if (score >= 90) return "good";

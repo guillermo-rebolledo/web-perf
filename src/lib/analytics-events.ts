@@ -3,5 +3,5 @@ export const AnalyticsEvent = {
   monitor_add: "monitor_add",
 } as const;
 
-export type AnalyticsEventName =
+type AnalyticsEventName =
   (typeof AnalyticsEvent)[keyof typeof AnalyticsEvent];

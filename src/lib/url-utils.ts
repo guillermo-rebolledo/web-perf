@@ -63,16 +63,7 @@ export function extractFilename(url: string): string {
 
 const markdownLinkRegex = /\[([^\]]*)\]\(([^)]*)\)/;
 
-export function urlParser(urlStr: string): { description: string; href: string } | null {
-  const match = urlStr.match(markdownLinkRegex);
-  if (!match) return null;
-  return {
-    description: match[1],
-    href: match[2],
-  };
-}
-
-export type ParsedDescriptionWithLink =
+type ParsedDescriptionWithLink =
   | { kind: "plain"; text: string }
   | {
       kind: "withLink";
