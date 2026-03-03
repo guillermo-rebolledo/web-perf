@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolveUser } from "@/lib/resolve-user";
+import { startOfDay, endOfDay, parse } from "date-fns";
 
 export type AlertsApiResponse = {
   alerts: {
@@ -33,6 +34,7 @@ export type AlertsApiResponse = {
 };
 
 // GET /api/alerts?days=30&severity=critical&limit=20&cursor=...
+// GET /api/alerts?date=yyyy-MM-dd&severity=critical&limit=50
 export async function GET(request: NextRequest) {
   try {
     const userId = await resolveUser(request);
@@ -41,20 +43,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
+    const dateParam = searchParams.get("date"); // "yyyy-MM-dd"
     const days = parseInt(searchParams.get("days") || "30", 10);
     const severity = searchParams.get("severity");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
     const cursor = searchParams.get("cursor");
 
-    // Calculate start date
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
     // Build where clause
     const where: Prisma.RegressionAlertWhereInput = {
-      createdAt: {
-        gte: startDate,
-      },
       run: {
         monitor: {
           site: {
@@ -63,6 +59,16 @@ export async function GET(request: NextRequest) {
         },
       },
     };
+
+    // Date filtering: specific day window or rolling N-day window
+    if (dateParam) {
+      const day = parse(dateParam, "yyyy-MM-dd", new Date());
+      where.createdAt = { gte: startOfDay(day), lte: endOfDay(day) };
+    } else {
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      where.createdAt = { gte: startDate };
+    }
 
     if (severity) {
       where.severity = severity;

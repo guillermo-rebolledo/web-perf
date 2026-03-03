@@ -60,12 +60,12 @@ function StatusBadge({ metric }: { metric: MetricDelta }) {
 
   // significance === "significant"
   return metric.isImprovement ? (
-    <Badge variant="success" className="gap-1">
+    <Badge variant="success">
       <TrendingUp className="h-3 w-3" />
       Improved
     </Badge>
   ) : (
-    <Badge variant="destructive" className="gap-1">
+    <Badge variant="destructive">
       <TrendingDown className="h-3 w-3" />
       Regressed
     </Badge>

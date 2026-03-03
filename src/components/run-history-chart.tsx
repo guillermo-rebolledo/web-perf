@@ -31,6 +31,25 @@ interface RunHistoryChartProps {
   runs: Run[];
 }
 
+/**
+ * Chart-specific palette — intentionally richer than the UI theme.
+ * Each color maps to a metric's character: blue=speed, green=stability,
+ * violet=quality, amber=discovery. Dark-mode friendly at these lightness levels.
+ */
+const SCORE_COLORS = {
+  performance:   "#3b82f6", // blue    — speed / technical
+  accessibility: "#22c55e", // green   — inclusivity
+  bestPractices: "#a855f7", // purple  — standards
+  seo:           "#f59e0b", // amber   — discoverability
+} as const;
+
+const CWV_COLORS = {
+  lcp:  "#ef4444", // red    — largest contentful paint (high impact)
+  fcp:  "#3b82f6", // blue   — first contentful paint
+  ttfb: "#8b5cf6", // violet — time to first byte (server)
+  cls:  "#10b981", // emerald — layout stability
+} as const;
+
 const CustomTooltip = ({
   active,
   payload,
@@ -138,37 +157,37 @@ export function RunHistoryChart({ runs }: RunHistoryChartProps) {
             <Line
               type="monotone"
               dataKey="performanceScore"
-              stroke="var(--color-chart-1)"
+              stroke={SCORE_COLORS.performance}
               name="Performance"
               strokeWidth={2}
-              dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-1)" }}
+              dot={{ r: 3, strokeWidth: 0, fill: SCORE_COLORS.performance }}
               connectNulls
             />
             <Line
               type="monotone"
               dataKey="accessibilityScore"
-              stroke="var(--color-chart-2)"
+              stroke={SCORE_COLORS.accessibility}
               name="Accessibility"
               strokeWidth={2}
-              dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-2)" }}
+              dot={{ r: 3, strokeWidth: 0, fill: SCORE_COLORS.accessibility }}
               connectNulls
             />
             <Line
               type="monotone"
               dataKey="bestPracticesScore"
-              stroke="var(--color-chart-3)"
+              stroke={SCORE_COLORS.bestPractices}
               name="Best Practices"
               strokeWidth={2}
-              dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-3)" }}
+              dot={{ r: 3, strokeWidth: 0, fill: SCORE_COLORS.bestPractices }}
               connectNulls
             />
             <Line
               type="monotone"
               dataKey="seoScore"
-              stroke="var(--color-chart-4)"
+              stroke={SCORE_COLORS.seo}
               name="SEO"
               strokeWidth={2}
-              dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-4)" }}
+              dot={{ r: 3, strokeWidth: 0, fill: SCORE_COLORS.seo }}
               connectNulls
             />
           </LineChart>
@@ -230,40 +249,40 @@ export function RunHistoryChart({ runs }: RunHistoryChartProps) {
               type="monotone"
               dataKey="lcp"
               yAxisId="time"
-              stroke="var(--color-chart-1)"
+              stroke={CWV_COLORS.lcp}
               name="LCP (ms)"
               strokeWidth={2}
-              dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-1)" }}
+              dot={{ r: 3, strokeWidth: 0, fill: CWV_COLORS.lcp }}
               connectNulls
             />
             <Line
               type="monotone"
               dataKey="fcp"
               yAxisId="time"
-              stroke="var(--color-chart-2)"
+              stroke={CWV_COLORS.fcp}
               name="FCP (ms)"
               strokeWidth={2}
-              dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-2)" }}
+              dot={{ r: 3, strokeWidth: 0, fill: CWV_COLORS.fcp }}
               connectNulls
             />
             <Line
               type="monotone"
               dataKey="ttfb"
               yAxisId="time"
-              stroke="var(--color-chart-3)"
+              stroke={CWV_COLORS.ttfb}
               name="TTFB (ms)"
               strokeWidth={2}
-              dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-3)" }}
+              dot={{ r: 3, strokeWidth: 0, fill: CWV_COLORS.ttfb }}
               connectNulls
             />
             <Line
               type="monotone"
               dataKey="cls"
               yAxisId="cls"
-              stroke="var(--color-chart-4)"
+              stroke={CWV_COLORS.cls}
               name="CLS ×1000"
               strokeWidth={2}
-              dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-4)" }}
+              dot={{ r: 3, strokeWidth: 0, fill: CWV_COLORS.cls }}
               connectNulls
             />
           </LineChart>

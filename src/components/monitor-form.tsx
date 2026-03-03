@@ -146,7 +146,10 @@ export function MonitorForm({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Configure Audit Monitor</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <MonitorSmartphone className="size-5 text-secondary" />
+            Configure Audit Monitor
+          </DialogTitle>
           <DialogDescription>
             Set up automated performance tracking for Core Web Vitals and
             PageSpeed Insights to catch regressions before they hit production.
@@ -235,8 +238,15 @@ export function MonitorForm({
                 </p>
               )}
             </fieldset>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Active</Label>
+            <div className="flex items-center justify-between rounded-lg border border-border p-4">
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="isActive" className="text-sm font-medium">
+                  Active
+                </Label>
+                <p className="text-xs text-muted-foreground leading-none tracking-tight">
+                  Scans run on schedule when enabled
+                </p>
+              </div>
               <Switch
                 id="isActive"
                 checked={isActive}
@@ -244,7 +254,7 @@ export function MonitorForm({
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/50 p-3">
+            <div className="flex items-center gap-3 rounded-lg border border-border/60 border-l-4 border-l-secondary bg-muted/50 p-3">
               <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
               <p className="text-xs leading-none tracking-tight text-muted-foreground">
                 {isActive ? (

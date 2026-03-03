@@ -29,16 +29,17 @@ export function ScoreCard({
   const avgColorClass = scoreVariantClass[avgVariant];
 
   return (
-    <Card className="col-span-1">
+    <Card className="col-span-1 shadow-sm">
       <CardContent className="pt-6">
         <div className="flex justify-between items-center min-w-0">
-          <span className="uppercase text-xs text-muted-foreground font-semibold tracking-tighter">
+          <span className="uppercase text-xs text-muted-foreground font-semibold tracking-tight">
             {title}
           </span>
           {Icon && <Icon className={cn(scoreClassName, "size-4")} />}
         </div>
-        <span className="text-4xl font-extrabold tabular-nums text-foreground">
-          {score ? Math.round(score) : "--"}
+        {/* null-check instead of falsy so score=0 renders correctly */}
+        <span className={cn(scoreClassName, "text-4xl font-extrabold tabular-nums")}>
+          {score !== null ? Math.round(score) : "--"}
         </span>
         <div className="mt-4 h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <div

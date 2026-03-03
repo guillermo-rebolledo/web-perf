@@ -16,12 +16,6 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { subDays } from "date-fns";
 import { HistoryView } from "@/components/history-view";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
 
 export default async function HistoryPage() {
   const session = await auth();
@@ -55,19 +49,11 @@ export default async function HistoryPage() {
 
   return (
     <div className="container mx-auto py-8 flex flex-col gap-8">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbPage>Run History</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <div className="flex flex-col">
-        <h1 className="text-3xl font-bold font-inter tracking-tighter">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-bold font-sans tracking-tighter">
           Run History
         </h1>
-        <p className="text-muted-foreground font-inter tracking-tighter -mt-2">
+        <p className="text-muted-foreground font-sans tracking-tight">
           Performance scores and Core Web Vitals over time
         </p>
       </div>

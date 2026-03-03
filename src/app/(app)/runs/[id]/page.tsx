@@ -144,8 +144,8 @@ export default async function RunPage({
         <CardContent className="pt-6">
           <div className="flex items-start gap-4">
             {isSuccess ? (
-              <div className="shrink-0 p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl flex items-center justify-center border border-emerald-100 dark:border-emerald-900/50">
-                <CircleCheck className="text-emerald-600 dark:text-emerald-400 size-8" />
+              <div className="shrink-0 p-2 bg-score-good/10 rounded-xl flex items-center justify-center border border-score-good/20">
+                <CircleCheck className="text-score-good size-8" />
               </div>
             ) : null}
             <div className="flex flex-col flex-1">
@@ -180,7 +180,7 @@ export default async function RunPage({
                 {previousRun && isSuccess && (
                   <Link
                     href={`/runs/${previousRun.id}/compare/${run.id}`}
-                    className="text-primary tracking-tighter text-xs flex items-center gap-1 hover:underline focus:underline shrink-0 w-fit"
+                    className="text-secondary tracking-tighter text-xs flex items-center gap-1 hover:underline focus:underline shrink-0 w-fit"
                   >
                     <GitCompare className="size-3" />
                     Compare with previous
@@ -198,7 +198,7 @@ export default async function RunPage({
               {isSuccess && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
                   <div className="col-span-1 flex items-center gap-2">
-                    <span className="bg-amber-500/10 text-amber-500 rounded p-2 shrink-0 w-fit self-start">
+                    <span className="bg-secondary/10 text-secondary rounded p-2 shrink-0 w-fit self-start">
                       <Lightbulb className="size-6" />
                     </span>
                     <div className="flex flex-col">
@@ -232,7 +232,7 @@ export default async function RunPage({
                   </div>
 
                   <div className="col-span-1 flex items-center gap-2">
-                    <span className="bg-emerald-600/10 text-emerald-600 rounded p-2 shrink-0 w-fit self-start">
+                    <span className="bg-score-good/10 text-score-good rounded p-2 shrink-0 w-fit self-start">
                       <Timer className="size-6" />
                     </span>
                     <div className="flex flex-col">
@@ -619,7 +619,7 @@ export default async function RunPage({
                                     </TableCell>
                                     <TableCell className="text-right text-xs tabular-nums">
                                       {source.wastedBytes != null ? (
-                                        <span className="text-orange-600 dark:text-orange-400">
+                                        <span className="text-secondary">
                                           {formatBytes(source.wastedBytes)}
                                         </span>
                                       ) : (
@@ -672,16 +672,16 @@ function ScoreCard({
   const progress = score ?? 0;
 
   return (
-    <Card className="col-span-1">
+    <Card className="col-span-1 shadow-sm">
       <CardContent className="pt-6">
         <div className="flex justify-between items-center min-w-0">
-          <span className="uppercase text-xs text-muted-foreground font-semibold tracking-tighter">
+          <span className="uppercase text-xs text-muted-foreground font-semibold tracking-tight">
             {title}
           </span>
           {Icon && <Icon className={cn(scoreClassName, "size-4")} />}
         </div>
-        <span className="text-4xl font-extrabold tabular-nums text-foreground">
-          {score ? Math.round(score) : "--"}
+        <span className={cn(scoreClassName, "text-4xl font-extrabold tabular-nums")}>
+          {score !== null ? Math.round(score) : "--"}
         </span>
         <div className="mt-4 h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <div

@@ -44,6 +44,11 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
+    title: "Run History",
+    url: "/history",
+    icon: History,
+  },
+  {
     title: "Regression Alerts",
     url: "/alerts",
     icon: AlertTriangle,
@@ -52,11 +57,6 @@ const navItems = [
     title: "Settings",
     url: "/settings",
     icon: Settings2,
-  },
-  {
-    title: "Run History",
-    url: "/history",
-    icon: History,
   },
 ];
 
@@ -102,7 +102,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-secondary/15 text-secondary transition-colors duration-150">
                   <Activity className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
@@ -127,6 +127,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuButton
                     asChild
                     isActive={pathname.startsWith(item.url)}
+                    className="transition-colors duration-150"
                   >
                     <Link href={item.url}>
                       <item.icon />
@@ -150,7 +151,7 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
                     size="lg"
                     className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                   >
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted">
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                       <span className="text-sm font-medium leading-none">
                         {(session.user.name || session.user.email || "U")
                           .charAt(0)

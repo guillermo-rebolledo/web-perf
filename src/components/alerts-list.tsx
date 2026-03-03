@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { AlertCard, type RegressionAlertWithDetails } from "./alert-card";
 import { Skeleton } from "./ui/skeleton";
+import { Button } from "./ui/button";
 import { TrendingUp, AlertCircle } from "lucide-react";
 import type { AlertsApiResponse } from "@/app/api/alerts/route";
 import { useCursorPagination } from "@/hooks/use-cursor-pagination";
@@ -50,7 +51,7 @@ export function AlertsList({ initialAlerts, days, severity }: AlertsListProps) {
     <div className="flex flex-col gap-4">
       {alerts.length > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
-          <TrendingUp className="h-4 w-4" />
+          <TrendingUp className="h-4 w-4 text-secondary" />
           <span className="tracking-tighter">
             {alerts.length} alert{alerts.length !== 1 ? "s" : ""} in the last{" "}
             {days} day{days > 1 ? "s" : ""}
@@ -77,9 +78,9 @@ export function AlertsList({ initialAlerts, days, severity }: AlertsListProps) {
         <div className="flex items-center justify-center gap-2 p-4 text-sm text-destructive bg-destructive/10 rounded-lg">
           <AlertCircle className="h-4 w-4" />
           <span>{error}</span>
-          <button onClick={loadMore} className="ml-2 underline hover:no-underline">
+          <Button variant="ghost" size="sm" onClick={loadMore} className="ml-2 h-auto px-2 py-0.5">
             Retry
-          </button>
+          </Button>
         </div>
       )}
 
