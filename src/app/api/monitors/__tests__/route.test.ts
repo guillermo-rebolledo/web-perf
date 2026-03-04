@@ -108,7 +108,7 @@ describe("POST /api/monitors", () => {
     expect(res.status).toBe(404);
   });
 
-  it("creates monitor with defaults", async () => {
+  it("creates schedule monitor with defaults and returns runId", async () => {
     vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
     vi.mocked(prismaMock.monitor.create).mockResolvedValue(createMonitor());
     vi.mocked(prismaMock.run.create).mockResolvedValue(
@@ -123,13 +123,48 @@ describe("POST /api/monitors", () => {
         siteId: "clxxxxxxxxxxxxxxxxxxxxxxxxx",
       })
     );
+    const data = await res.json();
 
     expect(res.status).toBe(201);
+    expect(data.runId).toBe("new-run");
     expect(prismaMock.monitor.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          triggerType: "schedule",
           strategy: "mobile",
           isActive: true,
+        }),
+      })
+    );
+  });
+
+  it("creates deployment monitor and returns webhookSecret without runId", async () => {
+    vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
+    vi.mocked(prismaMock.monitor.create).mockResolvedValue(
+      createMonitor({ triggerType: "deployment", githubBranch: "main" })
+    );
+
+    const res = await POST(
+      makeRequest("POST", "/api/monitors", {
+        siteId: "clxxxxxxxxxxxxxxxxxxxxxxxxx",
+        triggerType: "deployment",
+        strategy: "mobile",
+        githubBranch: "main",
+      })
+    );
+    const data = await res.json();
+
+    expect(res.status).toBe(201);
+    expect(data.webhookSecret).toBeDefined();
+    expect(typeof data.webhookSecret).toBe("string");
+    expect(data.runId).toBeUndefined();
+    // Should NOT create a run
+    expect(prismaMock.run.create).not.toHaveBeenCalled();
+    expect(prismaMock.monitor.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          triggerType: "deployment",
+          nextRunAt: new Date("2999-12-31"),
         }),
       })
     );

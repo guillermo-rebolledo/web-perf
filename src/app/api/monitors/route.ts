@@ -4,12 +4,16 @@ import { enqueueAuditJob } from "@/lib/queue";
 import { z } from "zod";
 import { RunStatus } from "@prisma/client";
 import { resolveUser } from "@/lib/resolve-user";
+import { randomBytes } from "crypto";
 
 const createMonitorSchema = z.object({
   siteId: z.string().cuid(),
+  triggerType: z.enum(["schedule", "deployment"]).default("schedule"),
   cadenceMinutes: z.number().int().min(30).max(43200).default(1440),
   strategy: z.enum(["mobile", "desktop"]).default("mobile"),
   isActive: z.boolean().default(true),
+  githubRepo: z.string().max(200).optional().nullable(),
+  githubBranch: z.string().max(100).default("main").optional(),
 });
 
 // GET /api/monitors?siteId=X - List monitors for a site
@@ -95,9 +99,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
     }
 
+    if (validated.triggerType === "deployment") {
+      // Deployment monitors: never run on schedule; auto-generate secret
+      const webhookSecret = randomBytes(32).toString("hex");
+
+      const monitor = await prisma.monitor.create({
+        data: {
+          siteId: validated.siteId,
+          triggerType: "deployment",
+          cadenceMinutes: validated.cadenceMinutes,
+          strategy: validated.strategy,
+          isActive: validated.isActive,
+          // Sentinel date: scheduler will never pick this up
+          nextRunAt: new Date("2999-12-31"),
+          githubRepo: validated.githubRepo ?? null,
+          githubBranch: validated.githubBranch ?? "main",
+          githubWebhookSecret: webhookSecret,
+        },
+      });
+
+      return NextResponse.json(
+        { ...monitor, webhookSecret },
+        { status: 201 }
+      );
+    }
+
+    // Schedule monitor: create and enqueue the initial run immediately
     const monitor = await prisma.monitor.create({
       data: {
         siteId: validated.siteId,
+        triggerType: "schedule",
         cadenceMinutes: validated.cadenceMinutes,
         strategy: validated.strategy,
         isActive: validated.isActive,
@@ -107,7 +138,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create and enqueue the initial run immediately
     const run = await prisma.run.create({
       data: {
         monitorId: monitor.id,
