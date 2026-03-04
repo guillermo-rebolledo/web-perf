@@ -103,3 +103,18 @@ export interface CliLoginStatus {
   apiKey?: string;
   email?: string;
 }
+
+// GET /api/integrations
+export interface IntegrationItem {
+  id: string;
+  name: string;
+  type: string;
+  isActive: boolean;
+  monitorCount: number;
+  createdAt: string;
+}
+
+export interface MonitorOption {
+  id: string;
+  label: string;
+}

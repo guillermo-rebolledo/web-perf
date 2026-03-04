@@ -111,6 +111,33 @@ GitHub deploys → emits deployment_status (state: success, environment: product
 
 **Developer setup guide:** `docs/github-webhook-setup.md`
 
+### Notification Integrations
+
+Users can connect Slack channels to receive audit result notifications after every run. Integration is via Incoming Webhooks (no OAuth).
+
+**Key files:**
+- `src/lib/notifications/types.ts` — `NotificationContext`, `IntegrationConfig` discriminated union
+- `src/lib/notifications/slack.ts` — Block Kit payload builder, `sendSlackNotification()`, `sendSlackTestMessage()`
+- `src/lib/notifications/dispatcher.ts` — routes by `config.type`; add a `case` here when adding new providers
+- `src/lib/notifications/index.ts` — `fireIntegrations(ctx)` public entry point (queries DB, fans out via `Promise.allSettled`)
+- `src/app/api/integrations/route.ts` — GET/POST (never returns `config.webhookUrl` to client)
+- `src/app/api/integrations/[id]/route.ts` — PATCH/DELETE (ownership checked)
+- `src/app/api/integrations/[id]/test/route.ts` — always returns HTTP 200 with `{ ok, error? }`
+- `src/components/integrations-manager.tsx` — list UI (mirrors api-key-manager)
+- `src/components/integration-dialog.tsx` — create/edit form with monitor scope selector
+
+**Worker hook:** `src/worker/processor.ts` after regression detection (line ~210) — fire-and-forget IIFE, same pattern as `calculateBaselines`.
+
+**"All monitors" convention:** zero `MonitorIntegration` rows for an integration = fires for every run. Specific rows restrict to those monitors. No nullable column needed.
+
+**Adding a new provider (e.g. Discord):**
+1. Add the type to `IntegrationConfig` union in `types.ts`
+2. Create `src/lib/notifications/discord.ts` with a send function
+3. Add `case "discord"` to `dispatcher.ts` (TS exhaustive check enforces completeness)
+4. Add the provider option to `integration-dialog.tsx`
+
+No DB migration needed — `config Json` already handles any shape.
+
 ### Environment Validation
 
 All env vars are validated at startup via `src/env.js` (T3 Env pattern). Check this file when adding new environment variables.

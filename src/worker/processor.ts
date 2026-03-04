@@ -208,6 +208,57 @@ export async function processAuditJob(job: Job<AuditJobData>) {
       // Don't fail the job if regression detection fails
     }
 
+    // Notifications (fire-and-forget — never blocks job completion)
+    void (async () => {
+      try {
+        const { fireIntegrations } = await import("@/lib/notifications");
+        const runWithSite = await prisma.run.findUnique({
+          where: { id: runId },
+          include: {
+            monitor: { include: { site: true } },
+            regressionAlerts: {
+              where: { createdAt: { gte: new Date(Date.now() - 60_000) } },
+              select: {
+                metricName: true,
+                severity: true,
+                percentChange: true,
+                baselineValue: true,
+                actualValue: true,
+              },
+            },
+          },
+        });
+        if (!runWithSite?.monitor?.site) return;
+        await fireIntegrations({
+          run: {
+            id: runWithSite.id,
+            monitorId: runWithSite.monitorId,
+            performanceScore: runWithSite.performanceScore,
+            lcp: runWithSite.lcp,
+            cls: runWithSite.cls,
+            inp: runWithSite.inp,
+            fcp: runWithSite.fcp,
+            ttfb: runWithSite.ttfb,
+            finalUrl: runWithSite.finalUrl,
+            completedAt: runWithSite.completedAt,
+            monitor: {
+              id: runWithSite.monitor.id,
+              strategy: runWithSite.monitor.strategy,
+              site: {
+                name: runWithSite.monitor.site.name,
+                url: runWithSite.monitor.site.url,
+              },
+              userId: runWithSite.monitor.site.userId,
+            },
+          },
+          regressions: runWithSite.regressionAlerts,
+          appBaseUrl: env.NEXTAUTH_URL ?? "http://localhost:3000",
+        });
+      } catch (err) {
+        console.error("[Worker] Notification dispatch error:", err);
+      }
+    })();
+
     // Update monitor lastRunAt
     await prisma.monitor.update({
       where: { id: monitorId },
