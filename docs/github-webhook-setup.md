@@ -21,6 +21,8 @@ When a deployment succeeds on GitHub (via Vercel, Netlify, Render, or a GitHub A
 
 ## Schema Fields
 
+> **Migration note:** These columns were introduced via `prisma migrate dev`. If you're adding new fields to the `Monitor` model, always use `pnpm prisma migrate dev --name <name>` — never `prisma db push`. The `db push` command skips migration file creation, which causes prod to fall out of sync.
+
 The following fields are on the `Monitor` model:
 
 | Field | Type | Description |
