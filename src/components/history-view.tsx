@@ -14,7 +14,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { type Prisma, type Run } from "@prisma/client";
 import { format } from "date-fns";
-import { Gauge, Accessibility, ShieldCheck, Search } from "lucide-react";
+import { Gauge, Accessibility, ShieldCheck, Search, Smartphone, Monitor } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -159,8 +159,15 @@ export function HistoryView({
           <SelectContent>
             {monitorsForSite.map((monitor) => (
               <SelectItem key={monitor.id} value={monitor.id}>
-                {monitor.strategy === "mobile" ? "📱" : "🖥️"}{" "}
-                <span className="capitalize">{monitor.strategy}</span>
+                {/* Lucide icons instead of emoji — consistent with app icon system */}
+                <span className="inline-flex items-center gap-1.5">
+                  {monitor.strategy === "mobile" ? (
+                    <Smartphone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  ) : (
+                    <Monitor className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  )}
+                  <span className="capitalize">{monitor.strategy}</span>
+                </span>
               </SelectItem>
             ))}
           </SelectContent>

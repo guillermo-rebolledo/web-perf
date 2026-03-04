@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { resolveUser } from "@/lib/resolve-user";
+import { auth } from "@/lib/auth";
 
 // DELETE /api/keys/[id] — revoke an API key
 export async function DELETE(
@@ -9,7 +9,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const userId = await resolveUser(request);
+    // Session-only: API keys must not be able to revoke other API keys
+    const session = await auth();
+    const userId = session?.user?.id ?? null;
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TIME_PERIODS, type TimePeriodValue } from "@/lib/alert-utils";
@@ -10,6 +10,7 @@ import { type RegressionAlertWithDetails } from "@/components/alert-card";
 import { EmptyAlerts } from "@/components/empty-alerts";
 import { Button } from "@/components/ui/button";
 import { AlertsList } from "@/components/alerts-list";
+import { AlertsDatePicker } from "@/components/alerts-date-picker";
 
 const INITIAL_LOAD_LIMIT = 20;
 
@@ -140,10 +141,10 @@ export default async function AlertsPage({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <h1 className="text-3xl font-bold font-inter tracking-tighter">
+          <h1 className="text-3xl font-bold font-sans tracking-tighter">
             Regression Alerts
           </h1>
-          <p className="text-muted-foreground font-inter tracking-tighter -mt-2">
+          <p className="text-muted-foreground font-sans tracking-tight -mt-2">
             Performance regressions detected across your monitored sites
           </p>
         </div>
@@ -151,8 +152,12 @@ export default async function AlertsPage({
 
       {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Link href="/alerts">
-          <Card className="border-0 border-l-4 border-primary/50 hover:border-primary/70 focus:border-primary/70">
+        <Link
+          href="/alerts"
+          aria-label={`Total alerts: ${totalAlerts}`}
+          className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Card className="border-0 border-l-4 border-primary/40 hover:border-primary transition-colors shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Alerts (30d)
@@ -163,8 +168,12 @@ export default async function AlertsPage({
             </CardContent>
           </Card>
         </Link>
-        <Link href="/alerts?severity=critical">
-          <Card className="border-0 border-l-4 border-destructive/50 hover:border-destructive/70 focus:border-destructive/70">
+        <Link
+          href="/alerts?severity=critical"
+          aria-label={`Critical alerts: ${criticalCount}`}
+          className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Card className="border-0 border-l-4 border-destructive/40 hover:border-destructive transition-colors shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Critical Alerts
@@ -177,16 +186,14 @@ export default async function AlertsPage({
             </CardContent>
           </Card>
         </Link>
-        <Card className="border-0 border-l-4 border-orange-500/50 hover:border-orange-500/70 focus:border-orange-500/70 select-none">
+        <Card className="border-0 border-l-4 border-secondary/40 hover:border-secondary transition-colors shadow-sm select-none">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Open Alerts
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-500">
-              {openCount}
-            </div>
+            <div className="text-3xl font-bold text-secondary">{openCount}</div>
           </CardContent>
         </Card>
       </div>
@@ -210,12 +217,16 @@ export default async function AlertsPage({
 
       {/* Time Period Tabs */}
       <Tabs defaultValue="1" className="w-full">
-        <TabsList className="grid w-full max-w-2xl grid-cols-5">
+        <TabsList className="grid w-full max-w-2xl grid-cols-6">
           {TIME_PERIODS.map((period) => (
             <TabsTrigger key={period.value} value={period.value}>
               {period.label}
             </TabsTrigger>
           ))}
+          <TabsTrigger value="date" className="flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5" />
+            Pick Date
+          </TabsTrigger>
         </TabsList>
 
         {TIME_PERIODS.map((period) => {
@@ -238,6 +249,10 @@ export default async function AlertsPage({
             </TabsContent>
           );
         })}
+
+        <TabsContent value="date" className="mt-6">
+          <AlertsDatePicker />
+        </TabsContent>
       </Tabs>
     </div>
   );

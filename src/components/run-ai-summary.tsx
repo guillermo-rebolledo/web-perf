@@ -71,6 +71,7 @@ export function RunAISummary({
 
   const handleGenerate = () => {
     setRateLimitError(null);
+    setIsOpen(true);
     complete("");
   };
 

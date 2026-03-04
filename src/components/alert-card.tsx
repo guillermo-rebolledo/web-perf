@@ -15,7 +15,13 @@ import {
   getMetricUnit,
 } from "@/lib/alert-utils";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RegressionAlertWithDetails {
   id: string;
@@ -101,12 +107,21 @@ export function AlertCard({ alert }: AlertCardProps) {
             </div>
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground tracking-tighter">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {formatDistanceToNow(new Date(alert.createdAt), {
-                addSuffix: true,
-              })}
-            </div>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {formatDistanceToNow(new Date(alert.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {format(new Date(alert.createdAt), "PPpp")}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </CardContent>
       </Card>

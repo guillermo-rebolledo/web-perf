@@ -100,7 +100,7 @@ export function MetricCard({
           {displayValue}
         </span>
         {value !== null && (
-          <span className="text-sm text-slate-500 font-medium">{unit}</span>
+          <span className="text-sm text-muted-foreground font-medium">{unit}</span>
         )}
       </div>
     </div>

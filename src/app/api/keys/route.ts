@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { resolveUser } from "@/lib/resolve-user";
 import { generateApiKey, hashApiKey } from "@/lib/api-key-auth";
 
@@ -43,10 +44,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/keys — create a new API key
+// POST /api/keys — create a new API key (session only — API keys cannot mint API keys)
 export async function POST(request: NextRequest) {
   try {
-    const userId = await resolveUser(request);
+    const session = await auth();
+    const userId = session?.user?.id ?? null;
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -60,7 +62,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
     const validated = createKeySchema.parse(body);
 
     const rawKey = generateApiKey();
