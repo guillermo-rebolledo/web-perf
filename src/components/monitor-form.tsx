@@ -361,7 +361,6 @@ export function MonitorForm({
         monitor_strategy: data.strategy,
       });
       setSetupState({ monitorId: result.id, webhookSecret: result.webhookSecret });
-      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -372,6 +371,7 @@ export function MonitorForm({
   function handleDone() {
     setOpen(false);
     onSuccess?.();
+    router.refresh();
   }
 
   const triggerCards = [

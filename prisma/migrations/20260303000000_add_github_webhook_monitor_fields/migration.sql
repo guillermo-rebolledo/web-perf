@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Monitor" ADD COLUMN IF NOT EXISTS "triggerType" TEXT NOT NULL DEFAULT 'schedule';
+ALTER TABLE "Monitor" ADD COLUMN IF NOT EXISTS "githubRepo" TEXT;
+ALTER TABLE "Monitor" ADD COLUMN IF NOT EXISTS "githubBranch" TEXT;
+ALTER TABLE "Monitor" ADD COLUMN IF NOT EXISTS "githubWebhookSecret" TEXT;

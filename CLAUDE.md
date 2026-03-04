@@ -26,6 +26,10 @@ pnpm tsc --noEmit
 # Database
 pnpm seed:regressions  # Seed regression alert test data
 
+# Schema changes — always create a migration file (never use db push)
+pnpm prisma migrate dev --name describe_your_change  # applies + creates migration file
+pnpm prisma migrate deploy                           # applies pending migrations to prod
+
 # Infrastructure (PostgreSQL + Redis)
 docker compose up -d
 ```
