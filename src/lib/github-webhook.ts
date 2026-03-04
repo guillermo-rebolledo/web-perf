@@ -29,11 +29,22 @@ interface DeploymentStatusPayload {
     state?: string;
     environment?: string;
   };
+  deployment?: {
+    // GitHub standard flag — set by Vercel, GitHub Actions, etc.
+    production_environment?: boolean;
+  };
 }
 
 /**
- * Returns true only for deployment_status events with state=success
- * targeting a production environment.
+ * Returns true for deployment_status events with state=success targeting a
+ * production environment.
+ *
+ * Production is detected via two signals (either is sufficient):
+ *  1. deployment.production_environment === true  — GitHub's standard flag
+ *     (Vercel, GitHub Actions, and most CI platforms set this)
+ *  2. deployment_status.environment contains "production" (case-insensitive)
+ *     — catches platforms like Railway that use compound names such as
+ *     "perflabs / production" and don't set production_environment
  */
 export function isSuccessfulDeployment(body: unknown): boolean {
   if (typeof body !== "object" || body === null) return false;
@@ -44,6 +55,8 @@ export function isSuccessfulDeployment(body: unknown): boolean {
 
   if (status.state !== "success") return false;
 
-  const env = status.environment ?? "";
-  return env.toLowerCase() === "production";
+  const isProductionFlag = payload.deployment?.production_environment === true;
+  const isProductionEnv = (status.environment ?? "").toLowerCase().includes("production");
+
+  return isProductionFlag || isProductionEnv;
 }

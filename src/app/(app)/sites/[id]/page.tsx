@@ -268,9 +268,18 @@ export default async function SitePage({
                     </CardHeader>
                     <CardContent className="min-w-0 overflow-hidden p-0!">
                       {recentRuns.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No runs yet
-                        </p>
+                        <div className="px-6 py-8 text-center">
+                          <p className="text-sm font-medium text-muted-foreground">
+                            {monitor.triggerType === "deployment"
+                              ? "Waiting for your first deployment"
+                              : "No runs yet"}
+                          </p>
+                          {monitor.triggerType === "deployment" && (
+                            <p className="mt-1 text-xs text-muted-foreground/70">
+                              Results will appear here after a successful deployment triggers this monitor.
+                            </p>
+                          )}
+                        </div>
                       ) : (
                         <Table>
                           <TableHeader>
