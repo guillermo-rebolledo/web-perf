@@ -1,8 +1,10 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/env";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { GitHubIntegrationPanel } from "@/components/github-integration-panel";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -37,6 +39,15 @@ import { MetricsChart } from "@/components/metrics-chart";
 import { formatDistanceToNow } from "date-fns";
 import { EmptyMonitors } from "@/components/empty-monitors";
 import { formatCadence } from "@/lib/dates";
+import {
+  Activity,
+  Clock,
+  GitBranch,
+  History,
+  Monitor as MonitorIcon,
+  Rocket,
+  Smartphone,
+} from "lucide-react";
 
 export default async function SitePage({
   params,
@@ -129,7 +140,7 @@ export default async function SitePage({
               .
             </p>
           </div>
-          <MonitorForm siteId={site.id} />
+          <MonitorForm siteId={site.id} baseUrl={env.NEXTAUTH_URL} />
         </div>
 
         {allRuns.length > 0 && (
@@ -158,7 +169,7 @@ export default async function SitePage({
                   <Card key={monitor.id} className="min-w-0">
                     <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
                       <div className="min-w-0">
-                        <CardTitle>
+                        <CardTitle className="flex flex-wrap items-center gap-2">
                           {monitor.isActive ? (
                             <Badge variant="success" className="uppercase">
                               Active
@@ -168,29 +179,91 @@ export default async function SitePage({
                               Inactive
                             </Badge>
                           )}
-                          <span className="capitalize px-1">
-                            {`${monitor.strategy === "mobile" ? "📱" : "🖥️"} ${monitor.strategy} Monitor`}
+                          <span className="flex items-center gap-1.5 capitalize">
+                            {monitor.strategy === "mobile" ? (
+                              <Smartphone className="size-4 text-muted-foreground" />
+                            ) : (
+                              <MonitorIcon className="size-4 text-muted-foreground" />
+                            )}
+                            {monitor.strategy} Monitor
                           </span>
+                          {monitor.triggerType === "deployment" && monitor.githubBranch && (
+                            <Badge variant="outline" className="gap-1 font-mono text-xs font-normal">
+                              <GitBranch className="size-3" />
+                              {monitor.githubBranch}
+                            </Badge>
+                          )}
                         </CardTitle>
-                        <CardDescription>
-                          Runs every {formatCadence(monitor.cadenceMinutes)}
-                          {monitor.lastRunAt &&
-                            ` • Last run ${formatDistanceToNow(
-                              new Date(monitor.lastRunAt),
-                              { addSuffix: true },
-                            )}`}
+                        <CardDescription className="mt-1">
+                          {monitor.triggerType === "deployment" ? (
+                            <span className="flex items-center gap-1.5">
+                              <Rocket className="size-3.5 shrink-0" />
+                              Runs on deployment
+                            </span>
+                          ) : (
+                            <>Runs every {formatCadence(monitor.cadenceMinutes)}</>
+                          )}
                         </CardDescription>
+                        {/* Metadata chips */}
+                        <div className="flex flex-wrap items-center gap-3 mt-2">
+                          {monitor.lastRunAt && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <History className="size-3 shrink-0" />
+                              Last run{" "}
+                              {formatDistanceToNow(new Date(monitor.lastRunAt), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          )}
+                          {monitor.triggerType === "schedule" && monitor.isActive && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="size-3 shrink-0" />
+                              Next run{" "}
+                              {formatDistanceToNow(new Date(monitor.nextRunAt), {
+                                addSuffix: true,
+                              })}
+                            </span>
+                          )}
+                          {(() => {
+                            const successCount = monitor.runs.filter(
+                              (r) => r.status === RunStatus.success,
+                            ).length;
+                            return successCount > 0 ? (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Activity className="size-3 shrink-0" />
+                                {successCount} successful{" "}
+                                {successCount === 1 ? "run" : "runs"}
+                              </span>
+                            ) : null;
+                          })()}
+                          {monitor.triggerType === "deployment" && monitor.githubRepo && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                              <GitBranch className="size-3 shrink-0" />
+                              {monitor.githubRepo}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="shrink-0">
-                        <RunButton
-                          monitorId={monitor.id}
-                          activeRunId={
-                            monitor.runs.find(
-                              (r) =>
-                                r.status === RunStatus.queued || r.status === RunStatus.running,
-                            )?.id
-                          }
-                        />
+                      <div className="flex shrink-0 items-center gap-2">
+                        {monitor.triggerType === "deployment" && (
+                          <GitHubIntegrationPanel
+                            monitorId={monitor.id}
+                            baseUrl={env.NEXTAUTH_URL}
+                            initialRepo={monitor.githubRepo}
+                            initialBranch={monitor.githubBranch}
+                          />
+                        )}
+                        {monitor.triggerType !== "deployment" && (
+                          <RunButton
+                            monitorId={monitor.id}
+                            activeRunId={
+                              monitor.runs.find(
+                                (r) =>
+                                  r.status === RunStatus.queued || r.status === RunStatus.running,
+                              )?.id
+                            }
+                          />
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="min-w-0 overflow-hidden p-0!">

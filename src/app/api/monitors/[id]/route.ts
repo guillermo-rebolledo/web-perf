@@ -7,6 +7,8 @@ const updateMonitorSchema = z.object({
   cadenceMinutes: z.number().int().min(30).max(43200).optional(),
   strategy: z.enum(["mobile", "desktop"]).optional(),
   isActive: z.boolean().optional(),
+  githubRepo: z.string().max(200).optional().nullable(),
+  githubBranch: z.string().max(100).optional().nullable(),
 });
 
 // PUT /api/monitors/[id] - Update monitor
@@ -61,6 +63,9 @@ export async function PUT(
     );
   }
 }
+
+// PATCH /api/monitors/[id] - Partial update (same schema as PUT, used by GitHub integration UI)
+export { PUT as PATCH };
 
 // DELETE /api/monitors/[id] - Delete monitor
 export async function DELETE(

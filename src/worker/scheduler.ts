@@ -32,10 +32,11 @@ export function startScheduler() {
 export async function processDueMonitors() {
   const now = new Date();
 
-  // Find all active monitors that are due for a run
+  // Find all active schedule monitors that are due for a run
   const dueMonitors = await prisma.monitor.findMany({
     where: {
       isActive: true,
+      triggerType: "schedule",
       nextRunAt: {
         lte: now,
       },

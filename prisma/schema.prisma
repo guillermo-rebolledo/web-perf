@@ -45,6 +45,15 @@ model Monitor {
   lastRunAt           DateTime?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+
+  // Trigger type: "schedule" (cron-based) or "deployment" (GitHub webhook)
+  triggerType         String   @default("schedule")
+
+  // GitHub webhook integration (only relevant when triggerType = "deployment")
+  githubRepo          String?  // "owner/repo" — display only
+  githubBranch        String?  // branch to watch, defaults to "main"
+  githubWebhookSecret String?  // plaintext — required for HMAC-SHA256 verification
+
   site                Site                 @relation(fields: [siteId], references: [id], onDelete: Cascade)
   runs                Run[]
   regressionBaselines RegressionBaseline[]

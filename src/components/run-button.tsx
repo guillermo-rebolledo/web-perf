@@ -93,16 +93,16 @@ export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
           onClick={handleRun}
           disabled={isLoading}
           size="sm"
-          className="w-fit"
+          className="w-fit gap-1.5"
         >
           {isLoading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="size-3.5 animate-spin" />
               Running...
             </>
           ) : (
             <>
-              <Play className="mr-2 h-4 w-4" />
+              <Play className="size-3.5" />
               Run Now
             </>
           )}

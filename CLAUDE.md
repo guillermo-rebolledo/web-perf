@@ -75,6 +75,38 @@ All routes require authentication (NextAuth session). Notable patterns:
 - Alerts endpoint (`GET /api/alerts`) uses cursor-based pagination
 - Scheduler endpoint (`POST /api/scheduler/tick`) requires `x-scheduler-secret` header
 
+### GitHub Webhook Integration (Deployment Monitors)
+
+`triggerType` is a **first-class Monitor property** chosen at creation time and is immutable:
+- `"schedule"` — runs on a cron cadence (existing behavior)
+- `"deployment"` — fires on every successful GitHub `deployment_status` event (webhook-driven)
+
+The two modes are mutually exclusive. A deployment monitor has `nextRunAt = 2999-12-31` so the scheduler never picks it up.
+
+**Supported platforms:** Vercel, Netlify, Render, and any GitHub Actions workflow that emits `deployment_status` events.
+
+**Flow:**
+```
+GitHub deploys → emits deployment_status (state: success, environment: production)
+→ POST /api/webhooks/github/[monitorId]
+→ HMAC-SHA256 signature verified against monitor.githubWebhookSecret
+→ Run created + enqueueAuditJob() called
+→ Worker fetches PSI → metrics stored
+```
+
+**Auth:** No user session — HMAC-SHA256 signature (`x-hub-signature-256` header) is the auth mechanism. The raw secret is auto-generated at monitor creation (`randomBytes(32).toString("hex")`) and stored plaintext because verification requires the raw value. It is returned once in the creation API response and shown once in the UI setup view.
+
+**Key files:**
+- `src/lib/github-webhook.ts` — `verifyGitHubSignature()` + `isSuccessfulDeployment()` helpers
+- `src/app/api/webhooks/github/[monitorId]/route.ts` — webhook receiver (no user auth, HMAC only); checks `triggerType === "deployment"`
+- `src/app/api/monitors/[id]/webhook-secret/route.ts` — secret rotation endpoint (requires user auth)
+- `src/components/github-integration-panel.tsx` — edit-only panel (repo/branch/secret rotation) shown only on deployment monitors
+- `src/components/monitor-form.tsx` — two-step creation: trigger type selector → path-specific fields → setup view for deployment monitors
+
+**Monitor fields:** `triggerType`, `githubRepo`, `githubBranch`, `githubWebhookSecret`
+
+**Developer setup guide:** `docs/github-webhook-setup.md`
+
 ### Environment Validation
 
 All env vars are validated at startup via `src/env.js` (T3 Env pattern). Check this file when adding new environment variables.
