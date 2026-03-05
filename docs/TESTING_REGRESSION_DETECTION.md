@@ -34,16 +34,20 @@ If you already have a user with that email, the script will:
 
 **Step 1: Run the seed script**
 
+Pass your email as the first argument:
+
 ```bash
-pnpm seed:regressions
+pnpm seed:regressions your-email@example.com
 ```
 
 You should see output like:
 ```
 🌱 Seeding regression test data...
 
+Target alerts to create: 30
+
 Creating test user...
-✅ User created: test@example.com
+✅ User created: your-email@example.com
 
 Creating test site...
 ✅ Site created: Test Site (with regressions)
@@ -63,27 +67,27 @@ Calculating baselines...
    - fcp: 1575.80 (n=30)
    - ttfb: 550.40 (n=30)
 
-Creating regressed runs...
+Creating 30 regressed runs...
 
-Creating Regression 1: LCP regression...
-   Detected 1 regression(s)
-   ✅ LCP: critical (low confidence)
-      Top cause: Third-Party Scripts Added or Increased (85% confidence)
-
-Creating Regression 2: TBT regression...
-   Detected 1 regression(s)
-   ✅ TBT: critical (low confidence)
-      Top cause: Main Thread Contention Increased (65% confidence)
-
-Creating Regression 3: CLS regression...
-   Detected 1 regression(s)
-   ✅ CLS: critical (low confidence)
-      Top cause: Layout Shifts Increased (80% confidence)
+[3%] Creating LCP regression (0d ago)...
+...
 
 ============================================================
 ✅ Seed completed successfully!
 
-Total regression alerts created: 3
+Total regression alerts created: 30
+
+Alerts by status:
+   - Open:         12
+   - Acknowledged: 9
+   - Resolved:     9
+
+Alerts by time period:
+   - Last 1 day:   1 alerts
+   - Last 3 days:  3 alerts
+   - Last 5 days:  5 alerts
+   - Last 10 days: 10 alerts
+   - Last 30 days: 30 alerts
 ```
 
 **Step 2: Configure auth for test user**
@@ -95,26 +99,13 @@ Since the test user `test@example.com` doesn't exist in your auth provider, you 
 - If using email magic link: Configure your email provider to allow test@example.com
 - **Not recommended** - easier to use Option 2B
 
-**Option 2B: Modify script to use YOUR email** (Recommended)
+**Option 2B: Pass your email as an argument** (Recommended)
 
 ```bash
-# Edit the seed script
-code prisma/seed-regressions.ts
+pnpm seed:regressions your-actual-email@example.com
 ```
 
-Change line ~23:
-```typescript
-// FROM:
-where: { email: "test@example.com" },
-
-// TO:
-where: { email: "your-actual-email@example.com" }, // Use your real email!
-```
-
-Then re-run:
-```bash
-pnpm seed:regressions
-```
+The script accepts your email as the first argument — no editing required.
 
 **Step 3: View in UI**
 
@@ -347,7 +338,7 @@ If you want a completely fresh start:
 psql $DATABASE_URL -c "DELETE FROM \"Site\" WHERE id = 'test-site-with-regressions';"
 
 # Then re-run seed
-pnpm seed:regressions
+pnpm seed:regressions your-email@example.com
 ```
 
 ---

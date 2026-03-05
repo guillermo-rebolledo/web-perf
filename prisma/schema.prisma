@@ -239,6 +239,8 @@ model RegressionAlert {
   status         String    @default("open") // "open", "acknowledged", "resolved"
   acknowledgedAt DateTime?
   acknowledgedBy String?
+  resolvedAt     DateTime?
+  resolvedBy     String?
   notes          String?   @db.Text
 
   createdAt DateTime @default(now())

@@ -1,6 +1,13 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { ALERT_STATUSES } from "@/lib/alert-utils";
+
+const patchSchema = z.object({
+  status: z.enum(ALERT_STATUSES).optional(),
+  notes: z.string().optional(),
+});
 
 /**
  * GET /api/regressions/[alertId]
@@ -63,7 +70,15 @@ export async function PATCH(
     }
 
     const { alertId } = await params;
-    const body = await request.json();
+
+    const parseResult = patchSchema.safeParse(await request.json());
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { error: "Invalid request body", issues: parseResult.error.issues },
+        { status: 400 }
+      );
+    }
+    const body = parseResult.data;
 
     // Verify ownership
     const alert = await prisma.regressionAlert.findFirst({
@@ -85,15 +100,27 @@ export async function PATCH(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    // Update alert
+    const now = new Date();
     const updated = await prisma.regressionAlert.update({
       where: { id: alertId },
       data: {
-        ...(body.status && { status: body.status }),
+        ...(body.status !== undefined && { status: body.status }),
         ...(body.notes !== undefined && { notes: body.notes }),
+        // Transitions
         ...(body.status === "acknowledged" && {
-          acknowledgedAt: new Date(),
+          acknowledgedAt: now,
           acknowledgedBy: session.user.id,
+        }),
+        ...(body.status === "resolved" && {
+          resolvedAt: now,
+          resolvedBy: session.user.id,
+        }),
+        // Reopen clears all tracking fields
+        ...(body.status === "open" && {
+          acknowledgedAt: null,
+          acknowledgedBy: null,
+          resolvedAt: null,
+          resolvedBy: null,
         }),
       },
     });

@@ -10,6 +10,10 @@ import {
   parseDiffSummary,
   severityConfig,
   confidenceConfig,
+  getStatusTransitions,
+  getStatusConfig,
+  isAlertStatus,
+  ALERT_STATUSES,
   type RegressionCause,
   type DiffSummary,
 } from "../alert-utils";
@@ -160,6 +164,71 @@ describe("parseRegressionCauses", () => {
 
   it("returns empty array for empty array", () => {
     expect(parseRegressionCauses([])).toEqual([]);
+  });
+});
+
+describe("ALERT_STATUSES", () => {
+  it("contains exactly open, acknowledged, resolved", () => {
+    expect(ALERT_STATUSES).toEqual(["open", "acknowledged", "resolved"]);
+  });
+});
+
+describe("isAlertStatus", () => {
+  it("returns true for valid statuses", () => {
+    expect(isAlertStatus("open")).toBe(true);
+    expect(isAlertStatus("acknowledged")).toBe(true);
+    expect(isAlertStatus("resolved")).toBe(true);
+  });
+
+  it("returns false for invalid statuses", () => {
+    expect(isAlertStatus("pending")).toBe(false);
+    expect(isAlertStatus("")).toBe(false);
+    expect(isAlertStatus("closed")).toBe(false);
+  });
+});
+
+describe("getStatusConfig", () => {
+  it("returns config for each valid status", () => {
+    expect(getStatusConfig("open").label).toBe("Open");
+    expect(getStatusConfig("acknowledged").label).toBe("Acknowledged");
+    expect(getStatusConfig("resolved").label).toBe("Resolved");
+  });
+
+  it("falls back to open config for unknown status", () => {
+    expect(getStatusConfig("unknown").label).toBe("Open");
+  });
+});
+
+describe("getStatusTransitions", () => {
+  it("returns acknowledge and resolve from open", () => {
+    const transitions = getStatusTransitions("open");
+    const statuses = transitions.map((t) => t.status);
+    expect(statuses).toContain("acknowledged");
+    expect(statuses).toContain("resolved");
+    expect(statuses).not.toContain("open");
+  });
+
+  it("returns resolve and reopen from acknowledged", () => {
+    const transitions = getStatusTransitions("acknowledged");
+    const statuses = transitions.map((t) => t.status);
+    expect(statuses).toContain("resolved");
+    expect(statuses).toContain("open");
+  });
+
+  it("returns only reopen from resolved", () => {
+    const transitions = getStatusTransitions("resolved");
+    const statuses = transitions.map((t) => t.status);
+    expect(statuses).toEqual(["open"]);
+  });
+
+  it("returns empty array for unknown status", () => {
+    expect(getStatusTransitions("invalid")).toEqual([]);
+  });
+
+  it("uses 'Reopen' label for open transition from acknowledged", () => {
+    const transitions = getStatusTransitions("acknowledged");
+    const reopen = transitions.find((t) => t.status === "open");
+    expect(reopen?.label).toBe("Reopen");
   });
 });
 

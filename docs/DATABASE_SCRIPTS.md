@@ -20,7 +20,7 @@ The project includes several utility scripts to help you manage test data:
 
 ### 🌱 Seed Script: `seed-regressions.ts`
 
-Creates comprehensive test data including baseline runs, regressed runs, and regression alerts distributed across different time periods.
+Creates comprehensive test data including baseline runs, regressed runs, and regression alerts distributed across different time periods. Alerts are seeded with varied statuses (open, acknowledged, resolved) to exercise the full alert lifecycle UI.
 
 #### What it Creates
 
@@ -28,13 +28,8 @@ Creates comprehensive test data including baseline runs, regressed runs, and reg
 - **1 Test Site** - A monitored website
 - **1 Test Monitor** - Performance monitoring configuration
 - **30 Baseline Runs** - Stable performance metrics over 30 days
-- **8 Regressed Runs** - Distributed across different time periods:
-  - **Recent (< 1 day)**: 3 alerts (LCP, TBT, CLS regressions)
-  - **2 days ago**: FCP regression (image optimization issue)
-  - **3 days ago**: Speed Index regression (rendering delay)
-  - **5 days ago**: TTFB regression (backend slowdown)
-  - **10 days ago**: INP regression (interaction delay)
-  - **30 days ago**: Multi-metric regression (deployment issue)
+- **N Regressed Runs** - Distributed across the last 30 days (default: 30, configurable via `[numAlerts]`)
+- **Alert status distribution** - ~40% open, ~30% acknowledged, ~30% resolved (with realistic notes)
 
 #### Regression Types
 
@@ -57,11 +52,15 @@ pnpm tsx prisma/seed-regressions.ts your-email@example.com
 
 # With custom name
 pnpm tsx prisma/seed-regressions.ts your-email@example.com "Your Name"
+
+# With custom name and alert count
+pnpm tsx prisma/seed-regressions.ts your-email@example.com "Your Name" 60
 ```
 
 **Arguments:**
 - `email` (required) - Your email address that matches your login
 - `name` (optional) - Display name (defaults to "Test User")
+- `numAlerts` (optional) - Number of regressed runs to create, 1–1000 (defaults to 30)
 
 **Important:** Use the same email address you use to sign in to the application.
 
@@ -69,6 +68,7 @@ pnpm tsx prisma/seed-regressions.ts your-email@example.com "Your Name"
 
 ```bash
 pnpm tsx prisma/seed-regressions.ts developer@company.com "Jane Developer"
+pnpm tsx prisma/seed-regressions.ts developer@company.com "Jane Developer" 60
 ```
 
 #### Expected Output
@@ -104,19 +104,25 @@ Creating Regression 1: LCP regression...
 
 ... (more regressions)
 
-Total regression alerts created: 8+
+Total regression alerts created: 30
+
+Alerts by status:
+   - Open:         12
+   - Acknowledged: 9
+   - Resolved:     9
 
 Alerts by time period:
-   - Last 1 day:   3 alerts
-   - Last 3 days:  5 alerts
-   - Last 5 days:  6 alerts
-   - Last 10 days: 7 alerts
-   - Last 30 days: 8+ alerts
+   - Last 1 day:   1 alerts
+   - Last 3 days:  3 alerts
+   - Last 5 days:  5 alerts
+   - Last 10 days: 10 alerts
+   - Last 30 days: 30 alerts
 
 To view in UI:
    1. Sign in as: developer@company.com
    2. Navigate to "Regression Alerts" in the sidebar
    3. Switch between time period tabs to see alerts
+   4. Use the status filter (All / Open / Acknowledged / Resolved) to triage
 ```
 
 #### Verifying the Data
@@ -127,7 +133,9 @@ After running the seed script:
 2. **Navigate to "Regression Alerts"** in the sidebar
 3. **Switch between tabs** (1d, 3d, 5d, 10d, 30d) to see alerts distributed across time periods
 4. **Click on any alert** to view detailed root cause analysis
-5. **Visit the Dashboard** to see the test site with performance trends
+5. **Use the status filter** (All / Open / Acknowledged / Resolved) to test the alert lifecycle UI
+6. **Change an alert's status** using the inline Actions dropdown or the full controls on the detail page
+7. **Visit the Dashboard** to see the test site with performance trends
 
 ---
 
@@ -251,11 +259,12 @@ If you forget to provide an email:
 ❌ Error: Email argument is required
 
 Usage:
-  pnpm tsx prisma/seed-regressions.ts <email> [name]
+  pnpm tsx prisma/seed-regressions.ts <email> [name] [numAlerts]
 
 Examples:
   pnpm tsx prisma/seed-regressions.ts user@example.com
   pnpm tsx prisma/seed-regressions.ts user@example.com "John Doe"
+  pnpm tsx prisma/seed-regressions.ts user@example.com "John Doe" 60
 ```
 
 ### Invalid Email Format

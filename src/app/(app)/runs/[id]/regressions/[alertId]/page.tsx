@@ -74,6 +74,7 @@ export default async function RegressionDetailsPage({
       </Breadcrumb>
 
       <RegressionHeader
+        alertId={alert.id}
         metricName={alert.metricName}
         severity={alert.severity}
         confidence={alert.confidence}
@@ -81,6 +82,10 @@ export default async function RegressionDetailsPage({
         actualValue={alert.actualValue}
         delta={alert.delta}
         percentChange={alert.percentChange}
+        status={alert.status}
+        notes={alert.notes}
+        acknowledgedAt={alert.acknowledgedAt}
+        resolvedAt={alert.resolvedAt}
       />
 
       <section className="flex flex-col gap-4">

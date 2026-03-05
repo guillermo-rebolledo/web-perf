@@ -964,7 +964,7 @@ side/
 ├── components.json             # shadcn/ui config
 ├── .env.example                # Environment template
 ├── README.md                   # Getting started guide
-└── ARCHITECTURE.md             # This file
+└── docs/ARCHITECTURE.md        # This file
 ```
 
 ---

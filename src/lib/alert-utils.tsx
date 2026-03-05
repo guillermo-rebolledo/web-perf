@@ -1,10 +1,72 @@
 import type React from "react";
 import type { BadgeProps } from "@/components/ui/badge";
-import { AlertTriangle, BadgeInfo, CircleAlert } from "lucide-react";
+import { AlertTriangle, BadgeInfo, CircleAlert, CircleDot, CircleCheck, CircleOff } from "lucide-react";
 
 // Type-safe severity and confidence levels
 type SeverityLevel = "critical" | "moderate" | "minor";
 type ConfidenceLevel = "high" | "medium" | "low";
+
+// Alert status
+export const ALERT_STATUSES = ["open", "acknowledged", "resolved"] as const;
+export type AlertStatus = (typeof ALERT_STATUSES)[number];
+
+interface StatusConfig {
+  label: string;
+  variant: BadgeProps["variant"];
+  icon: React.ReactNode;
+  color: string; // tailwind text color class
+}
+
+export const statusConfig: Record<AlertStatus, StatusConfig> = {
+  open: {
+    label: "Open",
+    variant: "outline",
+    icon: <CircleDot className="h-3.5 w-3.5" />,
+    color: "text-muted-foreground",
+  },
+  acknowledged: {
+    label: "Acknowledged",
+    variant: "warning",
+    icon: <CircleOff className="h-3.5 w-3.5" />,
+    color: "text-score-warning",
+  },
+  resolved: {
+    label: "Resolved",
+    variant: "success",
+    icon: <CircleCheck className="h-3.5 w-3.5" />,
+    color: "text-green-600 dark:text-green-400",
+  },
+};
+
+export function isAlertStatus(value: string): value is AlertStatus {
+  return ALERT_STATUSES.includes(value as AlertStatus);
+}
+
+export function getStatusConfig(status: string): StatusConfig {
+  return isAlertStatus(status) ? statusConfig[status] : statusConfig.open;
+}
+
+/** Returns the valid next statuses from a given status, including reopen. */
+export function getStatusTransitions(
+  current: string
+): { status: AlertStatus; label: string }[] {
+  switch (current) {
+    case "open":
+      return [
+        { status: "acknowledged", label: "Acknowledge" },
+        { status: "resolved", label: "Mark as Resolved" },
+      ];
+    case "acknowledged":
+      return [
+        { status: "resolved", label: "Mark as Resolved" },
+        { status: "open", label: "Reopen" },
+      ];
+    case "resolved":
+      return [{ status: "open", label: "Reopen" }];
+    default:
+      return [];
+  }
+}
 export type TimePeriodValue = "1" | "3" | "5" | "10" | "30";
 
 // Time period configuration

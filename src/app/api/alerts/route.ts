@@ -33,7 +33,7 @@ export type AlertsApiResponse = {
   hasMore: boolean;
 };
 
-// GET /api/alerts?days=30&severity=critical&limit=20&cursor=...
+// GET /api/alerts?days=30&severity=critical&status=open&limit=20&cursor=...
 // GET /api/alerts?date=yyyy-MM-dd&severity=critical&limit=50
 export async function GET(request: NextRequest) {
   try {
@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
     const dateParam = searchParams.get("date"); // "yyyy-MM-dd"
     const days = parseInt(searchParams.get("days") || "30", 10);
     const severity = searchParams.get("severity");
+    const statusFilter = searchParams.get("status");
     const limit = Math.min(parseInt(searchParams.get("limit") || "20", 10), 100);
     const cursor = searchParams.get("cursor");
 
@@ -72,6 +73,10 @@ export async function GET(request: NextRequest) {
 
     if (severity) {
       where.severity = severity;
+    }
+
+    if (statusFilter) {
+      where.status = statusFilter;
     }
 
     // Add cursor condition for pagination

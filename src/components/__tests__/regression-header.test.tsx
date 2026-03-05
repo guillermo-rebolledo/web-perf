@@ -4,6 +4,7 @@ import { RegressionHeader } from "../regression-header";
 
 describe("RegressionHeader", () => {
   const defaultProps = {
+    alertId: "alert-1",
     metricName: "lcp",
     severity: "critical",
     confidence: "high",
@@ -11,6 +12,10 @@ describe("RegressionHeader", () => {
     actualValue: 3500,
     delta: 1500,
     percentChange: 75,
+    status: "open",
+    notes: null,
+    acknowledgedAt: null,
+    resolvedAt: null,
   };
 
   it("renders metric name in uppercase", () => {

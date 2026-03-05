@@ -2,11 +2,11 @@
 
 A production-ready web performance monitoring application built with Next.js 15, featuring automated PageSpeed Insights audits, scheduled monitoring, and comprehensive performance analytics.
 
-> 📖 **For detailed architecture and implementation documentation, see [ARCHITECTURE.md](./ARCHITECTURE.md)**
+> 📖 **For detailed architecture and implementation documentation, see [ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 >
-> 🧪 **For testing setup, tools, and conventions, see [TESTING.md](./TESTING.md)**
+> 🧪 **For testing setup, tools, and conventions, see [TESTING.md](./docs/TESTING.md)**
 >
-> 🗄️ **For database seed and cleanup scripts, see [DATABASE_SCRIPTS.md](./DATABASE_SCRIPTS.md)**
+> 🗄️ **For database seed and cleanup scripts, see [DATABASE_SCRIPTS.md](./docs/DATABASE_SCRIPTS.md)**
 >
 > 📈 **For the Run History page and its seed scripts, see [docs/RUN-HISTORY.md](./docs/RUN-HISTORY.md)**
 
@@ -92,7 +92,7 @@ The application follows a **Next.js monorepo** structure with a separate **backg
 - Background job processing
 - Authentication flow
 
-**See [ARCHITECTURE.md](./ARCHITECTURE.md)**
+**See [ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
 ## Prerequisites
 
@@ -277,11 +277,13 @@ You'll be redirected to the sign-in page. Enter your email to receive a magic li
 ├── .env.example               # Environment template
 ├── package.json               # Dependencies and scripts
 ├── README.md                  # This file
-├── ARCHITECTURE.md            # Detailed architecture docs
-└── TESTING.md                 # Testing guide and conventions
+└── docs/                      # Documentation
+    ├── ARCHITECTURE.md        # Detailed architecture docs
+    ├── DATABASE_SCRIPTS.md    # Seed and cleanup scripts
+    └── TESTING.md             # Testing guide and conventions
 ```
 
-**📖 For detailed explanations of each component and module, see [ARCHITECTURE.md](./ARCHITECTURE.md)**
+**📖 For detailed explanations of each component and module, see [ARCHITECTURE.md](./docs/ARCHITECTURE.md)**
 
 ## Key Workflows
 
@@ -460,7 +462,7 @@ For full CLI documentation including all commands, auth flow, CI/CD usage, and s
 
 ### Database Seed and Cleanup Scripts
 
-For seeding test data and cleaning up the database during development, see **[DATABASE_SCRIPTS.md](./DATABASE_SCRIPTS.md)**.
+For seeding test data and cleaning up the database during development, see **[DATABASE_SCRIPTS.md](./docs/DATABASE_SCRIPTS.md)**.
 
 Quick reference:
 
@@ -520,7 +522,7 @@ pnpm cli:test
 pnpm cli:test:watch
 ```
 
-For full details on the testing strategy, tools, and conventions, see **[TESTING.md](./TESTING.md)**.
+For full details on the testing strategy, tools, and conventions, see **[TESTING.md](./docs/TESTING.md)**.
 
 ### Type Checking
 
@@ -656,7 +658,7 @@ posthog.capture(AnalyticsEvent.site_created, { url: site.url });
 
 We welcome contributions! Before getting started:
 
-1. **Read the documentation**: Check out [ARCHITECTURE.md](./ARCHITECTURE.md) to understand the codebase
+1. **Read the documentation**: Check out [ARCHITECTURE.md](./docs/ARCHITECTURE.md) to understand the codebase
 2. **Fork the repository**
 3. **Create a feature branch**: `git checkout -b feature/amazing-feature`
 4. **Make your changes**: Follow the code style and patterns in the codebase
@@ -666,7 +668,7 @@ We welcome contributions! Before getting started:
 
 ### For New Contributors
 
-- Review [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed implementation patterns
+- Review [ARCHITECTURE.md](./docs/ARCHITECTURE.md) for detailed implementation patterns
 - Start with small changes to get familiar with the codebase
 - Ask questions by opening an issue
 
