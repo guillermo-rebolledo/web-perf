@@ -79,8 +79,7 @@ describe("GET /api/regressions/[alertId]", () => {
   });
 
   it("returns alert when found", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prismaMock.regressionAlert.findFirst.mockResolvedValue(baseAlert as any);
+    prismaMock.regressionAlert.findFirst.mockResolvedValue(baseAlert);
     const res = await GET(makeRequest("GET"), makeParams("alert-1"));
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -91,8 +90,7 @@ describe("GET /api/regressions/[alertId]", () => {
 describe("PATCH /api/regressions/[alertId]", () => {
   beforeEach(() => {
     mockAuthenticated();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prismaMock.regressionAlert.findFirst.mockResolvedValue(baseAlert as any);
+    prismaMock.regressionAlert.findFirst.mockResolvedValue(baseAlert);
   });
 
   it("returns 401 when unauthenticated", async () => {
@@ -114,8 +112,7 @@ describe("PATCH /api/regressions/[alertId]", () => {
 
   it("sets acknowledgedAt and acknowledgedBy when acknowledging", async () => {
     const updatedAlert = { ...baseAlert, status: "acknowledged" };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prismaMock.regressionAlert.update.mockResolvedValue(updatedAlert as any);
+    prismaMock.regressionAlert.update.mockResolvedValue(updatedAlert);
 
     const res = await PATCH(
       makeRequest("PATCH", { status: "acknowledged" }),
@@ -136,8 +133,7 @@ describe("PATCH /api/regressions/[alertId]", () => {
 
   it("sets resolvedAt and resolvedBy when resolving", async () => {
     const updatedAlert = { ...baseAlert, status: "resolved" };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prismaMock.regressionAlert.update.mockResolvedValue(updatedAlert as any);
+    prismaMock.regressionAlert.update.mockResolvedValue(updatedAlert);
 
     const res = await PATCH(
       makeRequest("PATCH", { status: "resolved" }),
@@ -163,11 +159,9 @@ describe("PATCH /api/regressions/[alertId]", () => {
       acknowledgedAt: new Date(),
       acknowledgedBy: "test-user-id",
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prismaMock.regressionAlert.findFirst.mockResolvedValue(acknowledgedAlert as any);
+    prismaMock.regressionAlert.findFirst.mockResolvedValue(acknowledgedAlert);
     const updatedAlert = { ...baseAlert, status: "open" };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prismaMock.regressionAlert.update.mockResolvedValue(updatedAlert as any);
+    prismaMock.regressionAlert.update.mockResolvedValue(updatedAlert);
 
     const res = await PATCH(
       makeRequest("PATCH", { status: "open" }),
@@ -190,8 +184,7 @@ describe("PATCH /api/regressions/[alertId]", () => {
 
   it("saves optional notes", async () => {
     const updatedAlert = { ...baseAlert, status: "resolved", notes: "Fixed in v1.2" };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    prismaMock.regressionAlert.update.mockResolvedValue(updatedAlert as any);
+    prismaMock.regressionAlert.update.mockResolvedValue(updatedAlert);
 
     const res = await PATCH(
       makeRequest("PATCH", { status: "resolved", notes: "Fixed in v1.2" }),

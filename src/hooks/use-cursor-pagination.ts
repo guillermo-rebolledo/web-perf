@@ -51,6 +51,7 @@ export function useCursorPagination<T>({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const observerRef = useRef<HTMLDivElement>(null);
+  const isMounted = useRef(false);
 
   const loadMore = useCallback(async () => {
     if (isLoading || !hasMore) return;
@@ -79,7 +80,7 @@ export function useCursorPagination<T>({
           loadMore();
         }
       },
-      { threshold: 0.1, rootMargin: "100px" }
+      { threshold: 0.1, rootMargin: "100px" },
     );
 
     if (target) observer.observe(target);
@@ -87,6 +88,36 @@ export function useCursorPagination<T>({
       if (target) observer.unobserve(target);
     };
   }, [loadMore, hasMore, isLoading]);
+
+  // Re-fetch from scratch when the fetcher changes (e.g. filter change)
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    let cancelled = false;
+    setItems([]);
+    setNextCursor(null);
+    setHasMore(false);
+    setIsLoading(true);
+    setError(null);
+    fetcher(null)
+      .then((result) => {
+        if (cancelled) return;
+        setItems(result.items);
+        setNextCursor(result.nextCursor);
+        setHasMore(result.hasMore);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Failed to load");
+        setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetcher]);
 
   // Reset when initial data changes (e.g. filter or tab change)
   useEffect(() => {

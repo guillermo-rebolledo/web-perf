@@ -2,7 +2,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CalendarDays, CircleDot, CircleOff, CircleCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  CircleDot,
+  CircleOff,
+  CircleCheck,
+  Eye,
+} from "lucide-react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TIME_PERIODS, type TimePeriodValue } from "@/lib/alert-utils";
@@ -116,20 +123,25 @@ export default async function AlertsPage({
     run: { monitor: { site: { userId: session.user.id } } },
   });
 
-  const [totalAlerts, criticalCount, openCount, acknowledgedCount, resolvedCount] =
-    await Promise.all([
-      getAlertsCount(session.user.id, 30),
-      prisma.regressionAlert.count({
-        where: {
-          createdAt: { gte: thirtyDaysAgo },
-          severity: "critical",
-          run: { monitor: { site: { userId: session.user.id } } },
-        },
-      }),
-      prisma.regressionAlert.count({ where: statusWhere("open") }),
-      prisma.regressionAlert.count({ where: statusWhere("acknowledged") }),
-      prisma.regressionAlert.count({ where: statusWhere("resolved") }),
-    ]);
+  const [
+    totalAlerts,
+    criticalCount,
+    openCount,
+    acknowledgedCount,
+    resolvedCount,
+  ] = await Promise.all([
+    getAlertsCount(session.user.id, 30),
+    prisma.regressionAlert.count({
+      where: {
+        createdAt: { gte: thirtyDaysAgo },
+        severity: "critical",
+        run: { monitor: { site: { userId: session.user.id } } },
+      },
+    }),
+    prisma.regressionAlert.count({ where: statusWhere("open") }),
+    prisma.regressionAlert.count({ where: statusWhere("acknowledged") }),
+    prisma.regressionAlert.count({ where: statusWhere("resolved") }),
+  ]);
 
   return (
     <div className="container mx-auto py-8 flex flex-col gap-8">
@@ -152,14 +164,15 @@ export default async function AlertsPage({
           aria-label={`Total alerts: ${totalAlerts}`}
           className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <Card className="border-0 border-l-4 border-primary/40 hover:border-primary transition-colors shadow-sm">
+          <Card className="group border-0 border-l-4 border-primary/40 hover:border-primary transition-colors shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Alerts (30d)
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex items-end justify-between w-full">
               <div className="text-3xl font-bold">{totalAlerts}</div>
+              <Eye className="size-4 hidden group-hover:block group-focus:block" />
             </CardContent>
           </Card>
         </Link>
@@ -168,16 +181,17 @@ export default async function AlertsPage({
           aria-label={`Critical alerts: ${criticalCount}`}
           className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <Card className="border-0 border-l-4 border-destructive/40 hover:border-destructive transition-colors shadow-sm">
+          <Card className="group border-0 border-l-4 border-destructive/40 hover:border-destructive transition-colors shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Critical Alerts
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex items-end justify-between w-full">
               <div className="text-3xl font-bold text-destructive">
                 {criticalCount}
               </div>
+              <Eye className="size-4 hidden group-hover:block group-focus:block" />
             </CardContent>
           </Card>
         </Link>
@@ -200,7 +214,9 @@ export default async function AlertsPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-score-warning">{acknowledgedCount}</div>
+            <div className="text-3xl font-bold text-score-warning">
+              {acknowledgedCount}
+            </div>
           </CardContent>
         </Card>
         <Card className="border-0 border-l-4 border-green-500/40 shadow-sm select-none">
@@ -211,7 +227,9 @@ export default async function AlertsPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400">{resolvedCount}</div>
+            <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+              {resolvedCount}
+            </div>
           </CardContent>
         </Card>
       </div>
