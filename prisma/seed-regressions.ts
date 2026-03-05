@@ -46,11 +46,38 @@ function toJsonValue(data: unknown): Prisma.InputJsonValue {
 
 type RegressionBaseline = { metricName: string; medianValue: number };
 
+// Status distribution: 40% open, 30% acknowledged, 30% resolved
+function pickAlertStatus(index: number): "open" | "acknowledged" | "resolved" {
+  const bucket = index % 10;
+  if (bucket < 4) return "open";
+  if (bucket < 7) return "acknowledged";
+  return "resolved";
+}
+
+const RESOLVED_NOTES = [
+  "Fixed in latest deploy",
+  "Rolled back to v2.1.3",
+  "Identified as CDN misconfiguration — resolved",
+  "Bundle optimized after tree-shaking audit",
+  "TTFB fixed by upgrading server region",
+  "LCP image preloaded via <link rel=preload>",
+  "Third-party script deferred — no longer blocking",
+];
+
+const ACKNOWLEDGED_NOTES = [
+  "Investigating — likely caused by new hero image",
+  "Team aware, in backlog for this sprint",
+  "Profiling JS execution spike",
+  undefined, // some acknowledged alerts have no notes
+  undefined,
+];
+
 async function createRegressionRun(
   index: number,
   numAlerts: number,
   monitorId: string,
   baselines: RegressionBaseline[],
+  userId: string,
 ): Promise<number> {
   const regressionType = REGRESSION_TYPES[index % REGRESSION_TYPES.length];
   const progressPercent = (((index + 1) / numAlerts) * 100).toFixed(0);
@@ -123,13 +150,38 @@ async function createRegressionRun(
       calculateDiffSummary(run, prisma),
     ]);
 
+    const alertStatus = pickAlertStatus(index);
+    const alertDate = run.completedAt ?? new Date();
+    // Tracking timestamps are a bit after the alert was created
+    const trackingDate = new Date(alertDate.getTime() + 30 * 60 * 1000); // +30 min
+
+    const statusFields =
+      alertStatus === "acknowledged"
+        ? {
+            status: "acknowledged" as const,
+            acknowledgedAt: trackingDate,
+            acknowledgedBy: userId,
+            notes: ACKNOWLEDGED_NOTES[index % ACKNOWLEDGED_NOTES.length] ?? null,
+          }
+        : alertStatus === "resolved"
+          ? {
+              status: "resolved" as const,
+              acknowledgedAt: trackingDate,
+              acknowledgedBy: userId,
+              resolvedAt: new Date(trackingDate.getTime() + 60 * 60 * 1000), // +1h after ack
+              resolvedBy: userId,
+              notes: RESOLVED_NOTES[index % RESOLVED_NOTES.length],
+            }
+          : { status: "open" as const };
+
     await prisma.regressionAlert.create({
       data: {
         ...regression,
+        ...statusFields,
         likelyCauses: toJsonValue(causes),
         diffSummary: toJsonValue(diffSummary),
-        createdAt: run.completedAt ?? new Date(),
-        updatedAt: run.completedAt ?? new Date(),
+        createdAt: alertDate,
+        updatedAt: alertDate,
       },
     });
 
@@ -314,7 +366,7 @@ async function main() {
   let totalAlertsCreated = 0;
 
   for (let i = 0; i < numAlerts; i++) {
-    totalAlertsCreated += await createRegressionRun(i, numAlerts, monitor.id, baselines);
+    totalAlertsCreated += await createRegressionRun(i, numAlerts, monitor.id, baselines, user.id);
   }
 
   console.log(`\n✅ Created ${totalAlertsCreated} regression alerts\n`);
@@ -335,6 +387,17 @@ async function main() {
     orderBy: { createdAt: "asc" },
   });
   console.log(`Total regression alerts created: ${alerts.length}`);
+
+  // Status breakdown
+  const byStatus = {
+    open: alerts.filter((a) => a.status === "open").length,
+    acknowledged: alerts.filter((a) => a.status === "acknowledged").length,
+    resolved: alerts.filter((a) => a.status === "resolved").length,
+  };
+  console.log("\nAlerts by status:");
+  console.log(`   - Open:         ${byStatus.open}`);
+  console.log(`   - Acknowledged: ${byStatus.acknowledged}`);
+  console.log(`   - Resolved:     ${byStatus.resolved}`);
 
   // Group alerts by time period
   const now = Date.now();

@@ -200,6 +200,6 @@ Colors map to the project's CSS variables: `text-score-good`, `text-score-warnin
 
 ## Related Documentation
 
-- **[DATABASE_SCRIPTS.md](../DATABASE_SCRIPTS.md)** — full guide to all seed and cleanup scripts
-- **[ARCHITECTURE.md](../ARCHITECTURE.md)** — overall system design
+- **[DATABASE_SCRIPTS.md](./DATABASE_SCRIPTS.md)** — full guide to all seed and cleanup scripts
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — overall system design
 - **[docs/REGRESSION_DETECTION.md](./REGRESSION_DETECTION.md)** — regression alert system used on the Alerts page

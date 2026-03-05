@@ -1,18 +1,29 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { AlertCard, type RegressionAlertWithDetails } from "./alert-card";
 import { Skeleton } from "./ui/skeleton";
 import { Button } from "./ui/button";
 import { TrendingUp, AlertCircle } from "lucide-react";
 import type { AlertsApiResponse } from "@/app/api/alerts/route";
 import { useCursorPagination } from "@/hooks/use-cursor-pagination";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { ALERT_STATUSES, type AlertStatus } from "@/lib/alert-utils";
 
 interface AlertsListProps {
   initialAlerts: RegressionAlertWithDetails[];
   days: number;
   severity?: string;
 }
+
+type StatusFilter = AlertStatus | "all";
+
+const STATUS_LABELS: Record<StatusFilter, string> = {
+  all: "All",
+  open: "Open",
+  acknowledged: "Acknowledged",
+  resolved: "Resolved",
+};
 
 function deriveInitialCursor(alerts: RegressionAlertWithDetails[]): string | null {
   if (alerts.length < 20) return null;
@@ -21,10 +32,13 @@ function deriveInitialCursor(alerts: RegressionAlertWithDetails[]): string | nul
 }
 
 export function AlertsList({ initialAlerts, days, severity }: AlertsListProps) {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+
   const fetcher = useCallback(
     async (cursor: string | null) => {
       const params = new URLSearchParams({ days: days.toString(), limit: "20" });
       if (severity) params.set("severity", severity);
+      if (statusFilter !== "all") params.set("status", statusFilter);
       if (cursor) params.set("cursor", cursor);
 
       const response = await fetch(`/api/alerts?${params.toString()}`);
@@ -33,15 +47,21 @@ export function AlertsList({ initialAlerts, days, severity }: AlertsListProps) {
       const data: AlertsApiResponse = await response.json();
       return { items: data.alerts, nextCursor: data.nextCursor, hasMore: data.hasMore };
     },
-    [days, severity]
+    [days, severity, statusFilter]
   );
 
-  const { items: alerts, isLoading, hasMore, error, loadMore, observerRef } =
+  const { items: alerts, setItems, isLoading, hasMore, error, loadMore, observerRef } =
     useCursorPagination({
       initialItems: initialAlerts,
       initialCursor: deriveInitialCursor(initialAlerts),
       fetcher,
     });
+
+  function handleUpdate(updated: { id: string; status: string; notes: string | null }) {
+    setItems((prev) =>
+      prev.map((a) => (a.id === updated.id ? { ...a, status: updated.status, notes: updated.notes } : a))
+    );
+  }
 
   if (alerts.length === 0 && !isLoading) {
     return null; // Let the parent component handle empty state
@@ -49,7 +69,8 @@ export function AlertsList({ initialAlerts, days, severity }: AlertsListProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {alerts.length > 0 && (
+      {/* Status filter */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2 text-sm text-muted-foreground font-semibold">
           <TrendingUp className="h-4 w-4 text-secondary" />
           <span className="tracking-tighter">
@@ -57,11 +78,23 @@ export function AlertsList({ initialAlerts, days, severity }: AlertsListProps) {
             {days} day{days > 1 ? "s" : ""}
           </span>
         </div>
-      )}
+        <ToggleGroup
+          type="single"
+          value={statusFilter}
+          onValueChange={(v) => { if (v) setStatusFilter(v as StatusFilter); }}
+          className="border rounded-md"
+        >
+          {(["all", ...ALERT_STATUSES] as StatusFilter[]).map((s) => (
+            <ToggleGroupItem key={s} value={s} className="text-xs px-3 h-8">
+              {STATUS_LABELS[s]}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {alerts.map((alert) => (
-          <AlertCard key={alert.id} alert={alert} />
+          <AlertCard key={alert.id} alert={alert} onUpdate={handleUpdate} />
         ))}
 
         {/* Loading skeletons */}

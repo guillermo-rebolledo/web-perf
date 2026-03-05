@@ -24,7 +24,7 @@ pnpm lint
 pnpm tsc --noEmit
 
 # Database
-pnpm seed:regressions  # Seed regression alert test data
+pnpm seed:regressions email [name] [numAlerts]  # Seed alerts with varied open/acknowledged/resolved statuses
 
 # Schema changes — always create a migration file (never use db push)
 pnpm prisma migrate dev --name describe_your_change  # applies + creates migration file

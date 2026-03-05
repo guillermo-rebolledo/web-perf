@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -22,6 +25,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { AlertStatusBadge } from "@/components/alert-status-badge";
+import { AlertStatusAction } from "@/components/alert-status-action";
 
 interface RegressionAlertWithDetails {
   id: string;
@@ -50,11 +55,18 @@ interface RegressionAlertWithDetails {
 
 interface AlertCardProps {
   alert: RegressionAlertWithDetails;
+  onUpdate?: (updated: { id: string; status: string; notes: string | null }) => void;
 }
 
-export function AlertCard({ alert }: AlertCardProps) {
+export function AlertCard({ alert, onUpdate }: AlertCardProps) {
+  const [status, setStatus] = useState(alert.status);
   const severityInfo = getSeverityInfo(alert.severity);
   const confidenceInfo = getConfidenceInfo(alert.confidence);
+
+  function handleUpdate(updated: { id: string; status: string; notes: string | null }) {
+    setStatus(updated.status);
+    onUpdate?.(updated);
+  }
 
   return (
     <Link href={`/runs/${alert.run.id}/regressions/${alert.id}`}>
@@ -65,13 +77,24 @@ export function AlertCard({ alert }: AlertCardProps) {
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="flex flex-col gap-2 flex-1 min-w-0">
-                <div className="flex gap-2">
-                  <Badge variant={severityInfo.variant}>
-                    {severityInfo.label} Severity
-                  </Badge>
-                  <Badge variant={confidenceInfo.variant}>
-                    {confidenceInfo.label} Confidence
-                  </Badge>
+                <div className="flex flex-wrap gap-2 items-center justify-between">
+                  <div className="flex gap-2">
+                    <Badge variant={severityInfo.variant}>
+                      {severityInfo.label} Severity
+                    </Badge>
+                    <Badge variant={confidenceInfo.variant}>
+                      {confidenceInfo.label} Confidence
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <AlertStatusBadge status={status} />
+                    <AlertStatusAction
+                      alertId={alert.id}
+                      currentStatus={status}
+                      size="compact"
+                      onUpdate={handleUpdate}
+                    />
+                  </div>
                 </div>
                 <CardTitle className="font-bold truncate">
                   {alert.run.monitor.site.name}

@@ -16,6 +16,7 @@ interface UseCursorPaginationOptions<T> {
 
 export interface UseCursorPaginationResult<T> {
   items: T[];
+  setItems: React.Dispatch<React.SetStateAction<T[]>>;
   isLoading: boolean;
   hasMore: boolean;
   error: string | null;
@@ -94,5 +95,5 @@ export function useCursorPagination<T>({
     setHasMore(initialCursor !== null);
   }, [initialItems, initialCursor]);
 
-  return { items, isLoading, hasMore, error, loadMore, observerRef };
+  return { items, setItems, isLoading, hasMore, error, loadMore, observerRef };
 }
