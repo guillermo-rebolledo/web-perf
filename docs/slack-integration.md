@@ -74,6 +74,26 @@ The outer `text` field is used as a mobile push notification fallback (e.g. "My 
 
 ---
 
+## Notification deduplication
+
+PerfLab suppresses repeat Slack notifications for metrics that are already known to be regressed. This prevents Slack spam when the same metric (e.g. LCP) regresses across every monitoring run until it is fixed.
+
+**Rules:**
+
+| Situation | Slack notification |
+|---|---|
+| New regression (no prior open/acknowledged alert for this metric) | Sent |
+| Same metric, same or lower severity — prior alert is open/acknowledged | Suppressed |
+| Same metric, higher severity (escalation) — e.g. `moderate` → `critical` | Sent |
+| Metric regression recurs after the alert was resolved | Sent |
+| Run has no regressions (healthy audit) | Sent ("Audit Complete") |
+
+**How to re-arm notifications for a metric:**
+
+Resolve the alert from the alerts list in the app. Once the alert is resolved, the next run that detects a regression for that metric will send a fresh notification.
+
+---
+
 ## Managing integrations
 
 ### Scope options
@@ -122,7 +142,8 @@ The webhook URL is valid but the JSON payload was rejected. This should not happ
 
 ### Regression notification not received even though regressions were detected
 
-Regression alerts are included only if they were created within the **last 60 seconds** before the notification fires. If the regression detection step is very slow (>60s), the window may not include the alerts. This is an edge case — the regression detection step normally takes under 1 second.
+1. The metrics may have been **suppressed by deduplication**: if the regressed metrics already have open or acknowledged alerts on this monitor, repeat notifications are intentionally suppressed. See [Notification deduplication](#notification-deduplication). To re-arm notifications, resolve the relevant alert(s) in the app.
+2. Regression alerts are included only if they were created within the **last 60 seconds** before the notification fires. If the regression detection step is very slow (>60s), the window may not include the alerts. This is an edge case — the regression detection step normally takes under 1 second.
 
 ---
 

@@ -70,10 +70,11 @@ model MonitorIntegration {
 
 ```
 src/lib/notifications/
-├── types.ts        — shared interfaces; no dependencies
-├── slack.ts        — Slack adapter (payload builder + send helpers)
-├── dispatcher.ts   — routes by config.type; add a case here per new provider
-└── index.ts        — public entry point used by the worker
+├── types.ts            — shared interfaces; no dependencies
+├── slack.ts            — Slack adapter (payload builder + send helpers)
+├── dispatcher.ts       — routes by config.type; add a case here per new provider
+├── deduplication.ts    — filterNewRegressions(); suppresses repeat notifications
+└── index.ts            — public entry point used by the worker
 ```
 
 ### `types.ts`
@@ -149,6 +150,45 @@ export async function dispatch(config: IntegrationConfig, ctx: NotificationConte
 
 `assertNever` takes a `never`-typed argument and throws at runtime if somehow reached. Because `config.type` is a literal union, TypeScript narrows it to `never` in the `default` branch — so forgetting to add a `case` for a new provider is a **compile error**, not a runtime surprise.
 
+### `deduplication.ts`
+
+Exports a single async function:
+
+```typescript
+filterNewRegressions(
+  monitorId: string,
+  currentRunId: string,
+  regressions: NotificationRegression[],
+  prismaClient: PrismaClient,
+): Promise<NotificationRegression[]>
+```
+
+**Suppression rules:**
+
+| Condition | Result |
+|---|---|
+| No prior unresolved alert for metric M | Passes through (new regression) |
+| Prior alert exists at same or higher severity | Suppressed |
+| Prior alert exists at lower severity | Suppressed |
+| Prior alert exists at lower severity AND new is strictly higher | Passes through (escalation) |
+| Prior alert was resolved (not returned by query) | Passes through (recurrence) |
+
+**Severity ranking** (`SEVERITY_RANK`):
+
+| Severity | Rank |
+|---|---|
+| `minor` | 0 |
+| `moderate` | 1 |
+| `critical` | 2 |
+| unknown / unrecognized | -1 (any known severity escalates) |
+
+**Key implementation details:**
+
+- `runId: { not: currentRunId }` excludes the current run's own alerts from the query — the current run's alerts are already saved in the DB when the notification IIFE fires, so without this exclusion they would suppress themselves on first occurrence.
+- `status: { not: "resolved" }` means resolved alerts are excluded; a metric whose alert was resolved and then regresses again will fire a fresh notification.
+- Only `metricName` and `severity` are selected — minimal query footprint.
+- Returns `[]` immediately (no DB query) when `regressions` is empty.
+
 ### `index.ts`
 
 Exports `fireIntegrations(ctx)` — the only function the worker imports. Its steps:
@@ -172,9 +212,21 @@ The notification dispatch is added to `src/worker/processor.ts` **after** regres
 void (async () => {
   try {
     const { fireIntegrations } = await import("@/lib/notifications");
+    const { filterNewRegressions } = await import("@/lib/notifications/deduplication");
     const runWithSite = await prisma.run.findUnique({ ... });
     if (!runWithSite?.monitor?.site) return;
-    await fireIntegrations({ run, regressions, appBaseUrl });
+
+    const newRegressions = await filterNewRegressions(
+      monitorId, runId, runWithSite.regressionAlerts, prisma,
+    );
+
+    // Skip notification if all regressions are already open/acknowledged
+    if (runWithSite.regressionAlerts.length > 0 && newRegressions.length === 0) {
+      console.log(`[Notifications] All N regression(s) suppressed for run ${runId}`);
+      return;
+    }
+
+    await fireIntegrations({ run, regressions: newRegressions, appBaseUrl });
   } catch (err) {
     console.error("[Worker] Notification dispatch error:", err);
   }
@@ -194,6 +246,10 @@ The notification IIFE re-fetches the run including `monitor.site` and the fresh 
 - The transaction that saves run metrics completes before this IIFE starts, so the data is guaranteed to be in the DB.
 - The fetch includes `regressionAlerts` filtered to `createdAt >= now - 60s` to capture only the alerts created by *this* run (not historical ones).
 - The extra query runs after the job's critical path and does not add perceptible latency to the audit.
+
+**Deduplication guard:**
+
+After fetching `regressionAlerts`, the IIFE calls `filterNewRegressions` before `fireIntegrations`. If the run detected regressions but all were suppressed (all metrics already have open/acknowledged alerts), the IIFE logs a suppression message and returns early — no Slack message is sent. Healthy runs (zero regressions) bypass this guard entirely, so "Audit Complete" notifications are unaffected.
 
 ---
 
@@ -380,6 +436,9 @@ There is no retry mechanism in V1. Slack Incoming Webhooks have high availabilit
 # Unit tests — payload builder, color logic, send helpers
 pnpm test src/lib/__tests__/notifications.test.ts
 
+# Deduplication unit tests — suppression rules, escalation, edge cases
+pnpm test src/lib/notifications/__tests__/deduplication.test.ts
+
 # API route tests — auth, validation, ownership, test endpoint
 pnpm test src/app/api/integrations/__tests__/route.test.ts
 
@@ -433,6 +492,18 @@ pnpm test src/components/__tests__/integrations-manager.test.tsx
 
 **Trade-off:** Notification failures are only visible in worker logs, not in the UI run timeline. The Test Connection button is the primary debugging surface.
 
+### Deduplication via alert lifecycle
+
+**Decision:** Use `RegressionAlert.status != "resolved"` as the deduplication gate rather than a time-window or a dedupliation table.
+
+**Rationale:** The alert lifecycle (`open` → `acknowledged` → `resolved`) already models whether a user is aware of a regression. If an alert is `open` or `acknowledged`, the user already received (or will receive) a notification — re-notifying on every subsequent run adds noise without new signal. Only two events should re-arm notifications: severity escalation (the situation got worse) and resolution followed by recurrence (the metric was fixed and regressed again).
+
+**Trade-off:** Deduplication is user-action-dependent. If a user never resolves alerts, they will only be notified once per metric regression (plus escalations). This is the correct product behavior — the alert list in the UI is the persistent record; Slack notifications are for "something new happened."
+
+**Alternatives considered:**
+- Time-window cooldown (e.g., suppress for 24h): requires storing last-notified timestamp; doesn't account for the alert having been acknowledged.
+- Separate deduplication table: unnecessary complexity — the alert status is already the right signal.
+
 ### No retry in V1
 
 **Decision:** Single attempt per audit, no retry queue.
@@ -443,4 +514,4 @@ pnpm test src/components/__tests__/integrations-manager.test.tsx
 
 ---
 
-**Last updated:** 2026-03-04
+**Last updated:** 2026-03-05
