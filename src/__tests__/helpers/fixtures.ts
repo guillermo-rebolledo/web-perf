@@ -1,4 +1,4 @@
-import type { User, Site, Monitor, Run, Audit } from "@prisma/client";
+import type { User, Site, Monitor, Run, Audit, Integration } from "@prisma/client";
 import { RunStatus } from "@prisma/client";
 import type { PSIResponse } from "@/lib/psi-parser";
 
@@ -98,6 +98,20 @@ export function createAudit(overrides: Partial<Audit> = {}): Audit {
     displayValue: "1.8 s",
     numericValue: 1800,
     details: null,
+    ...overrides,
+  };
+}
+
+export function createIntegration(overrides: Partial<Integration> = {}): Integration {
+  return {
+    id: "test-integration-id",
+    userId: "test-user-id",
+    name: "Slack #perf-alerts",
+    type: "slack",
+    config: { type: "slack", webhookUrl: "https://hooks.slack.com/services/test" },
+    isActive: true,
+    createdAt: new Date("2025-01-01"),
+    updatedAt: new Date("2025-01-01"),
     ...overrides,
   };
 }

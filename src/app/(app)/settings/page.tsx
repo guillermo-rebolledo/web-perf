@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ApiKeyManager } from "@/components/api-key-manager";
+import { IntegrationsManager } from "@/components/integrations-manager";
 
 export const metadata = { title: "Settings" };
 
@@ -12,19 +13,31 @@ export default async function SettingsPage() {
     redirect("/auth/signin");
   }
 
-  const keys = await prisma.apiKey.findMany({
-    where: { userId: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      keyPrefix: true,
-      lastUsedAt: true,
-      expiresAt: true,
-      createdAt: true,
-      userAgent: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [keys, integrations, monitors] = await Promise.all([
+    prisma.apiKey.findMany({
+      where: { userId: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        keyPrefix: true,
+        lastUsedAt: true,
+        expiresAt: true,
+        createdAt: true,
+        userAgent: true,
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.integration.findMany({
+      where: { userId: session.user.id },
+      include: { _count: { select: { monitorIntegrations: true } } },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.monitor.findMany({
+      where: { site: { userId: session.user.id } },
+      include: { site: { select: { name: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
 
   const serializedKeys = keys.map((k) => ({
     id: k.id,
@@ -34,6 +47,20 @@ export default async function SettingsPage() {
     expiresAt: k.expiresAt?.toISOString() ?? null,
     createdAt: k.createdAt.toISOString(),
     userAgent: k.userAgent ?? null,
+  }));
+
+  const serializedIntegrations = integrations.map((i) => ({
+    id: i.id,
+    name: i.name,
+    type: i.type,
+    isActive: i.isActive,
+    monitorCount: i._count.monitorIntegrations,
+    createdAt: i.createdAt.toISOString(),
+  }));
+
+  const serializedMonitors = monitors.map((m) => ({
+    id: m.id,
+    label: `${m.site.name} (${m.strategy})`,
   }));
 
   return (
@@ -48,6 +75,14 @@ export default async function SettingsPage() {
       <section>
         <h2 className="mb-4 text-lg font-medium">API Keys</h2>
         <ApiKeyManager initialKeys={serializedKeys} />
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-medium">Notification Integrations</h2>
+        <IntegrationsManager
+          initialIntegrations={serializedIntegrations}
+          monitors={serializedMonitors}
+        />
       </section>
     </div>
   );

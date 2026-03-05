@@ -114,8 +114,9 @@ export default async function Home() {
                 <div className="font-bold text-base">Register your sites</div>
               </div>
               <div>
-                Add any URL to Web Performance Lab. Pick a monitoring cadence:
-                hourly, daily, or triggered via the CLI.
+                Add any URL to PerfLabs. Run audits on a schedule, trigger them
+                from the CLI, or fire one automatically on every deployment via
+                a GitHub webhook.
               </div>
             </div>
             <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
@@ -230,6 +231,25 @@ export default async function Home() {
               <div>
                 Monitor both strategies independently. Mobile performance often
                 tells a different story than desktop — and Google measures both.
+              </div>
+            </div>
+            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+              <div className="font-bold text-base">Deploy-triggered Audits</div>
+              <div>
+                Connect a GitHub webhook and every successful deployment
+                triggers an audit automatically. Works with Vercel, Railway,
+                Netlify, and any CI that emits{" "}
+                <code className="font-geist-mono text-xs">deployment_status</code>{" "}
+                events — no polling, no cron lag, no manual runs.
+              </div>
+            </div>
+            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+              <div className="font-bold text-base">Slack Notifications</div>
+              <div>
+                Connect a Slack webhook once and every completed audit posts to
+                your channel — performance score, all five Core Web Vitals, and
+                any regressions flagged by severity. Green means clean. Red
+                means act. No dashboard check required.
               </div>
             </div>
           </div>

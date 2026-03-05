@@ -20,6 +20,7 @@ model User {
   sessions      Session[]
   sites         Site[]
   apiKeys       ApiKey[]
+  integrations  Integration[]
 }
 
 model Site {
@@ -57,6 +58,7 @@ model Monitor {
   site                Site                 @relation(fields: [siteId], references: [id], onDelete: Cascade)
   runs                Run[]
   regressionBaselines RegressionBaseline[]
+  monitorIntegrations MonitorIntegration[]
 
   @@index([siteId])
   @@index([isActive, nextRunAt])
@@ -249,4 +251,34 @@ model RegressionAlert {
   @@index([severity])
   @@index([createdAt, severity])
   @@index([createdAt, status])
+}
+
+model Integration {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  type      String   // "slack" | future: "discord" | "webhook"
+  config    Json     // type-specific: { type: "slack", webhookUrl: "..." }
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monitorIntegrations MonitorIntegration[]
+
+  @@index([userId])
+  @@index([userId, isActive])
+}
+
+model MonitorIntegration {
+  integrationId String
+  monitorId     String
+  createdAt     DateTime @default(now())
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  monitor     Monitor     @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@id([integrationId, monitorId])
+  @@index([integrationId])
+  @@index([monitorId])
 }
