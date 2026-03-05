@@ -212,6 +212,9 @@ export async function processAuditJob(job: Job<AuditJobData>) {
     void (async () => {
       try {
         const { fireIntegrations } = await import("@/lib/notifications");
+        const { filterNewRegressions } = await import(
+          "@/lib/notifications/deduplication"
+        );
         const runWithSite = await prisma.run.findUnique({
           where: { id: runId },
           include: {
@@ -229,6 +232,25 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           },
         });
         if (!runWithSite?.monitor?.site) return;
+
+        const newRegressions = await filterNewRegressions(
+          monitorId,
+          runId,
+          runWithSite.regressionAlerts,
+          prisma,
+        );
+
+        // Skip notification if all regressions are already open/acknowledged
+        if (
+          runWithSite.regressionAlerts.length > 0 &&
+          newRegressions.length === 0
+        ) {
+          console.log(
+            `[Notifications] All ${runWithSite.regressionAlerts.length} regression(s) suppressed for run ${runId} (already open/acknowledged)`,
+          );
+          return;
+        }
+
         await fireIntegrations({
           run: {
             id: runWithSite.id,
@@ -251,7 +273,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
               userId: runWithSite.monitor.site.userId,
             },
           },
-          regressions: runWithSite.regressionAlerts,
+          regressions: newRegressions,
           appBaseUrl: env.NEXTAUTH_URL ?? "http://localhost:3000",
         });
       } catch (err) {
