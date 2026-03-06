@@ -13,6 +13,7 @@ export function createUser(overrides: Partial<User> = {}): User {
     image: null,
     createdAt: new Date("2025-01-01"),
     updatedAt: new Date("2025-01-01"),
+    weeklyDigestEnabled: true,
     ...overrides,
   };
 }

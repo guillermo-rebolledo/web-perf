@@ -1,6 +1,6 @@
 import cron from "node-cron";
 import { prisma } from "@/lib/prisma";
-import { enqueueAuditJob } from "@/lib/queue";
+import { enqueueAuditJob, enqueueDigestJob } from "@/lib/queue";
 import { cleanupOldScreenshots } from "@/lib/screenshot-cleanup";
 import { env } from "@/env";
 import { addMinutes } from "date-fns";
@@ -15,6 +15,16 @@ export function startScheduler() {
       await processDueMonitors();
     } catch (error) {
       console.error("[Scheduler] Error processing due monitors:", error);
+    }
+  });
+
+  // Weekly digest — Monday 9 AM UTC
+  cron.schedule("0 9 * * 1", async () => {
+    try {
+      console.log("[Scheduler] Enqueuing weekly digest job");
+      await enqueueDigestJob();
+    } catch (error) {
+      console.error("[Scheduler] Error enqueuing weekly digest:", error);
     }
   });
 
