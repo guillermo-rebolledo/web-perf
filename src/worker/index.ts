@@ -80,12 +80,6 @@ digestWorker.on("failed", (job, err) => {
   console.error(`[DigestWorker] Job ${job?.id} failed:`, err);
 });
 
-// Recover orphaned runs from a previous crash before accepting new jobs
-await recoverOrphanedRuns();
-
-// Start the scheduler
-startScheduler();
-
 // Graceful shutdown
 const shutdown = async () => {
   console.log("[Worker] Shutting down gracefully...");
@@ -96,6 +90,11 @@ const shutdown = async () => {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-console.log("[Worker] Worker and scheduler started successfully");
-console.log(`[Worker] Connected to Redis at ${env.REDIS_HOST}:${env.REDIS_PORT}`);
-console.log("[Worker] Waiting for jobs...");
+// Recover orphaned runs from a previous crash before accepting new jobs, then start
+void (async () => {
+  await recoverOrphanedRuns();
+  startScheduler();
+  console.log("[Worker] Worker and scheduler started successfully");
+  console.log(`[Worker] Connected to Redis at ${env.REDIS_HOST}:${env.REDIS_PORT}`);
+  console.log("[Worker] Waiting for jobs...");
+})();
