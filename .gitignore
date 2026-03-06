@@ -44,7 +44,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
+# env files (includes .env.sentry-build-plugin for source map auth tokens)
 .env*
 !.env.example
 !.env.test

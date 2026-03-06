@@ -1,5 +1,6 @@
 import type { Job } from "bullmq";
 import type { AuditJobData } from "@/lib/queue";
+import * as Sentry from "@sentry/node";
 import { Prisma, RunStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { fetchPageSpeedInsights, parsePSIResponse } from "@/lib/psi-parser";
@@ -301,6 +302,9 @@ export async function processAuditJob(job: Job<AuditJobData>) {
 
     console.log(`[Worker] Successfully completed audit job ${job.id}`);
   } catch (error) {
+    Sentry.captureException(error, {
+      tags: { runId, monitorId, siteUrl, strategy },
+    });
     console.error(`[Worker] Error processing audit job ${job.id}:`, error);
 
     // Update run status to failed

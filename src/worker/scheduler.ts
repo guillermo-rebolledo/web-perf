@@ -1,4 +1,5 @@
-import cron from "node-cron";
+import * as Sentry from "@sentry/node";
+import nodeCron from "node-cron";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob, enqueueDigestJob } from "@/lib/queue";
 import { cleanupOldScreenshots } from "@/lib/screenshot-cleanup";
@@ -6,37 +7,48 @@ import { env } from "@/env";
 import { addMinutes } from "date-fns";
 import { RunStatus } from "@prisma/client";
 
+const cron = Sentry.cron.instrumentNodeCron(nodeCron);
+
 export function startScheduler() {
   console.log("[Scheduler] Starting cron scheduler (runs every minute)");
 
-  // Run every minute - process due monitors
-  cron.schedule("*/1 * * * *", async () => {
-    try {
-      await processDueMonitors();
-    } catch (error) {
-      console.error("[Scheduler] Error processing due monitors:", error);
-    }
-  });
+  cron.schedule(
+    "*/1 * * * *",
+    async () => {
+      try {
+        await processDueMonitors();
+      } catch (error) {
+        console.error("[Scheduler] Error processing due monitors:", error);
+      }
+    },
+    { name: "scheduler-process-due-monitors" },
+  );
 
-  // Weekly digest — Monday 9 AM UTC
-  cron.schedule("0 9 * * 1", async () => {
-    try {
-      console.log("[Scheduler] Enqueuing weekly digest job");
-      await enqueueDigestJob();
-    } catch (error) {
-      console.error("[Scheduler] Error enqueuing weekly digest:", error);
-    }
-  });
+  cron.schedule(
+    "0 9 * * 1",
+    async () => {
+      try {
+        console.log("[Scheduler] Enqueuing weekly digest job");
+        await enqueueDigestJob();
+      } catch (error) {
+        console.error("[Scheduler] Error enqueuing weekly digest:", error);
+      }
+    },
+    { name: "scheduler-weekly-digest" },
+  );
 
-  // Run daily at 3 AM - cleanup old screenshots
-  cron.schedule("0 3 * * *", async () => {
-    try {
-      console.log("[Scheduler] Running daily screenshot cleanup");
-      await cleanupOldScreenshots(env.SCREENSHOT_TTL_DAYS);
-    } catch (error) {
-      console.error("[Scheduler] Error during screenshot cleanup:", error);
-    }
-  });
+  cron.schedule(
+    "0 3 * * *",
+    async () => {
+      try {
+        console.log("[Scheduler] Running daily screenshot cleanup");
+        await cleanupOldScreenshots(env.SCREENSHOT_TTL_DAYS);
+      } catch (error) {
+        console.error("[Scheduler] Error during screenshot cleanup:", error);
+      }
+    },
+    { name: "scheduler-screenshot-cleanup" },
+  );
 }
 
 export async function processDueMonitors() {
