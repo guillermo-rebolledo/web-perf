@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveUser } from "@/lib/resolve-user";
 import { sendSlackTestMessage } from "@/lib/notifications/slack";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 // POST /api/integrations/[id]/test — always returns HTTP 200 with { ok, error? }
 export async function POST(
@@ -11,6 +12,12 @@ export async function POST(
   const { id } = await params;
   const userId = await resolveUser(request);
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // Rate limit: 5 test messages per integration per day
+  const rl = await checkRateLimit(`${userId}:${id}`, 5, "integration-test", true);
+  if (!rl.success) {
+    return NextResponse.json({ ok: false, error: "Too many test requests. Try again tomorrow." });
+  }
 
   const integration = await prisma.integration.findUnique({ where: { id } });
   if (!integration || integration.userId !== userId) {

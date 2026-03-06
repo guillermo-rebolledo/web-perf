@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { env } from "@/env";
 import { processDueMonitors } from "@/worker/scheduler";
 
 // POST /api/scheduler/tick - Trigger scheduler (protected by secret header)
 export async function POST(request: NextRequest) {
   try {
-    // Check authorization header
+    // Check authorization header using timing-safe comparison to prevent timing oracles
     const authHeader = request.headers.get("x-scheduler-secret");
-    if (!authHeader || authHeader !== env.SCHEDULER_SECRET) {
+    const expected = Buffer.from(env.SCHEDULER_SECRET);
+    const provided = authHeader ? Buffer.from(authHeader) : null;
+    const authorized =
+      provided !== null &&
+      provided.length === expected.length &&
+      timingSafeEqual(provided, expected);
+    if (!authorized) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

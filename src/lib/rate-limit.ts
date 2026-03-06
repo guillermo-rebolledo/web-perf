@@ -12,7 +12,8 @@ interface RateLimitResult {
 export async function checkRateLimit(
   userId: string,
   limit: number = env.RATE_LIMIT_RUNS_PER_DAY,
-  keyPrefix: string = "run"
+  keyPrefix: string = "run",
+  failOpen = false,
 ): Promise<RateLimitResult> {
   const today = format(new Date(), "yyyy-MM-dd");
   const key = `rate-limit:${keyPrefix}:${userId}:${today}`;
@@ -43,12 +44,40 @@ export async function checkRateLimit(
     };
   } catch (error) {
     console.error("Rate limit check failed:", error);
-    // Fail open - allow the request if Redis is down
-    return {
-      success: true,
-      remaining: limit,
-      limit,
-      reset: new Date(),
-    };
+    if (failOpen) {
+      return { success: true, remaining: limit, limit, reset: new Date() };
+    }
+    return { success: false, remaining: 0, limit, reset: new Date() };
+  }
+}
+
+/**
+ * IP-based rate limiter with a rolling time window.
+ * Fails open on Redis error — CLI polling is low-risk and blocking
+ * legitimate users during a Redis blip is worse than the risk.
+ */
+export async function checkIpRateLimit(
+  ip: string,
+  limit: number,
+  windowSeconds: number,
+  keyPrefix: string,
+): Promise<RateLimitResult> {
+  const windowKey = Math.floor(Date.now() / (windowSeconds * 1000));
+  const key = `rate-limit:${keyPrefix}:${ip}:${windowKey}`;
+
+  try {
+    const current = await redis.incr(key);
+    if (current === 1) {
+      await redis.expire(key, windowSeconds);
+    }
+    const remaining = Math.max(0, limit - current);
+    const reset = new Date(
+      Math.ceil(Date.now() / (windowSeconds * 1000)) * windowSeconds * 1000,
+    );
+    return { success: current <= limit, remaining, limit, reset };
+  } catch (error) {
+    console.error("IP rate limit check failed:", error);
+    // Fail open — don't break the CLI device flow during a Redis blip
+    return { success: true, remaining: limit, limit, reset: new Date() };
   }
 }

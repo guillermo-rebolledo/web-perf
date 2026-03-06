@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { resolveUser } from "@/lib/resolve-user";
 import { generateApiKey, hashApiKey } from "@/lib/api-key-auth";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const MAX_KEYS = 10;
 
@@ -53,6 +54,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Rate limit: 10 creation attempts per hour per user
+    const rl = await checkRateLimit(userId, 10, "key-create", true);
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many API key creation attempts. Please wait before trying again." },
+        { status: 429, headers: { "Retry-After": "3600" } },
+      );
+    }
+
     // Enforce 10-key cap
     const count = await prisma.apiKey.count({ where: { userId } });
     if (count >= MAX_KEYS) {
@@ -100,7 +110,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ key, rawKey }, { status: 201 });
+    return NextResponse.json({ key, rawKey }, {
+      status: 201,
+      headers: { "Cache-Control": "no-store, private" },
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

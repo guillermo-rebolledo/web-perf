@@ -252,6 +252,16 @@ export default async function Home() {
                 means act. No dashboard check required.
               </div>
             </div>
+            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+              <div className="font-bold text-base">Weekly Email Digest</div>
+              <div>
+                Every Monday, a performance summary lands in your inbox —
+                Lighthouse scores, Core Web Vitals, week-over-week trends, and
+                open alerts by severity for every site you monitor. Forward it
+                to stakeholders, bring it to your retro, or just skip the
+                dashboard entirely.
+              </div>
+            </div>
           </div>
         </section>
 
@@ -462,12 +472,12 @@ Full results: https://perflabs.dev/runs/cm9xyz456`}
               © {new Date().getFullYear()} PerfLabs. All rights reserved.
             </p>
             <div className="flex gap-5 text-xs text-muted-foreground">
-              <a href="#" className="transition-colors hover:text-foreground">
+              <Link href="/legal/privacy" className="transition-colors hover:text-foreground">
                 Privacy Policy
-              </a>
-              <a href="#" className="transition-colors hover:text-foreground">
+              </Link>
+              <Link href="/legal/terms" className="transition-colors hover:text-foreground">
                 Terms of Service
-              </a>
+              </Link>
             </div>
           </div>
         </div>

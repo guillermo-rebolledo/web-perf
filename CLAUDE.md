@@ -217,6 +217,22 @@ Use the `web-design-guidelines` skill (`/web-design-guidelines`) to audit UI fil
 > Full design reference: `.agents/skills/frontend-design/SKILL.md`
 > Web interface guidelines skill: `.agents/skills/web-design-guidelines/SKILL.md`
 
+## Security Reviews
+
+When asked to review security, find vulnerabilities, audit code, or check for OWASP issues, use the `security-review` skill.
+
+> Full skill entry point: `.agents/skills/security-review/SKILL.md`
+> Language guide (Next.js/TypeScript): `.agents/skills/security-review/languages/javascript.md`
+> Reference files: `.agents/skills/security-review/references/` (injection, xss, authorization, authentication, cryptography, ssrf, csrf, api-security, business-logic, misconfiguration, data-protection, logging, modern-threats, supply-chain, error-handling)
+
+**Project-specific context for audits:**
+- All API routes authenticate via `resolveUser()` in `src/lib/resolve-user.ts` (Bearer API key or NextAuth session)
+- Webhook routes use HMAC-SHA256 (`x-hub-signature-256`) — no user session
+- PSI fetcher in `src/worker/processor.ts` makes outbound HTTP requests to Google with user-supplied URLs — **SSRF surface**
+- AI summary endpoint makes outbound requests to OpenAI — user-supplied content passed as context
+- Zod is used consistently for input validation across all API routes
+- Prisma ORM only — no raw SQL queries
+
 ## Copywriting
 
 When writing or improving marketing copy — homepage, landing pages, pricing, feature pages, or any product page — use the `copywriting` skill (`/copywriting`).
