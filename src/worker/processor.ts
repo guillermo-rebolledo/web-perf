@@ -32,6 +32,16 @@ async function writeDebugFile(data: unknown, filename = "psi-debug.json") {
   }
 }
 
+function sanitizeErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  // PSI errors format: "PageSpeed Insights API error (NNN): <response body>"
+  // Keep only the safe prefix — strip everything after the status code.
+  const psiMatch = raw.match(/^(PageSpeed Insights API error \(\d+\))/);
+  if (psiMatch) return psiMatch[1];
+  // Truncate any other error message to prevent unexpected leakage
+  return raw.length > 500 ? `${raw.slice(0, 500)}\u2026` : raw;
+}
+
 export async function processAuditJob(job: Job<AuditJobData>) {
   const { runId, monitorId, siteUrl, strategy } = job.data;
 
@@ -299,7 +309,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
       data: {
         status: RunStatus.failed,
         completedAt: new Date(),
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorMessage: sanitizeErrorMessage(error),
       },
     });
 

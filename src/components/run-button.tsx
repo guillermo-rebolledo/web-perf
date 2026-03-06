@@ -32,6 +32,15 @@ export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
   }, [activeRunId, startPolling]);
 
   const handleRun = async () => {
+    // Request notification permission while we still have the user gesture
+    if (
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
+      await Notification.requestPermission();
+    }
+
     setIsLoading(true);
     setError(null);
 

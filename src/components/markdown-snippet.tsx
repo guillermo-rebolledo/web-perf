@@ -17,6 +17,15 @@ export function MarkdownSnippet({ md }: { md: string }) {
           allowedAttributes: {
             a: ["href", "name", "target", "rel"],
           },
+          // Explicitly restrict href to safe schemes to block javascript: URIs
+          allowedSchemes: ["http", "https", "mailto"],
+          // Force noopener noreferrer on all links
+          transformTags: {
+            a: (tagName, attribs) => ({
+              tagName,
+              attribs: { ...attribs, rel: "noopener noreferrer" },
+            }),
+          },
         });
       })
       .then((html) => {

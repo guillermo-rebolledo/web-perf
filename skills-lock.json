@@ -11,6 +11,11 @@
       "sourceType": "github",
       "computedHash": "063a0e6448123cd359ad0044cc46b0e490cc7964d45ef4bb9fd842bd2ffbca67"
     },
+    "security-review": {
+      "source": "getsentry/skills",
+      "sourceType": "github",
+      "computedHash": "cc631e7761e4bb8f844e931e3019e9abf8a36520137480ee60b897314776b0de"
+    },
     "typescript-advanced-types": {
       "source": "wshobson/agents",
       "sourceType": "github",

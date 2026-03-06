@@ -3,9 +3,24 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { resolveUser } from "@/lib/resolve-user";
 
+const ALLOWED_WEBHOOK_HOSTS = new Set(["hooks.slack.com"]);
+
+function isAllowedWebhookUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && ALLOWED_WEBHOOK_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 const patchSchema = z.object({
   name: z.string().min(1).max(100).optional(),
-  webhookUrl: z.string().url().optional(),
+  webhookUrl: z
+    .string()
+    .url()
+    .refine(isAllowedWebhookUrl, "Webhook URL must be a valid hooks.slack.com URL")
+    .optional(),
   isActive: z.boolean().optional(),
   monitorIds: z.array(z.string()).optional(),
 });

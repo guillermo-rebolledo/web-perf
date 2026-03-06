@@ -30,9 +30,13 @@ export const env = createEnv({
     EMAIL_FROM: z.string().email().optional(),
     REDIS_HOST: z.string().default("localhost"),
     REDIS_PORT: z.coerce.number().default(6379),
-    REDIS_PASSWORD: z.string().optional(),
+    REDIS_PASSWORD:
+      process.env.NODE_ENV === "production"
+        ? z.string().min(1)
+        : z.string().optional(),
     PAGESPEED_API_KEY: z.string().min(1),
     SCHEDULER_SECRET: z.string().min(32),
+    HEALTH_SECRET: z.string().min(16).optional(),
     RATE_LIMIT_RUNS_PER_DAY: z.coerce.number().default(100),
     SCREENSHOT_TTL_DAYS: z.coerce.number().default(30),
     OPENAI_API_KEY: z.string().min(1),
@@ -75,6 +79,7 @@ export const env = createEnv({
     REDIS_PASSWORD: process.env.REDIS_PASSWORD,
     PAGESPEED_API_KEY: process.env.PAGESPEED_API_KEY,
     SCHEDULER_SECRET: process.env.SCHEDULER_SECRET,
+    HEALTH_SECRET: process.env.HEALTH_SECRET,
     RATE_LIMIT_RUNS_PER_DAY: process.env.RATE_LIMIT_RUNS_PER_DAY,
     SCREENSHOT_TTL_DAYS: process.env.SCREENSHOT_TTL_DAYS,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
@@ -90,3 +95,23 @@ export const env = createEnv({
    */
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });
+
+// Cross-field validation: all EMAIL_SERVER_* vars must be set together or not at all.
+if (!process.env.SKIP_ENV_VALIDATION) {
+  const emailVars = {
+    EMAIL_SERVER_USER: process.env.EMAIL_SERVER_USER,
+    EMAIL_SERVER_PASSWORD: process.env.EMAIL_SERVER_PASSWORD,
+    EMAIL_SERVER_HOST: process.env.EMAIL_SERVER_HOST,
+    EMAIL_FROM: process.env.EMAIL_FROM,
+  };
+  const set = Object.values(emailVars).filter(Boolean);
+  if (set.length > 0 && set.length !== Object.keys(emailVars).length) {
+    const missing = Object.entries(emailVars)
+      .filter(([, v]) => !v)
+      .map(([k]) => k)
+      .join(", ");
+    throw new Error(
+      `Partial email configuration detected. Set all EMAIL_SERVER_* and EMAIL_FROM vars or none of them. Missing: ${missing}`,
+    );
+  }
+}

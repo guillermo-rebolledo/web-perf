@@ -157,19 +157,29 @@ export function HistoryView({
             <SelectValue placeholder="Select monitor" />
           </SelectTrigger>
           <SelectContent>
-            {monitorsForSite.map((monitor) => (
-              <SelectItem key={monitor.id} value={monitor.id}>
-                {/* Lucide icons instead of emoji — consistent with app icon system */}
-                <span className="inline-flex items-center gap-1.5">
-                  {monitor.strategy === "mobile" ? (
-                    <Smartphone className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  ) : (
-                    <Monitor className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  )}
-                  <span className="capitalize">{monitor.strategy}</span>
-                </span>
-              </SelectItem>
-            ))}
+            {monitorsForSite.map((monitor) => {
+              const hasSiblingWithSameStrategy = monitorsForSite.some(
+                (m) => m.id !== monitor.id && m.strategy === monitor.strategy,
+              );
+              return (
+                <SelectItem key={monitor.id} value={monitor.id}>
+                  {/* Lucide icons instead of emoji — consistent with app icon system */}
+                  <span className="inline-flex items-center gap-1.5">
+                    {monitor.strategy === "mobile" ? (
+                      <Smartphone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    ) : (
+                      <Monitor className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    )}
+                    <span className="capitalize">{monitor.strategy}</span>
+                    {hasSiblingWithSameStrategy && (
+                      <span className="text-muted-foreground">
+                        · {monitor.triggerType === "deployment" ? "Deployment" : "Scheduled"}
+                      </span>
+                    )}
+                  </span>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
 

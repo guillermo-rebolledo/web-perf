@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { customAlphabet } from "nanoid";
 import { redis } from "@/lib/redis";
 import { env } from "@/env";
+import { checkIpRateLimit } from "@/lib/rate-limit";
 
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
 
@@ -47,6 +48,19 @@ export async function POST(_request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      request.headers.get("x-real-ip") ??
+      "unknown";
+
+    const ipLimit = await checkIpRateLimit(ip, 60, 60, "cli-poll");
+    if (!ipLimit.success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": "60" } },
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const code = searchParams.get("code");
 

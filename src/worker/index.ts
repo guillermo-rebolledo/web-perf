@@ -5,6 +5,7 @@ import { AuditJobData, DigestJobData } from "@/lib/queue";
 import { processAuditJob } from "./processor";
 import { processDigestJob } from "./digest-processor";
 import { startScheduler } from "./scheduler";
+import { prisma } from "@/lib/prisma";
 
 // Create a connection configuration
 const connection = {
@@ -13,6 +14,23 @@ const connection = {
   password: env.REDIS_PASSWORD,
   maxRetriesPerRequest: null, // Required for BullMQ
 };
+
+/**
+ * Mark any runs still in "running" state as "failed".
+ * These are orphaned runs from a previous worker process that crashed mid-job.
+ */
+async function recoverOrphanedRuns(): Promise<void> {
+  const result = await prisma.run.updateMany({
+    where: { status: "running" },
+    data: {
+      status: "failed",
+      errorMessage: "Worker restarted — run was interrupted",
+    },
+  });
+  if (result.count > 0) {
+    console.log(`[Worker] Recovered ${result.count} orphaned run(s) from previous crash`);
+  }
+}
 
 // Create the worker
 const worker = new Worker<AuditJobData>(
@@ -23,6 +41,8 @@ const worker = new Worker<AuditJobData>(
   {
     connection,
     concurrency: 1, // Process one job at a time initially
+    lockDuration: 120_000, // 2 minutes — job considered stalled if lock not renewed
+    stalledInterval: 30_000, // Check for stalled jobs every 30 seconds
     limiter: {
       max: 10, // Max 10 jobs
       duration: 60000, // Per 60 seconds (respecting PSI API limits)
@@ -59,6 +79,9 @@ digestWorker.on("completed", (job) => {
 digestWorker.on("failed", (job, err) => {
   console.error(`[DigestWorker] Job ${job?.id} failed:`, err);
 });
+
+// Recover orphaned runs from a previous crash before accepting new jobs
+await recoverOrphanedRuns();
 
 // Start the scheduler
 startScheduler();

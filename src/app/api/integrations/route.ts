@@ -3,10 +3,27 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { resolveUser } from "@/lib/resolve-user";
 
+// Allowlist: only Slack's official webhook domain is permitted.
+// This prevents SSRF where a user could store an internal/metadata URL
+// and cause the server to make outbound requests to it.
+const ALLOWED_WEBHOOK_HOSTS = new Set(["hooks.slack.com"]);
+
+function isAllowedWebhookUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && ALLOWED_WEBHOOK_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 const createSchema = z.object({
   name: z.string().min(1).max(100),
   type: z.literal("slack"),
-  webhookUrl: z.string().url(),
+  webhookUrl: z
+    .string()
+    .url()
+    .refine(isAllowedWebhookUrl, "Webhook URL must be a valid hooks.slack.com URL"),
   monitorIds: z.array(z.string()).optional(), // empty/absent = all monitors
 });
 

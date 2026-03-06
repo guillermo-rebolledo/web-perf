@@ -36,7 +36,10 @@ export async function POST(
     });
 
     // Return raw secret once — not stored in a retrievable form
-    return NextResponse.json({ secret }, { status: 200 });
+    return NextResponse.json({ secret }, {
+      status: 200,
+      headers: { "Cache-Control": "no-store, private" },
+    });
   } catch (error) {
     console.error("Error generating webhook secret:", error);
     return NextResponse.json(
