@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ApiKeyManager } from "@/components/api-key-manager";
 import { IntegrationsManager } from "@/components/integrations-manager";
+import { DigestToggle } from "@/components/digest-toggle";
 
 export const metadata = { title: "Settings" };
 
@@ -13,7 +14,7 @@ export default async function SettingsPage() {
     redirect("/auth/signin");
   }
 
-  const [keys, integrations, monitors] = await Promise.all([
+  const [keys, integrations, monitors, user] = await Promise.all([
     prisma.apiKey.findMany({
       where: { userId: session.user.id },
       select: {
@@ -36,6 +37,10 @@ export default async function SettingsPage() {
       where: { site: { userId: session.user.id } },
       include: { site: { select: { name: true } } },
       orderBy: { createdAt: "asc" },
+    }),
+    prisma.user.findUniqueOrThrow({
+      where: { id: session.user.id },
+      select: { weeklyDigestEnabled: true },
     }),
   ]);
 
@@ -83,6 +88,11 @@ export default async function SettingsPage() {
           initialIntegrations={serializedIntegrations}
           monitors={serializedMonitors}
         />
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-medium">Notifications</h2>
+        <DigestToggle initialEnabled={user.weeklyDigestEnabled} />
       </section>
     </div>
   );
