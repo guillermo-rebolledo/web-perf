@@ -9,9 +9,38 @@ interface Props {
   initialEnabled: boolean;
 }
 
+/**
+ * Returns "Monday at 9:00 AM UTC · Tuesday at 7:00 PM in your timezone"
+ * (or omits the local part if the browser timezone is UTC).
+ * The day label is included when the local day differs from Monday.
+ */
+function formatScheduleHint(): string {
+  const utcLabel = "Monday at 9:00 AM UTC";
+
+  try {
+    // Anchor to a known Monday at 09:00 UTC — 2 Mar 2026 is a Monday.
+    const ref = new Date("2026-03-02T09:00:00Z");
+    const localTime = new Intl.DateTimeFormat(undefined, {
+      weekday: "long",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    }).format(ref);
+
+    // If the formatted string already contains "UTC" the timezone IS UTC —
+    // no point showing the same time twice.
+    if (localTime.includes("UTC")) return utcLabel;
+
+    return `${utcLabel} · ${localTime} in your timezone`;
+  } catch {
+    return utcLabel;
+  }
+}
+
 export function DigestToggle({ initialEnabled }: Props) {
   const [enabled, setEnabled] = useState(initialEnabled);
   const [loading, setLoading] = useState(false);
+  const scheduleHint = formatScheduleHint();
 
   async function handleToggle(checked: boolean) {
     setLoading(true);
@@ -41,7 +70,7 @@ export function DigestToggle({ initialEnabled }: Props) {
             Email Digest
           </Label>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Weekly performance summary sent every Monday at 9 AM UTC.
+            Weekly performance summary sent every {scheduleHint}.
           </p>
         </div>
         <Switch
