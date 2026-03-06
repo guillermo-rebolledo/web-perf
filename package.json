@@ -65,6 +65,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.3.1",
+    "prisma": "^6.19.2",
+    "tsx": "^4.21.0",
     "ioredis": "^5.9.3",
     "lucide-react": "^0.564.0",
     "marked": "^17.0.3",
@@ -116,9 +118,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "happy-dom": "^20.6.1",
-    "prisma": "^6.19.2",
     "tailwindcss": "^4",
-    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.0.18",
     "vitest-mock-extended": "^3.1.0"
