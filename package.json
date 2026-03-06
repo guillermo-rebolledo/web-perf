@@ -56,6 +56,8 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-email/components": "^1.0.8",
+    "@sentry/nextjs": "^10.42.0",
+    "@sentry/node": "^10.42.0",
     "@t3-oss/env-nextjs": "^0.13.10",
     "ai": "^6.0.100",
     "bullmq": "^5.69.3",
@@ -85,6 +87,15 @@
     "tailwind-merge": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.3.6"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@sentry/cli",
+      "esbuild",
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
+    ]
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

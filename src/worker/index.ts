@@ -1,4 +1,5 @@
 import "dotenv/config";
+import * as Sentry from "@sentry/node";
 import { Worker } from "bullmq";
 import { env } from "@/env";
 import { AuditJobData, DigestJobData } from "@/lib/queue";
@@ -6,6 +7,13 @@ import { processAuditJob } from "./processor";
 import { processDigestJob } from "./digest-processor";
 import { startScheduler } from "./scheduler";
 import { prisma } from "@/lib/prisma";
+
+Sentry.init({
+  dsn: env.SENTRY_DSN,
+  sendDefaultPii: true,
+  tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
+  environment: env.NODE_ENV,
+});
 
 // Create a connection configuration
 const connection = {
@@ -56,10 +64,14 @@ worker.on("completed", (job) => {
 });
 
 worker.on("failed", (job, err) => {
+  Sentry.captureException(err, {
+    tags: { worker: "performance-audits", jobId: job?.id },
+  });
   console.error(`[Worker] Job ${job?.id} failed:`, err);
 });
 
 worker.on("error", (err) => {
+  Sentry.captureException(err, { tags: { worker: "performance-audits" } });
   console.error("[Worker] Worker error:", err);
 });
 
@@ -77,6 +89,9 @@ digestWorker.on("completed", (job) => {
 });
 
 digestWorker.on("failed", (job, err) => {
+  Sentry.captureException(err, {
+    tags: { worker: "weekly-digest", jobId: job?.id },
+  });
   console.error(`[DigestWorker] Job ${job?.id} failed:`, err);
 });
 
@@ -84,6 +99,7 @@ digestWorker.on("failed", (job, err) => {
 const shutdown = async () => {
   console.log("[Worker] Shutting down gracefully...");
   await Promise.all([worker.close(), digestWorker.close()]);
+  await Sentry.close(2000);
   process.exit(0);
 };
 

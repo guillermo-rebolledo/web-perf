@@ -604,6 +604,70 @@ posthog.capture(AnalyticsEvent.site_created, { url: site.url });
 - [Feature flags](https://posthog.com/docs/feature-flags)
 - [Session replay](https://posthog.com/docs/session-replay)
 
+## Observability (Sentry)
+
+This project uses [Sentry](https://sentry.io) for error monitoring, performance tracing, session replay, and cron job health tracking across the Next.js app and the background worker process.
+
+> 📖 **For detailed architecture and implementation documentation, see [docs/sentry-integration.md](./docs/sentry-integration.md)**
+
+### What Sentry captures
+
+- **Errors** — unhandled exceptions, promise rejections, API route failures, worker job crashes
+- **Traces** — server request timing, client navigation spans, Web Vitals (LCP, CLS, FCP, TTFB)
+- **Session Replay** — video-like reproductions of user sessions when errors occur
+- **Cron health** — missed, failed, or timed-out scheduled jobs in the worker
+
+### Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `SENTRY_DSN` | Optional | Server-side DSN for the Next.js server and worker process |
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional | Client-side DSN (safe to expose in browser bundle) |
+| `SENTRY_AUTH_TOKEN` | CI only | Auth token for source map uploads during production builds |
+| `SENTRY_ORG` | CI only | Sentry organization slug |
+| `SENTRY_PROJECT` | CI only | Sentry project slug |
+
+Sentry is optional — the app runs without it when DSN variables are not set. The SDK silently no-ops.
+
+### Local development setup
+
+To test Sentry locally:
+
+1. Create a free account at [sentry.io](https://sentry.io) and create a Next.js project
+2. Copy the DSN from **Settings → Projects → Client Keys (DSN)**
+3. Add to your `.env`:
+
+```env
+SENTRY_DSN=https://your-key@o0.ingest.sentry.io/0
+NEXT_PUBLIC_SENTRY_DSN=https://your-key@o0.ingest.sentry.io/0
+```
+
+4. Restart the dev server (`pnpm dev:all`)
+
+To see SDK debug logs in the console, temporarily add `debug: true` to any `Sentry.init()` call.
+
+### Verifying the setup
+
+Throw a test error in a client component or API route:
+
+```typescript
+// In any client component — click a button that runs this:
+throw new Error("Sentry test error — delete me");
+
+// Or in any API route:
+import * as Sentry from "@sentry/nextjs";
+Sentry.captureException(new Error("Sentry test error — delete me"));
+```
+
+Check [sentry.io/issues/](https://sentry.io/issues/) — the error should appear within ~30 seconds.
+
+### Useful links
+
+- [Sentry Next.js integration docs](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
+- [Session Replay privacy configuration](https://docs.sentry.io/platforms/javascript/guides/nextjs/session-replay/privacy/)
+- [Cron Monitoring](https://docs.sentry.io/product/crons/)
+- [Source map setup](https://docs.sentry.io/platforms/javascript/guides/nextjs/sourcemaps/)
+
 ## OAuth Setup
 
 ### Google
