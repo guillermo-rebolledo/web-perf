@@ -100,6 +100,8 @@ test.describe("Site detail page (authenticated)", () => {
   test("can navigate from run history to run detail", async ({ page }) => {
     await page.goto(`/sites/${TEST_SITE.id}`);
     await page.getByRole("link", { name: /view details/i }).first().click();
-    await expect(page).toHaveURL(new RegExp(`/runs/`));
+    // waitForURL makes the navigation wait explicit — toHaveURL alone can race
+    // against Next.js client-side routing in CI where the dev server is slower.
+    await page.waitForURL(/\/runs\//, { timeout: 15_000 });
   });
 });
