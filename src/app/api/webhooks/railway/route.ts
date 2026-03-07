@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from "next/server";
+import { env } from "@/env";
+import {
+  isActionableStatus,
+  sendRailwayDeployNotification,
+  type RailwayWebhookPayload,
+} from "@/lib/notifications/railway-deployment";
+
+// POST /api/webhooks/railway
+// Receives Railway deployment webhook events and forwards a Slack notification.
+// No auth: Railway's webhook dashboard does not support secret tokens.
+// No DB interaction — pure webhook receiver.
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Graceful no-op: if env var is not configured, the feature is disabled
+  if (!env.RAILWAY_SLACK_WEBHOOK_URL) {
+    return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
+  }
+
+  // Parse body
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Validate shape minimally
+  if (
+    typeof body !== "object" ||
+    body === null ||
+    !("status" in body) ||
+    typeof (body as Record<string, unknown>).status !== "string"
+  ) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  }
+
+  const payload = body as RailwayWebhookPayload;
+
+  // Skip non-actionable statuses (DEPLOYING, REMOVED) to avoid noise
+  if (!isActionableStatus(payload.status)) {
+    return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
+  }
+
+  try {
+    await sendRailwayDeployNotification(env.RAILWAY_SLACK_WEBHOOK_URL, payload);
+  } catch (error) {
+    console.error("Failed to send Railway deploy Slack notification:", error);
+    return NextResponse.json(
+      { error: "Failed to send notification" },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.json({ ok: true }, { status: 200 });
+}
