@@ -11,13 +11,27 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
+// Mock sonner
+vi.mock("sonner", () => ({
+  toast: {
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
+
 // Mock global fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+import { toast } from "sonner";
+
 describe("RunButton", () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    vi.mocked(toast.error).mockReset();
+    vi.mocked(toast.info).mockReset();
+    vi.mocked(toast.warning).mockReset();
   });
 
   it("renders Run Now button", () => {
@@ -73,7 +87,7 @@ describe("RunButton", () => {
     });
   });
 
-  it("shows rate limit error on 429", async () => {
+  it("fires toast.error on 429", async () => {
     const user = userEvent.setup();
     mockFetch.mockResolvedValue({
       ok: false,
@@ -84,10 +98,17 @@ describe("RunButton", () => {
     render(<RunButton monitorId="m1" />);
     await user.click(screen.getByRole("button", { name: /run now/i }));
 
-    await expect(screen.findByText(/rate limit exceeded/i)).resolves.toBeInTheDocument();
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Daily run limit reached",
+        expect.objectContaining({
+          description: expect.stringContaining("midnight"),
+        })
+      );
+    });
   });
 
-  it("shows conflict error on 409", async () => {
+  it("fires toast.info on 409", async () => {
     const user = userEvent.setup();
     mockFetch.mockResolvedValue({
       ok: false,
@@ -99,6 +120,28 @@ describe("RunButton", () => {
     render(<RunButton monitorId="m1" />);
     await user.click(screen.getByRole("button", { name: /run now/i }));
 
-    await expect(screen.findByText(/already in progress/i)).resolves.toBeInTheDocument();
+    await waitFor(() => {
+      expect(toast.info).toHaveBeenCalledWith(
+        "Audit already in progress",
+        expect.objectContaining({
+          description: expect.stringContaining("queued"),
+        })
+      );
+    });
+  });
+
+  it("fires toast.error on generic fetch failure", async () => {
+    const user = userEvent.setup();
+    mockFetch.mockRejectedValue(new Error("Network error"));
+
+    render(<RunButton monitorId="m1" />);
+    await user.click(screen.getByRole("button", { name: /run now/i }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Failed to start run",
+        expect.objectContaining({ description: "Network error" })
+      );
+    });
   });
 });
