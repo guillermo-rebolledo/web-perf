@@ -1,0 +1,82 @@
+name: E2E
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    name: Playwright
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: perflab
+          POSTGRES_USER: perflab
+          POSTGRES_PASSWORD: perflab
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://perflab:perflab@localhost:5432/perflab
+      NEXTAUTH_SECRET: e2e-test-secret-at-least-32-chars-long
+      NEXTAUTH_URL: http://localhost:3000
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      PAGESPEED_API_KEY: dummy
+      SCHEDULER_SECRET: e2e-test-scheduler-secret-32-chars-ok
+      GOOGLE_CLIENT_ID: dummy-google-client-id
+      GOOGLE_CLIENT_SECRET: dummy-google-client-secret
+      GITHUB_CLIENT_ID: dummy-github-client-id
+      GITHUB_CLIENT_SECRET: dummy-github-client-secret
+      OPENAI_API_KEY: dummy-openai-api-key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Apply database migrations
+        run: pnpm prisma migrate deploy
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

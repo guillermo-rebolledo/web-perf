@@ -279,3 +279,20 @@ Playwright in CI mode:
 - Uses a single worker
 - Produces GitHub Actions-compatible reports
 - Forbids `.only` annotations
+
+### CI Workflows
+
+| Workflow | File | Trigger | What it runs |
+|---|---|---|---|
+| Vitest | `.github/workflows/test.yml` | `push` to `main`, `pull_request` | `pnpm test` |
+| Lint | `.github/workflows/lint.yml` | `push` to `main`, `pull_request` | `pnpm lint` + `tsc --noEmit` |
+| E2E | `.github/workflows/e2e.yml` | `pull_request` to `main` | `pnpm test:e2e` |
+
+The E2E workflow (`e2e.yml`) is a required check on PRs targeting `main`. It:
+1. Spins up Postgres 16 and Redis 7 via GitHub Actions `services`
+2. Installs only Chromium (matching the single project in `playwright.config.ts`)
+3. Applies pending migrations with `prisma migrate deploy`
+4. Runs `pnpm test:e2e`
+5. Uploads the Playwright HTML report as an artifact (7-day retention) on failure
+
+E2E tests only run on PRs, not on direct pushes to `main`, to keep the main branch pipeline fast. Unit and lint checks cover `push` events.

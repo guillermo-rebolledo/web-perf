@@ -49,7 +49,7 @@ const worker = new Worker<AuditJobData>(
   {
     connection,
     concurrency: 1, // Process one job at a time initially
-    lockDuration: 120_000, // 2 minutes — job considered stalled if lock not renewed
+    lockDuration: 300_000, // 5 minutes — PSI audits can take 30–90s; give ample headroom
     stalledInterval: 30_000, // Check for stalled jobs every 30 seconds
     limiter: {
       max: 10, // Max 10 jobs
