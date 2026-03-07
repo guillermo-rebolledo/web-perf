@@ -24,7 +24,7 @@ const targetEmail = args[0];
 
 if (!targetEmail || targetEmail.startsWith("--")) {
   console.error(
-    "Usage: pnpm digest:test-email <email> [--real] [--user <userId>]"
+    "Usage: pnpm digest:test-email <email> [--real] [--user <userId>]",
   );
   process.exit(1);
 }
@@ -145,7 +145,7 @@ async function main() {
 
   if (!process.env.RESEND_API_KEY) {
     console.error(
-      "\nError: RESEND_API_KEY is not set. Add it to your .env file.\n"
+      "\nError: RESEND_API_KEY is not set. Add it to your .env file.\n",
     );
     process.exit(1);
   }
@@ -155,9 +155,8 @@ async function main() {
   if (useReal || specificUserId) {
     printSection("Loading real data from DB");
     const { prisma } = await import("../src/lib/prisma.js");
-    const { aggregateUserDigest } = await import(
-      "../src/lib/digest/aggregator.js"
-    );
+    const { aggregateUserDigest } =
+      await import("../src/lib/digest/aggregator.js");
 
     let userId = specificUserId;
 
@@ -168,7 +167,7 @@ async function main() {
       });
       if (!user) {
         console.error(
-          "\nNo users with weeklyDigestEnabled=true found in DB.\n"
+          "\nNo users with weeklyDigestEnabled=true found in DB.\n",
         );
         process.exit(1);
       }
@@ -182,7 +181,7 @@ async function main() {
     if (!data) {
       console.error(
         "\nNo digest data for this user (no runs in the past 7 days).\n" +
-          "Tip: run without --real to send fixture data instead.\n"
+          "Tip: run without --real to send fixture data instead.\n",
       );
       process.exit(1);
     }
@@ -201,11 +200,11 @@ async function main() {
 
   printSection("Sending email");
   console.log(`  To:      ${targetEmail}`);
-  console.log(`  From:    ${process.env.RESEND_FROM_EMAIL ?? "digest@perflabs.app"}`);
-  console.log(`  Sites:   ${digestData.sites.length}`);
   console.log(
-    `  Alerts:  ${digestData.summary.totalCriticalAlerts} critical`
+    `  From:    ${process.env.RESEND_FROM_EMAIL ?? "digest@updates.perflabs.dev"}`,
   );
+  console.log(`  Sites:   ${digestData.sites.length}`);
+  console.log(`  Alerts:  ${digestData.summary.totalCriticalAlerts} critical`);
   console.log();
 
   const { sendDigestEmail } = await import("../src/lib/digest/sender.js");

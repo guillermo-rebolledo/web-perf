@@ -29,18 +29,18 @@ Users with no successful runs in the past 7 days are silently skipped — no emp
 
 ### Key files
 
-| File | Purpose |
-|---|---|
-| `src/lib/queue.ts` | `DigestJobData` type + `enqueueDigestJob()` |
-| `src/worker/scheduler.ts` | Monday 9 AM cron that triggers the job |
-| `src/worker/digest-processor.ts` | Job handler: fans out to all opted-in users |
-| `src/lib/digest/aggregator.ts` | Queries DB, computes trends and alert counts |
-| `src/lib/digest/sender.ts` | Renders template + sends via Resend |
-| `src/lib/digest/unsubscribe-token.ts` | HMAC sign/verify for unsubscribe links |
-| `src/emails/weekly-digest.tsx` | React Email template |
-| `src/app/api/digest/unsubscribe/route.ts` | One-click unsubscribe endpoint |
-| `src/app/api/user/route.ts` | `PATCH /api/user` — toggle `weeklyDigestEnabled` |
-| `src/components/digest-toggle.tsx` | Settings page toggle |
+| File                                      | Purpose                                          |
+| ----------------------------------------- | ------------------------------------------------ |
+| `src/lib/queue.ts`                        | `DigestJobData` type + `enqueueDigestJob()`      |
+| `src/worker/scheduler.ts`                 | Monday 9 AM cron that triggers the job           |
+| `src/worker/digest-processor.ts`          | Job handler: fans out to all opted-in users      |
+| `src/lib/digest/aggregator.ts`            | Queries DB, computes trends and alert counts     |
+| `src/lib/digest/sender.ts`                | Renders template + sends via Resend              |
+| `src/lib/digest/unsubscribe-token.ts`     | HMAC sign/verify for unsubscribe links           |
+| `src/emails/weekly-digest.tsx`            | React Email template                             |
+| `src/app/api/digest/unsubscribe/route.ts` | One-click unsubscribe endpoint                   |
+| `src/app/api/user/route.ts`               | `PATCH /api/user` — toggle `weeklyDigestEnabled` |
+| `src/components/digest-toggle.tsx`        | Settings page toggle                             |
 
 ---
 
@@ -50,7 +50,7 @@ Add to `.env`:
 
 ```
 RESEND_API_KEY=re_your_api_key_here
-RESEND_FROM_EMAIL=digest@perflabs.app
+RESEND_FROM_EMAIL=digest@updates.perflabs.dev
 ```
 
 Get a Resend API key at [resend.com/api-keys](https://resend.com/api-keys).
@@ -103,10 +103,12 @@ Use the `digest:test-email` script to send a real email through Resend without t
 2. **A verified sender domain or address** in Resend. Until your domain is verified, Resend only allows sending to the email address used to create your Resend account. So for local testing, send to yourself.
 
 3. **Environment variables** set in `.env`:
+
    ```
    RESEND_API_KEY=re_your_api_key_here
-   RESEND_FROM_EMAIL=digest@perflabs.app   # must match a verified domain in Resend
+   RESEND_FROM_EMAIL=digest@updates.perflabs.dev   # must match a verified domain in Resend
    ```
+
    `NEXTAUTH_URL` (already set in `.env`) is used for unsubscribe links — no extra variable needed.
 
 4. **Dependencies installed** (`pnpm install` — already done if you followed setup).
@@ -130,15 +132,16 @@ In all cases the email is delivered to `<email>` regardless of whose data is use
 
 ### Modes
 
-| Mode | DB required | Data source | Best for |
-|---|---|---|---|
-| _(default)_ | No | Rich fixture: 2 sites, mixed trends, alerts | Checking template layout and formatting |
-| `--real` | Yes | First opted-in user's actual last 7 days | Verifying real data renders correctly |
-| `--real --user <id>` | Yes | Specific user's actual last 7 days | Debugging a specific user's digest |
+| Mode                 | DB required | Data source                                 | Best for                                |
+| -------------------- | ----------- | ------------------------------------------- | --------------------------------------- |
+| _(default)_          | No          | Rich fixture: 2 sites, mixed trends, alerts | Checking template layout and formatting |
+| `--real`             | Yes         | First opted-in user's actual last 7 days    | Verifying real data renders correctly   |
+| `--real --user <id>` | Yes         | Specific user's actual last 7 days          | Debugging a specific user's digest      |
 
 ### What the fixture data looks like
 
 The fixture generates a realistic email with:
+
 - **Marketing Site** — declining trend (score 81 → 68), 2 critical alerts, 3 regressions including an LCP +33% and CLS +100%
 - **Docs** — improving trend (score 89 → 94), no alerts
 
@@ -146,13 +149,13 @@ This exercises the full template including alert badges, trend arrows, regressio
 
 ### Troubleshooting
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| `RESEND_API_KEY is not set` | Missing env var | Add `RESEND_API_KEY` to `.env` |
-| Email delivered but from wrong address | `RESEND_FROM_EMAIL` domain not verified | Add/verify the domain in Resend dashboard, or use `onboarding@resend.dev` for testing |
-| `No users with weeklyDigestEnabled=true` | Using `--real` with empty/opted-out DB | Run without `--real` to use fixture data instead, or enable digest for a user in the DB |
-| `No digest data for this user` | `--real` user has no runs in the past 7 days | Use a user with recent runs, or use fixture mode |
-| Email lands in spam | Sender domain not properly authenticated | Set up SPF, DKIM, and DMARC for your sending domain in Resend |
+| Symptom                                  | Likely cause                                 | Fix                                                                                     |
+| ---------------------------------------- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `RESEND_API_KEY is not set`              | Missing env var                              | Add `RESEND_API_KEY` to `.env`                                                          |
+| Email delivered but from wrong address   | `RESEND_FROM_EMAIL` domain not verified      | Add/verify the domain in Resend dashboard, or use `onboarding@resend.dev` for testing   |
+| `No users with weeklyDigestEnabled=true` | Using `--real` with empty/opted-out DB       | Run without `--real` to use fixture data instead, or enable digest for a user in the DB |
+| `No digest data for this user`           | `--real` user has no runs in the past 7 days | Use a user with recent runs, or use fixture mode                                        |
+| Email lands in spam                      | Sender domain not properly authenticated     | Set up SPF, DKIM, and DMARC for your sending domain in Resend                           |
 
 ---
 
@@ -199,14 +202,14 @@ pnpm test
 
 ### Test coverage by file
 
-| Test file | What it covers |
-|---|---|
-| `src/lib/digest/aggregator.test.ts` | Empty users, no-runs-this-week skip, improving/declining trend detection, alert severity counting, top-3 regression ordering |
-| `src/lib/digest/unsubscribe-token.test.ts` | Sign/verify round-trip, tampered token → null, malformed input → null, determinism |
-| `src/lib/digest/sender.test.ts` | Correct recipient and from address, subject format, `List-Unsubscribe` CAN-SPAM header, Resend error propagation |
-| `src/worker/__tests__/digest-processor.test.ts` | Opted-in-only user filter, sends to all users with data, skips no-data users, **per-user error isolation** (one failure doesn't abort others), no-user no-op |
-| `src/app/api/digest/unsubscribe/__tests__/route.test.ts` | Missing token → 400, invalid token → 400, DB field flip, redirect to `/settings?unsubscribed=1` |
-| `src/app/api/user/__tests__/route.test.ts` | Unauthenticated → 401, non-boolean body → 400, valid enable/disable → 200 |
+| Test file                                                | What it covers                                                                                                                                               |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/lib/digest/aggregator.test.ts`                      | Empty users, no-runs-this-week skip, improving/declining trend detection, alert severity counting, top-3 regression ordering                                 |
+| `src/lib/digest/unsubscribe-token.test.ts`               | Sign/verify round-trip, tampered token → null, malformed input → null, determinism                                                                           |
+| `src/lib/digest/sender.test.ts`                          | Correct recipient and from address, subject format, `List-Unsubscribe` CAN-SPAM header, Resend error propagation                                             |
+| `src/worker/__tests__/digest-processor.test.ts`          | Opted-in-only user filter, sends to all users with data, skips no-data users, **per-user error isolation** (one failure doesn't abort others), no-user no-op |
+| `src/app/api/digest/unsubscribe/__tests__/route.test.ts` | Missing token → 400, invalid token → 400, DB field flip, redirect to `/settings?unsubscribed=1`                                                              |
+| `src/app/api/user/__tests__/route.test.ts`               | Unauthenticated → 401, non-boolean body → 400, valid enable/disable → 200                                                                                    |
 
 ---
 
@@ -239,9 +242,11 @@ Drift occurs when the database schema diverges from the local migration history.
    - If the branch removes or renames columns, run `pnpm prisma migrate reset` on your local DB first (data loss is fine in dev).
 
 4. **If you detect drift** (`prisma migrate dev` warns about it), use `prisma migrate deploy` for additive-only migrations — it applies pending local migrations without the drift check:
+
    ```bash
    pnpm prisma migrate deploy
    ```
+
    Use this only for additive changes (ADD COLUMN, CREATE TABLE). For destructive changes, reset the DB.
 
 5. **Never commit a manually-altered DB state** — if you ran SQL directly against the DB, create a matching migration file before committing, or your teammates' DBs will diverge.
@@ -250,10 +255,10 @@ Drift occurs when the database schema diverges from the local migration history.
 
 ### Quick Reference
 
-| Situation | Command |
-|---|---|
-| Normal schema change on your branch | `pnpm prisma migrate dev --name describe_change` |
-| Apply pending additive migrations (drift exists) | `pnpm prisma migrate deploy` |
-| Switching branches that remove/rename columns | `pnpm prisma migrate reset` (local only) |
-| Production deploy | `pnpm prisma migrate deploy` |
-| Inspect migration history | `docker exec -i <postgres> psql -U perflab -d perflab -c "SELECT migration_name FROM _prisma_migrations ORDER BY started_at;"` |
+| Situation                                        | Command                                                                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| Normal schema change on your branch              | `pnpm prisma migrate dev --name describe_change`                                                                               |
+| Apply pending additive migrations (drift exists) | `pnpm prisma migrate deploy`                                                                                                   |
+| Switching branches that remove/rename columns    | `pnpm prisma migrate reset` (local only)                                                                                       |
+| Production deploy                                | `pnpm prisma migrate deploy`                                                                                                   |
+| Inspect migration history                        | `docker exec -i <postgres> psql -U perflab -d perflab -c "SELECT migration_name FROM _prisma_migrations ORDER BY started_at;"` |
