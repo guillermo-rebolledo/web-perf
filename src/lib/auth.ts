@@ -61,10 +61,15 @@ export const { handlers, auth } = NextAuth({
       });
 
       if (!dbUser) {
+        // Fresh sign-in: user record doesn't exist yet in the DB (edge case
+        // with some providers). Carry the id forward from the trigger payload.
         if (user?.id) {
           token.id = user.id;
+          return token;
         }
-        return token;
+        // User was deleted — returning null invalidates the JWT and forces
+        // the session to null on the next check, signing the user out.
+        return null;
       }
 
       return {

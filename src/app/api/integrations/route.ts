@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { resolveUser } from "@/lib/resolve-user";
+import { MAX_INTEGRATIONS_PER_USER } from "@/lib/limits";
 
 // Allowlist: only Slack's official webhook domain is permitted.
 // This prevents SSRF where a user could store an internal/metadata URL
@@ -71,6 +72,15 @@ export async function POST(request: NextRequest) {
   }
 
   const { name, type, webhookUrl, monitorIds } = parsed.data;
+
+  // Enforce per-user integration limit
+  const integrationCount = await prisma.integration.count({ where: { userId } });
+  if (integrationCount >= MAX_INTEGRATIONS_PER_USER) {
+    return NextResponse.json(
+      { error: `Integration limit reached. Maximum ${MAX_INTEGRATIONS_PER_USER} integrations per account.` },
+      { status: 422 },
+    );
+  }
 
   // Verify monitorIds belong to the user
   if (monitorIds && monitorIds.length > 0) {

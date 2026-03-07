@@ -4,9 +4,10 @@ import { TEST_SITE } from "./helpers/seed";
 test.describe("Dashboard (unauthenticated)", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("root page redirects to dashboard or sign-in", async ({ page }) => {
+  test("root page shows landing page for unauthenticated users", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/\/(dashboard|auth\/signin|api\/auth)/);
+    // / is now a marketing landing page; unauthenticated users stay on /
+    await expect(page).toHaveURL("http://localhost:3000/");
   });
 
   test("dashboard route redirects to auth", async ({ request }) => {
@@ -45,7 +46,7 @@ test.describe("Dashboard (authenticated)", () => {
     await page.goto("/dashboard");
     await expect(page.getByText("Navigation")).toBeVisible();
     await expect(page.getByRole("link", { name: /dashboard/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /sites/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /alerts/i })).toBeVisible();
   });
 
   test("can navigate to the seeded site detail page", async ({ page }) => {

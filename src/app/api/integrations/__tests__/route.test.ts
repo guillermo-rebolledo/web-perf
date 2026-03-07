@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
+
+vi.mock("@/lib/rate-limit", () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({ success: true, remaining: 4, limit: 5, reset: new Date() }),
+}));
 import {
   mockAuthenticated,
   mockUnauthenticated,
@@ -90,6 +94,23 @@ describe("POST /api/integrations", () => {
       }),
     );
     expect(res.status).toBe(400);
+  });
+
+  it("returns 422 when integration limit is reached", async () => {
+    vi.mocked(prismaMock.integration.count).mockResolvedValue(10);
+
+    const res = await POST(
+      makeRequest("POST", "/api/integrations", {
+        name: "One Too Many",
+        type: "slack",
+        webhookUrl: "https://hooks.slack.com/services/test",
+      }),
+    );
+    const data = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(422);
+    expect(data.error).toContain("limit reached");
+    expect(prismaMock.integration.create).not.toHaveBeenCalled();
   });
 
   it("creates integration and returns 200", async () => {

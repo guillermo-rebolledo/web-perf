@@ -5,6 +5,7 @@ import { z } from "zod";
 import { RunStatus } from "@prisma/client";
 import { resolveUser } from "@/lib/resolve-user";
 import { randomBytes } from "crypto";
+import { MAX_MONITORS_PER_SITE } from "@/lib/limits";
 
 const createMonitorSchema = z.object({
   siteId: z.string().cuid(),
@@ -97,6 +98,15 @@ export async function POST(request: NextRequest) {
 
     if (!site) {
       return NextResponse.json({ error: "Site not found" }, { status: 404 });
+    }
+
+    // Enforce per-site monitor limit
+    const monitorCount = await prisma.monitor.count({ where: { siteId: validated.siteId } });
+    if (monitorCount >= MAX_MONITORS_PER_SITE) {
+      return NextResponse.json(
+        { error: `Monitor limit reached. Maximum ${MAX_MONITORS_PER_SITE} monitors per site.` },
+        { status: 422 }
+      );
     }
 
     if (validated.triggerType === "deployment") {

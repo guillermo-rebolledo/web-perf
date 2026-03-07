@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ApiKeyManager } from "@/components/api-key-manager";
 import { IntegrationsManager } from "@/components/integrations-manager";
 import { DigestToggle } from "@/components/digest-toggle";
+import { AccountSection } from "@/components/account-section";
 
 export const metadata = { title: "Settings" };
 
@@ -93,6 +94,11 @@ export default async function SettingsPage() {
       <section>
         <h2 className="mb-4 text-lg font-medium">Notifications</h2>
         <DigestToggle initialEnabled={user.weeklyDigestEnabled} />
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-lg font-medium">Account</h2>
+        <AccountSection />
       </section>
     </div>
   );

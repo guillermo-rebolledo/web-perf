@@ -36,7 +36,7 @@ test.describe("Authentication", () => {
 
   test("verify-request page renders", async ({ page }) => {
     await page.goto("/auth/verify-request");
-    await expect(page.getByText(/check your email/i)).toBeVisible();
+    await expect(page.getByText(/check your inbox/i)).toBeVisible();
   });
 
   test("error page renders", async ({ page }) => {
