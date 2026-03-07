@@ -13,6 +13,8 @@ declare module "sonner" {
 
   export const toast: ToastFn & {
     success: ToastFn;
+    info: ToastFn;
+    warning: ToastFn;
     error: ToastFn;
   };
 

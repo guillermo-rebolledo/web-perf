@@ -3,6 +3,7 @@ import nodeCron from "node-cron";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob, enqueueDigestJob } from "@/lib/queue";
 import { cleanupOldScreenshots } from "@/lib/screenshot-cleanup";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { env } from "@/env";
 import { addMinutes } from "date-fns";
 import { RunStatus } from "@prisma/client";
@@ -89,6 +90,24 @@ export async function processDueMonitors() {
         console.log(
           `[Scheduler] Monitor ${monitor.id} already has a ${monitor.runs[0].status} run, skipping`
         );
+        continue;
+      }
+
+      // Quota check: enforce scheduled-run daily limit per user
+      const quota = await checkRateLimit(
+        monitor.site.userId,
+        env.RATE_LIMIT_SCHEDULED_RUNS_PER_DAY,
+        "scheduled",
+        true, // failOpen — Redis error must not halt all scheduled monitoring
+      );
+      if (!quota.success) {
+        console.warn(
+          `[Scheduler] Scheduled-run quota exceeded for user ${monitor.site.userId}, skipping monitor ${monitor.id} (resets ${quota.reset.toISOString()})`
+        );
+        await prisma.monitor.update({
+          where: { id: monitor.id },
+          data: { nextRunAt: addMinutes(now, monitor.cadenceMinutes) },
+        });
         continue;
       }
 

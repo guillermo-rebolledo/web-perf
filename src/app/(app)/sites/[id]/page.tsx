@@ -38,6 +38,7 @@ import { ScoreBadge } from "@/components/score-badge";
 import { MetricsChart } from "@/components/metrics-chart";
 import { formatDistanceToNow } from "date-fns";
 import { EmptyMonitors } from "@/components/empty-monitors";
+import { ScheduledQuotaWarning } from "@/components/scheduled-quota-warning";
 import { formatCadence } from "@/lib/dates";
 import {
   Activity,
@@ -109,6 +110,7 @@ export default async function SitePage({
 
   return (
     <div className="container mx-auto py-8">
+      <ScheduledQuotaWarning />
       <div className="flex flex-col gap-8">
         <Breadcrumb>
           <BreadcrumbList>

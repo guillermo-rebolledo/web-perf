@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -19,7 +20,6 @@ interface RunButtonProps {
 
 export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
   const [isLoading, setIsLoading] = useState(!!activeRunId);
-  const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const router = useRouter();
   const { startPolling } = useRunPolling();
@@ -42,7 +42,6 @@ export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
     }
 
     setIsLoading(true);
-    setError(null);
 
     try {
       const response = await fetch(`/api/monitors/${monitorId}/run`, {
@@ -52,14 +51,22 @@ export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 429) {
-          throw new Error(
-            `Rate limit exceeded. ${errorData.remaining} runs remaining today.`,
-          );
+          toast.error("Daily run limit reached", {
+            description:
+              "Your manual run quota resets at midnight. Scheduled monitoring continues unaffected.",
+          });
+        } else if (response.status === 409) {
+          toast.info("Audit already in progress", {
+            description:
+              "A run is queued for this monitor. Check back shortly.",
+          });
+        } else {
+          toast.error("Failed to start run", {
+            description: errorData.error ?? "An unexpected error occurred.",
+          });
         }
-        if (response.status === 409) {
-          throw new Error("A run is already in progress for this monitor.");
-        }
-        throw new Error(errorData.error || "Failed to start run");
+        setIsLoading(false);
+        return;
       }
 
       const data = await response.json();
@@ -69,7 +76,9 @@ export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
       router.refresh();
       startPolling(data.runId, () => setIsLoading(false));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      toast.error("Failed to start run", {
+        description: err instanceof Error ? err.message : "An unexpected error occurred.",
+      });
       setIsLoading(false);
     }
   };
@@ -117,7 +126,6 @@ export function RunButton({ monitorId, activeRunId }: RunButtonProps) {
           )}
         </Button>
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }

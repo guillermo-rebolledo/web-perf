@@ -2,7 +2,7 @@ import { redis } from "./redis";
 import { env } from "@/env";
 import { format } from "date-fns";
 
-interface RateLimitResult {
+export interface RateLimitResult {
   success: boolean;
   remaining: number;
   limit: number;
@@ -48,6 +48,30 @@ export async function checkRateLimit(
       return { success: true, remaining: limit, limit, reset: new Date() };
     }
     return { success: false, remaining: 0, limit, reset: new Date() };
+  }
+}
+
+export async function getQuotaStatus(
+  userId: string,
+  limit: number,
+  keyPrefix: string,
+): Promise<RateLimitResult> {
+  const today = format(new Date(), "yyyy-MM-dd");
+  const key = `rate-limit:${keyPrefix}:${userId}:${today}`;
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+  try {
+    const raw = await redis.get(key);
+    const current = raw ? parseInt(raw, 10) : 0;
+    return {
+      success: current < limit,
+      remaining: Math.max(0, limit - current),
+      limit,
+      reset: endOfDay,
+    };
+  } catch {
+    // Fail open — don't block rendering on a Redis hiccup
+    return { success: true, remaining: limit, limit, reset: endOfDay };
   }
 }
 
