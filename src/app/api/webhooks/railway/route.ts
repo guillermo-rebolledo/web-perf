@@ -24,10 +24,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Temporary: log the raw Railway payload so we can verify the real shape in production logs.
-  // Remove once confirmed.
-  console.log("[railway-webhook] raw payload:", JSON.stringify(body));
-
   // Extract status — treat missing/unrecognised payloads (e.g. Railway test pings) as a no-op
   const status =
     typeof body === "object" &&
