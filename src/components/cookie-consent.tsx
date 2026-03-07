@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 
 const CONSENT_KEY = "perflabs-analytics-consent";
 
 export function CookieConsent() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(CONSENT_KEY);
-    if (!stored) setVisible(true);
-  }, []);
+  // Lazy initializer: returns false on the server (no window) so SSR output
+  // matches. On the client, reads localStorage so returning visitors who
+  // already responded never see the banner again.
+  const [visible, setVisible] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(CONSENT_KEY) === null;
+  });
 
   if (!visible) return null;
 
