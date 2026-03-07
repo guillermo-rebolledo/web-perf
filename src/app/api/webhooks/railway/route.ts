@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { env } from "@/env";
 import {
   isActionableStatus,
@@ -9,27 +8,12 @@ import {
 
 // POST /api/webhooks/railway
 // Receives Railway deployment webhook events and forwards a Slack notification.
-// Auth: Bearer token compared via timing-safe equality against RAILWAY_WEBHOOK_SECRET.
+// No auth: Railway's webhook dashboard does not support secret tokens.
 // No DB interaction — pure webhook receiver.
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // Graceful no-op: if env vars are not configured, the feature is disabled
-  if (!env.RAILWAY_WEBHOOK_SECRET || !env.RAILWAY_SLACK_WEBHOOK_URL) {
+  // Graceful no-op: if env var is not configured, the feature is disabled
+  if (!env.RAILWAY_SLACK_WEBHOOK_URL) {
     return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
-  }
-
-  // Verify bearer token using timing-safe comparison
-  const authHeader = request.headers.get("authorization") ?? "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-
-  const expected = Buffer.from(env.RAILWAY_WEBHOOK_SECRET, "utf8");
-  const received = Buffer.from(token, "utf8");
-
-  const isValid =
-    expected.length === received.length &&
-    crypto.timingSafeEqual(expected, received);
-
-  if (!isValid) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Parse body

@@ -9,9 +9,10 @@ It is completely separate from the per-user PSI audit notification system and is
 ## How it works
 
 1. Railway POSTs a JSON payload to `/api/webhooks/railway` on every deployment event.
-2. The endpoint verifies the `Authorization: Bearer <token>` header against `RAILWAY_WEBHOOK_SECRET` using timing-safe comparison.
-3. Non-actionable statuses (`DEPLOYING`, `REMOVED`) are skipped — no Slack message is sent.
-4. For `SUCCESS`, `FAILED`, or `CRASHED` statuses, a Block Kit message is built and POSTed to `RAILWAY_SLACK_WEBHOOK_URL`.
+2. Non-actionable statuses (`DEPLOYING`, `REMOVED`) are skipped — no Slack message is sent.
+3. For `SUCCESS`, `FAILED`, or `CRASHED` statuses, a Block Kit message is built and POSTed to `RAILWAY_SLACK_WEBHOOK_URL`.
+
+> **Note:** Railway's webhook dashboard does not support custom secret tokens, so the endpoint relies on the URL itself being non-guessable. The worst an unauthorized caller can do is trigger a fake Slack message — no DB writes or user data are involved.
 
 ---
 
@@ -19,10 +20,9 @@ It is completely separate from the per-user PSI audit notification system and is
 
 | Variable | Required | Description |
 |---|---|---|
-| `RAILWAY_WEBHOOK_SECRET` | Yes (for feature to be active) | Shared secret set in the Railway dashboard; used to verify inbound webhook requests |
 | `RAILWAY_SLACK_WEBHOOK_URL` | Yes (for feature to be active) | Slack incoming webhook URL for the deployment channel |
 
-If either variable is missing, the endpoint returns `200 OK` immediately and no notification is sent (opt-in behavior).
+If the variable is missing, the endpoint returns `200 OK` immediately and no notification is sent (opt-in behavior).
 
 ---
 
@@ -34,12 +34,11 @@ If either variable is missing, the endpoint returns `200 OK` immediately and no 
 2. Click **Add to Slack**, select the target channel (e.g. `#deployments`), and click **Allow**.
 3. Copy the webhook URL (format: `https://hooks.slack.com/services/...`).
 
-### 2. Set environment variables in Railway
+### 2. Set the environment variable in Railway
 
-In the Railway dashboard, add the following variables to your service:
+In the Railway dashboard, add the following variable to your service:
 
 ```
-RAILWAY_WEBHOOK_SECRET=<a strong random string you choose>
 RAILWAY_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 ```
 
@@ -48,18 +47,16 @@ RAILWAY_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 1. In the Railway dashboard, go to **Project Settings** → **Webhooks**.
 2. Click **Add Webhook**.
 3. Set the URL to: `https://your-app.railway.app/api/webhooks/railway`
-4. Set the **Secret Token** to the same value as `RAILWAY_WEBHOOK_SECRET`.
-5. Select **Deployment** events.
-6. Save.
+4. Select **Deployment** events.
+5. Save.
 
 ---
 
 ## Testing locally
 
-Set the env vars in your `.env` file:
+Set the env var in your `.env` file:
 
 ```
-RAILWAY_WEBHOOK_SECRET=test-secret
 RAILWAY_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
 ```
 
@@ -68,7 +65,6 @@ Then run the dev server and use `curl` to test:
 **Successful deployment:**
 ```bash
 curl -X POST http://localhost:3000/api/webhooks/railway \
-  -H "Authorization: Bearer test-secret" \
   -H "Content-Type: application/json" \
   -d '{
     "status": "SUCCESS",
@@ -84,7 +80,6 @@ curl -X POST http://localhost:3000/api/webhooks/railway \
 **Failed deployment:**
 ```bash
 curl -X POST http://localhost:3000/api/webhooks/railway \
-  -H "Authorization: Bearer test-secret" \
   -H "Content-Type: application/json" \
   -d '{
     "status": "FAILED",
@@ -99,17 +94,8 @@ curl -X POST http://localhost:3000/api/webhooks/railway \
 **Non-actionable (should return 200 with `skipped: true`, no Slack message):**
 ```bash
 curl -X POST http://localhost:3000/api/webhooks/railway \
-  -H "Authorization: Bearer test-secret" \
   -H "Content-Type: application/json" \
   -d '{"status": "DEPLOYING", "service": {"id":"s1","name":"web"}, "environment": {"id":"e1","name":"production"}, "deployment": {"id":"d1"}, "project": {"id":"p1","name":"side"}, "timestamp": "2026-03-06T12:00:00Z"}'
-```
-
-**Wrong secret (should return 401):**
-```bash
-curl -X POST http://localhost:3000/api/webhooks/railway \
-  -H "Authorization: Bearer wrong-secret" \
-  -H "Content-Type: application/json" \
-  -d '{"status":"SUCCESS",...}'
 ```
 
 ---
