@@ -514,6 +514,7 @@ export async function fetchPageSpeedInsights(
     headers: {
       "User-Agent": "Web-Performance-Lab/1.0",
     },
+    signal: AbortSignal.timeout(90_000), // 90-second hard limit — PSI audits typically take 30–60s
   });
 
   if (!response.ok) {
