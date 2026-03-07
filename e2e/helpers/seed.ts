@@ -9,19 +9,19 @@ export const TEST_USER = {
 };
 
 export const TEST_SITE = {
-  id: "e2e-test-site-id",
+  id: "cle2etestsite000000001",
   name: "E2E Test Site",
   url: "https://e2e-test.example.com",
 };
 
 export const TEST_MONITOR = {
-  id: "e2e-test-monitor-id",
+  id: "cle2etestmonitor00001",
   cadenceMinutes: 1440,
   strategy: "mobile",
 };
 
 export const TEST_RUN = {
-  id: "e2e-test-run-id",
+  id: "cle2etestrun000000001",
   status: "success",
   performanceScore: 85,
   accessibilityScore: 92,
@@ -123,6 +123,69 @@ export async function seedTestData() {
         numericValue: 0.1,
       },
     ],
+  });
+}
+
+// --- Limit seeding helpers ---
+// Each helper brings the given resource exactly to the cap so the next API
+// call hits the 422 enforcement. Use try/finally + the matching cleanup in
+// tests to avoid polluting state for other specs.
+
+export async function seedSitesAtLimit() {
+  // TEST_USER already has 1 site (TEST_SITE); create 24 more to reach cap 25.
+  await prisma.site.createMany({
+    data: Array.from({ length: 24 }, (_, i) => ({
+      name: `Limit Site ${i + 1}`,
+      url: `https://limit-site-${i + 1}.example.com`,
+      userId: TEST_USER.id,
+    })),
+  });
+}
+
+export async function cleanupLimitSites() {
+  await prisma.site.deleteMany({
+    where: { userId: TEST_USER.id, name: { startsWith: "Limit Site" } },
+  });
+}
+
+export async function seedMonitorsAtLimit() {
+  // TEST_SITE already has 1 monitor (TEST_MONITOR); create 4 more to reach cap 5.
+  await prisma.monitor.createMany({
+    data: Array.from({ length: 4 }, () => ({
+      siteId: TEST_SITE.id,
+      cadenceMinutes: 1440,
+      strategy: "mobile",
+      isActive: false,
+      nextRunAt: new Date("2999-12-31"),
+    })),
+  });
+}
+
+export async function cleanupLimitMonitors() {
+  // Remove all monitors for TEST_SITE except the canonical one.
+  await prisma.monitor.deleteMany({
+    where: { siteId: TEST_SITE.id, id: { not: TEST_MONITOR.id } },
+  });
+}
+
+export async function seedIntegrationsAtLimit() {
+  // TEST_USER starts with 0 integrations; create 10 to reach cap.
+  await prisma.integration.createMany({
+    data: Array.from({ length: 10 }, (_, i) => ({
+      userId: TEST_USER.id,
+      name: `Limit Integration ${i + 1}`,
+      type: "slack",
+      config: {
+        type: "slack",
+        webhookUrl: `https://hooks.slack.com/services/limit-${i + 1}`,
+      },
+    })),
+  });
+}
+
+export async function cleanupLimitIntegrations() {
+  await prisma.integration.deleteMany({
+    where: { userId: TEST_USER.id, name: { startsWith: "Limit Integration" } },
   });
 }
 

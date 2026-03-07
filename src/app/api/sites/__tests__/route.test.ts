@@ -84,6 +84,22 @@ describe("POST /api/sites", () => {
     expect(data.error).toContain("already exists");
   });
 
+  it("returns 422 when site limit is reached", async () => {
+    vi.mocked(prismaMock.site.count).mockResolvedValue(25);
+
+    const res = await POST(
+      makeRequest("POST", "/api/sites", {
+        name: "One Too Many",
+        url: "https://example.com",
+      })
+    );
+    const data = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(data.error).toContain("limit reached");
+    expect(prismaMock.site.create).not.toHaveBeenCalled();
+  });
+
   it("creates a new site with canonicalized URL", async () => {
     vi.mocked(prismaMock.site.findFirst).mockResolvedValue(null);
     vi.mocked(prismaMock.site.create).mockResolvedValue(

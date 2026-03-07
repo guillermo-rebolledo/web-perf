@@ -108,6 +108,24 @@ describe("POST /api/monitors", () => {
     expect(res.status).toBe(404);
   });
 
+  it("returns 422 when monitor limit is reached for site", async () => {
+    vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
+    vi.mocked(prismaMock.monitor.count).mockResolvedValue(5);
+
+    const res = await POST(
+      makeRequest("POST", "/api/monitors", {
+        siteId: "clxxxxxxxxxxxxxxxxxxxxxxxxx",
+        cadenceMinutes: 60,
+        strategy: "mobile",
+      })
+    );
+    const data = await res.json();
+
+    expect(res.status).toBe(422);
+    expect(data.error).toContain("limit reached");
+    expect(prismaMock.monitor.create).not.toHaveBeenCalled();
+  });
+
   it("creates schedule monitor with defaults and returns runId", async () => {
     vi.mocked(prismaMock.site.findFirst).mockResolvedValue(createSite());
     vi.mocked(prismaMock.monitor.create).mockResolvedValue(createMonitor());

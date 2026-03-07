@@ -4,6 +4,7 @@ import { z } from "zod";
 import { canonicalizeUrl } from "@/lib/url-utils";
 import { RunStatus } from "@prisma/client";
 import { resolveUser } from "@/lib/resolve-user";
+import { MAX_SITES_PER_USER } from "@/lib/limits";
 
 const createSiteSchema = z.object({
   name: z.string().min(1).max(100),
@@ -62,6 +63,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validated = createSiteSchema.parse(body);
+
+    // Enforce per-user site limit
+    const siteCount = await prisma.site.count({ where: { userId } });
+    if (siteCount >= MAX_SITES_PER_USER) {
+      return NextResponse.json(
+        { error: `Site limit reached. Maximum ${MAX_SITES_PER_USER} sites per account.` },
+        { status: 422 }
+      );
+    }
 
     // Canonicalize URL
     const canonicalUrl = canonicalizeUrl(validated.url);

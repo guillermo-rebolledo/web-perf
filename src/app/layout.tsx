@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Inter, JetBrains_Mono } from "next/font/google";
 import { auth } from "@/lib/auth";
 import { SessionProvider } from "@/components/session-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { CookieConsent } from "@/components/cookie-consent";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -97,6 +99,8 @@ export default async function RootLayout({
       >
         <ThemeProvider>
           <SessionProvider session={session}>{children}</SessionProvider>
+          <CookieConsent />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

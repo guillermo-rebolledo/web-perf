@@ -23,6 +23,12 @@ export async function GET(request: NextRequest) {
 
   await prisma.user.delete({ where: { id: userId } });
 
-  // Redirect to homepage after successful deletion
-  return NextResponse.redirect(new URL("/?deleted=1", request.url));
+  // Redirect to sign-in and clear the JWT session cookie so the browser
+  // doesn't remain authenticated. NextAuth v5 uses a JWT strategy, so deleting
+  // the user doesn't invalidate the in-browser token automatically.
+  const response = NextResponse.redirect(new URL("/auth/signin", request.url));
+  // Delete both the plain (dev) and Secure-prefixed (prod HTTPS) variants.
+  response.cookies.delete("next-auth.session-token");
+  response.cookies.delete("__Secure-next-auth.session-token");
+  return response;
 }
