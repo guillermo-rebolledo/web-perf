@@ -47,6 +47,8 @@ export const env = createEnv({
       .email()
       .default("digest@updates.perflabs.dev"),
     SENTRY_DSN: z.string().url().optional(),
+    RAILWAY_WEBHOOK_SECRET: z.string().min(1).optional(),
+    RAILWAY_SLACK_WEBHOOK_URL: z.string().url().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -93,6 +95,8 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     SENTRY_DSN: process.env.SENTRY_DSN,
+    RAILWAY_WEBHOOK_SECRET: process.env.RAILWAY_WEBHOOK_SECRET,
+    RAILWAY_SLACK_WEBHOOK_URL: process.env.RAILWAY_SLACK_WEBHOOK_URL,
     NODE_ENV: process.env.NODE_ENV,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
