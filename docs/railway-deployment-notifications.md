@@ -67,13 +67,21 @@ Then run the dev server and use `curl` to test:
 curl -X POST http://localhost:3000/api/webhooks/railway \
   -H "Content-Type: application/json" \
   -d '{
-    "status": "SUCCESS",
-    "service": {"id": "s1", "name": "web"},
-    "environment": {"id": "e1", "name": "production"},
-    "deployment": {"id": "d1", "url": "https://example.railway.app"},
-    "project": {"id": "p1", "name": "side"},
+    "type": "Deployment.deployed",
     "timestamp": "2026-03-06T12:00:00Z",
-    "actor": {"id": "u1", "name": "Guillermo"}
+    "details": {
+      "id": "d1",
+      "status": "SUCCESS",
+      "commitAuthor": "Guillermo",
+      "commitMessage": "feat: my change",
+      "commitHash": "abc1234def5678"
+    },
+    "resource": {
+      "project": {"id": "p1", "name": "perflabs"},
+      "service": {"id": "s1", "name": "web"},
+      "environment": {"id": "e1", "name": "production"},
+      "deployment": {"id": "d1"}
+    }
   }'
 ```
 
@@ -82,12 +90,15 @@ curl -X POST http://localhost:3000/api/webhooks/railway \
 curl -X POST http://localhost:3000/api/webhooks/railway \
   -H "Content-Type: application/json" \
   -d '{
-    "status": "FAILED",
-    "service": {"id": "s1", "name": "web"},
-    "environment": {"id": "e1", "name": "production"},
-    "deployment": {"id": "d1"},
-    "project": {"id": "p1", "name": "side"},
-    "timestamp": "2026-03-06T12:00:00Z"
+    "type": "Deployment.failed",
+    "timestamp": "2026-03-06T12:00:00Z",
+    "details": {"id": "d1", "status": "FAILED", "commitAuthor": "Guillermo"},
+    "resource": {
+      "project": {"id": "p1", "name": "perflabs"},
+      "service": {"id": "s1", "name": "web"},
+      "environment": {"id": "e1", "name": "production"},
+      "deployment": {"id": "d1"}
+    }
   }'
 ```
 
@@ -95,7 +106,7 @@ curl -X POST http://localhost:3000/api/webhooks/railway \
 ```bash
 curl -X POST http://localhost:3000/api/webhooks/railway \
   -H "Content-Type: application/json" \
-  -d '{"status": "DEPLOYING", "service": {"id":"s1","name":"web"}, "environment": {"id":"e1","name":"production"}, "deployment": {"id":"d1"}, "project": {"id":"p1","name":"side"}, "timestamp": "2026-03-06T12:00:00Z"}'
+  -d '{"type":"Deployment.deploying","timestamp":"2026-03-06T12:00:00Z","details":{"id":"d1","status":"DEPLOYING"},"resource":{"project":{"id":"p1","name":"perflabs"},"service":{"id":"s1","name":"web"},"environment":{"id":"e1","name":"production"},"deployment":{"id":"d1"}}}'
 ```
 
 ---
@@ -104,7 +115,7 @@ curl -X POST http://localhost:3000/api/webhooks/railway \
 
 **Success (green bar):**
 - Header: `✅ Deployment succeeded`
-- Fields: Project, Service, Environment, Triggered by, Deployment ID, Timestamp, URL (if present)
+- Fields: Project, Service, Environment, Triggered by, Deployment ID, Timestamp, Commit (hash + first line of message)
 
 **Failure/Crash (red bar):**
 - Header: `❌ Deployment failed` or `❌ Deployment crashed`
