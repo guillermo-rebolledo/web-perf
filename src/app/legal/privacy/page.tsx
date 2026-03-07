@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const LAST_UPDATED = "March 1, 2026";
-const CONTACT_EMAIL = "privacy@perflabs.app";
+const CONTACT_EMAIL = "privacy@updates.perflabs.dev";
 
 export default function PrivacyPolicy() {
   return (

@@ -17,7 +17,7 @@ export const env = createEnv({
       // since NextAuth.js automatically uses the VERCEL_URL if present.
       (str) => process.env.VERCEL_URL ?? str,
       // VERCEL_URL doesn't include `https` so it cant be validated as a URL
-      process.env.VERCEL ? z.string().min(1) : z.string().url()
+      process.env.VERCEL ? z.string().min(1) : z.string().url(),
     ),
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
@@ -41,7 +41,10 @@ export const env = createEnv({
     SCREENSHOT_TTL_DAYS: z.coerce.number().default(30),
     OPENAI_API_KEY: z.string().min(1),
     RESEND_API_KEY: z.string().min(1).optional(),
-    RESEND_FROM_EMAIL: z.string().email().default("digest@perflabs.app"),
+    RESEND_FROM_EMAIL: z
+      .string()
+      .email()
+      .default("digest@updates.perflabs.dev"),
     SENTRY_DSN: z.string().url().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
