@@ -24,22 +24,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // Validate shape minimally
-  if (
-    typeof body !== "object" ||
-    body === null ||
-    !("status" in body) ||
-    typeof (body as Record<string, unknown>).status !== "string"
-  ) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+  // Extract status — treat missing/unrecognised payloads (e.g. Railway test pings) as a no-op
+  const status =
+    typeof body === "object" &&
+    body !== null &&
+    "status" in body &&
+    typeof (body as Record<string, unknown>).status === "string"
+      ? (body as Record<string, unknown>).status as string
+      : null;
+
+  if (!status || !isActionableStatus(status)) {
+    return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
   }
 
   const payload = body as RailwayWebhookPayload;
-
-  // Skip non-actionable statuses (DEPLOYING, REMOVED) to avoid noise
-  if (!isActionableStatus(payload.status)) {
-    return NextResponse.json({ ok: true, skipped: true }, { status: 200 });
-  }
 
   try {
     await sendRailwayDeployNotification(env.RAILWAY_SLACK_WEBHOOK_URL, payload);
