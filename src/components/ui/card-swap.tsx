@@ -38,7 +38,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       {...rest}
       className={[
         "absolute top-1/2 left-1/2 rounded-xl overflow-hidden",
-        "[transform-style:preserve-3d] [will-change:transform] [backface-visibility:hidden]",
+        "transform-3d will-change-transform backface-hidden",
         customClass ?? "",
         rest.className ?? "",
       ]
@@ -58,7 +58,12 @@ interface Slot {
   zIndex: number;
 }
 
-const makeSlot = (i: number, distX: number, distY: number, total: number): Slot => ({
+const makeSlot = (
+  i: number,
+  distX: number,
+  distY: number,
+  total: number,
+): Slot => ({
   x: i * distX,
   y: -i * distY,
   z: -i * distX * 1.5,
@@ -111,7 +116,6 @@ const CardSwap: React.FC<CardSwapProps> = ({
 
   const childArr = useMemo(
     () => Children.toArray(children) as ReactElement<CardProps>[],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [children],
   );
 
@@ -121,7 +125,9 @@ const CardSwap: React.FC<CardSwapProps> = ({
     [childArr.length],
   );
 
-  const order = useRef<number[]>(Array.from({ length: childArr.length }, (_, i) => i));
+  const order = useRef<number[]>(
+    Array.from({ length: childArr.length }, (_, i) => i),
+  );
   const tlRef = useRef<gsap.core.Timeline | null>(null);
   const intervalRef = useRef<number>(0);
   const container = useRef<HTMLDivElement>(null);
@@ -129,7 +135,11 @@ const CardSwap: React.FC<CardSwapProps> = ({
   useEffect(() => {
     const total = refs.length;
     refs.forEach((r, i) =>
-      placeNow(r.current!, makeSlot(i, cardDistance, verticalDistance, total), skewAmount),
+      placeNow(
+        r.current!,
+        makeSlot(i, cardDistance, verticalDistance, total),
+        skewAmount,
+      ),
     );
 
     const swap = () => {
@@ -140,21 +150,58 @@ const CardSwap: React.FC<CardSwapProps> = ({
       const tl = gsap.timeline();
       tlRef.current = tl;
 
-      tl.to(elFront, { x: "-=700", duration: config.durDrop, ease: config.ease });
+      tl.to(elFront, {
+        x: "-=700",
+        duration: config.durDrop,
+        ease: config.ease,
+      });
 
       tl.addLabel("promote", `-=${config.durDrop * config.promoteOverlap}`);
       rest.forEach((idx, i) => {
         const el = refs[idx].current!;
         const slot = makeSlot(i, cardDistance, verticalDistance, refs.length);
         tl.set(el, { zIndex: slot.zIndex }, "promote");
-        tl.to(el, { x: slot.x, y: slot.y, z: slot.z, duration: config.durMove, ease: config.ease }, `promote+=${i * 0.15}`);
+        tl.to(
+          el,
+          {
+            x: slot.x,
+            y: slot.y,
+            z: slot.z,
+            duration: config.durMove,
+            ease: config.ease,
+          },
+          `promote+=${i * 0.15}`,
+        );
       });
 
-      const backSlot = makeSlot(refs.length - 1, cardDistance, verticalDistance, refs.length);
+      const backSlot = makeSlot(
+        refs.length - 1,
+        cardDistance,
+        verticalDistance,
+        refs.length,
+      );
       tl.addLabel("return", `promote+=${config.durMove * config.returnDelay}`);
-      tl.call(() => { gsap.set(elFront, { zIndex: backSlot.zIndex }); }, undefined, "return");
-      tl.to(elFront, { x: backSlot.x, y: backSlot.y, z: backSlot.z, duration: config.durReturn, ease: config.ease }, "return");
-      tl.call(() => { order.current = [...rest, front]; });
+      tl.call(
+        () => {
+          gsap.set(elFront, { zIndex: backSlot.zIndex });
+        },
+        undefined,
+        "return",
+      );
+      tl.to(
+        elFront,
+        {
+          x: backSlot.x,
+          y: backSlot.y,
+          z: backSlot.z,
+          duration: config.durReturn,
+          ease: config.ease,
+        },
+        "return",
+      );
+      tl.call(() => {
+        order.current = [...rest, front];
+      });
     };
 
     swap();
@@ -162,8 +209,14 @@ const CardSwap: React.FC<CardSwapProps> = ({
 
     if (pauseOnHover) {
       const node = container.current!;
-      const pause = () => { tlRef.current?.pause(); clearInterval(intervalRef.current); };
-      const resume = () => { tlRef.current?.play(); intervalRef.current = window.setInterval(swap, delay); };
+      const pause = () => {
+        tlRef.current?.pause();
+        clearInterval(intervalRef.current);
+      };
+      const resume = () => {
+        tlRef.current?.play();
+        intervalRef.current = window.setInterval(swap, delay);
+      };
       node.addEventListener("mouseenter", pause);
       node.addEventListener("mouseleave", resume);
       return () => {
