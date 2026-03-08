@@ -3,6 +3,7 @@
 import { useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
+import { SiteSearch } from "@/components/site-search";
 
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   const { state, isMobile } = useSidebar();
@@ -17,8 +18,9 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
       )}
       style={{ marginLeft: expanded ? "var(--sidebar-width, 16rem)" : 0 }}
     >
-      <div className="flex h-12 shrink-0 items-center px-4">
+      <div className="flex h-12 shrink-0 items-center justify-between px-4">
         <SidebarTrigger />
+        <SiteSearch />
       </div>
       <div className="flex-1 overflow-auto p-4">{children}</div>
     </main>
