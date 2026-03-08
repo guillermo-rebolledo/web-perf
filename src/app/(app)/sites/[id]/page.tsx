@@ -142,7 +142,7 @@ export default async function SitePage({
               .
             </p>
           </div>
-          <MonitorForm siteId={site.id} baseUrl={env.NEXTAUTH_URL} />
+          <MonitorForm siteId={site.id} baseUrl={env.NEXTAUTH_URL} retentionDays={env.RUN_RETENTION_DAYS} />
         </div>
 
         {allRuns.length > 0 && (

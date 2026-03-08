@@ -1,5 +1,6 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
+import { DEFAULT_RUN_RETENTION_DAYS } from "./lib/retention";
 
 export const env = createEnv({
   /**
@@ -40,6 +41,7 @@ export const env = createEnv({
     RATE_LIMIT_RUNS_PER_DAY: z.coerce.number().default(100),
     RATE_LIMIT_SCHEDULED_RUNS_PER_DAY: z.coerce.number().default(500),
     SCREENSHOT_TTL_DAYS: z.coerce.number().default(30),
+    RUN_RETENTION_DAYS: z.coerce.number().default(DEFAULT_RUN_RETENTION_DAYS),
     OPENAI_API_KEY: z.string().min(1),
     RESEND_API_KEY: z.string().min(1).optional(),
     RESEND_FROM_EMAIL: z
@@ -90,6 +92,7 @@ export const env = createEnv({
     RATE_LIMIT_RUNS_PER_DAY: process.env.RATE_LIMIT_RUNS_PER_DAY,
     RATE_LIMIT_SCHEDULED_RUNS_PER_DAY: process.env.RATE_LIMIT_SCHEDULED_RUNS_PER_DAY,
     SCREENSHOT_TTL_DAYS: process.env.SCREENSHOT_TTL_DAYS,
+    RUN_RETENTION_DAYS: process.env.RUN_RETENTION_DAYS,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,

@@ -13,6 +13,7 @@
 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/env";
 import { redirect } from "next/navigation";
 import { subDays } from "date-fns";
 import { HistoryView } from "@/components/history-view";
@@ -54,7 +55,8 @@ export default async function HistoryPage() {
           Run History
         </h1>
         <p className="text-muted-foreground font-sans tracking-tight">
-          Performance scores and Core Web Vitals over time
+          Performance scores and Core Web Vitals over time &mdash; runs are kept for{" "}
+          <span className="font-medium text-foreground">{env.RUN_RETENTION_DAYS} days</span>.
         </p>
       </div>
 
