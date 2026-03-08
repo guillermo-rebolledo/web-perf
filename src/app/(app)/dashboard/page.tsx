@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { SiteForm } from "@/components/site-form";
 import { EmptySites } from "@/components/empty-sites";
@@ -9,7 +10,7 @@ export default async function DashboardPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return null;
+    redirect("/auth/signin");
   }
 
   const sites: SiteWithMonitorsAndRuns[] = await prisma.site.findMany({

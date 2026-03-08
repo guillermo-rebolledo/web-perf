@@ -666,9 +666,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 2. **Magic link sent** → Email with verification token
 3. **User clicks link** → Token validated
 4. **Session created** → JWT stored in cookie
-5. **Protected routes** → Check `auth()` on every request
+5. **Protected routes** → `src/proxy.ts` intercepts the request first (JWT verified in Edge runtime, no DB call); per-page `auth()` checks act as belt-and-suspenders fallbacks and provide the user ID needed to scope DB queries
 
 #### Usage in Server Components
+
+Middleware runs first and redirects unauthenticated users before the page renders. The in-page `auth()` call is a belt-and-suspenders fallback and is also required to retrieve the user ID for scoping DB queries.
 
 ```typescript
 import { auth } from "@/lib/auth";
@@ -676,11 +678,11 @@ import { redirect } from "next/navigation";
 
 export default async function ProtectedPage() {
   const session = await auth();
-  
+
   if (!session?.user?.id) {
     redirect("/auth/signin");
   }
-  
+
   // User is authenticated
   return <div>Welcome, {session.user.email}</div>;
 }
@@ -860,14 +862,22 @@ export function YourComponent() {
 #### 4. New Page
 
 ```typescript
-// src/app/your-page/page.tsx
+// src/app/(app)/your-page/page.tsx
 import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function YourPage() {
   const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/auth/signin");
+  }
+
   // ... implementation
 }
 ```
+
+> **Important:** Pages added under `(app)/` must also have their path prefix added to the `matcher` array in `src/proxy.ts` (e.g. `"/your-page/:path*"`). The proxy provides the first layer of protection; the in-page check is a fallback and provides the user ID for DB queries.
 
 ### Common Patterns
 
@@ -946,6 +956,7 @@ side/
 │   │   ├── psi-parser.ts       # PageSpeed parser
 │   │   ├── url-utils.ts        # URL helpers
 │   │   └── metrics-compare.ts  # Comparison logic
+│   ├── proxy.ts                 # Route protection (auth guard for (app)/ routes)
 │   ├── types/                  # TypeScript types
 │   │   ├── next-auth.d.ts      # NextAuth types
 │   │   └── prisma.ts           # Prisma query types
