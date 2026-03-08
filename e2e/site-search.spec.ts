@@ -4,6 +4,10 @@ import { TEST_SITE } from "./helpers/seed";
 test.describe("Site search (⌘K)", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/dashboard");
+    // Wait for React to hydrate before interacting with client components.
+    // The search trigger button is server-rendered but its onClick handler is
+    // only attached after hydration; clicking without this wait is racy.
+    await page.waitForLoadState("networkidle");
   });
 
   test("search trigger button is visible in the header", async ({ page }) => {
@@ -13,7 +17,9 @@ test.describe("Site search (⌘K)", () => {
   });
 
   test("opens the search dialog via the trigger button", async ({ page }) => {
-    await page.getByRole("button", { name: /search sites/i }).click();
+    const trigger = page.getByRole("button", { name: /search sites/i });
+    await expect(trigger).toBeVisible();
+    await trigger.click();
     await expect(
       page.getByPlaceholder("Search your sites…")
     ).toBeVisible();
