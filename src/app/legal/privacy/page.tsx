@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "PerfLabs Privacy Policy — how we collect, use, and protect your data.",
 };
 
-const LAST_UPDATED = "March 1, 2026";
+const LAST_UPDATED = "March 8, 2026";
 const CONTACT_EMAIL = "privacy@updates.perflabs.dev";
 
 export default function PrivacyPolicy() {
@@ -66,6 +66,11 @@ export default function PrivacyPolicy() {
                 interactions, collected via PostHog analytics (see Section 5).
               </li>
               <li>
+                <strong>Diagnostic data:</strong> error reports, stack traces,
+                and anonymized session replays, collected via Sentry for
+                debugging purposes (see Section 6).
+              </li>
+              <li>
                 <strong>API keys:</strong> stored as SHA-256 hashes — we never
                 store the raw key.
               </li>
@@ -108,7 +113,8 @@ export default function PrivacyPolicy() {
               </li>
               <li>
                 <strong>Legitimate interests:</strong> improving product
-                reliability and preventing fraud.
+                reliability, preventing fraud, and diagnosing errors and
+                performance issues (including via Sentry error monitoring).
               </li>
               <li>
                 <strong>Consent:</strong> for non-essential analytics cookies
@@ -142,7 +148,42 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-3">6. Data retention</h2>
+            <h2 className="text-lg font-semibold mb-3">
+              6. Error monitoring &amp; session replay (Sentry)
+            </h2>
+            <p>
+              We use Sentry (sentry.io) to capture errors, performance traces,
+              and session replays. This helps us identify and fix bugs quickly
+              and improve service reliability.
+            </p>
+            <p className="mt-2">
+              <strong>Session replay</strong> records anonymized UI interactions
+              for approximately 1 in 5 sessions (and all sessions in which a
+              JavaScript error occurs). All text inputs are fully masked —
+              Sentry never sees what you type. No passwords, form fields, or
+              sensitive content are captured.
+            </p>
+            <p className="mt-2">
+              Sentry data is processed in the United States by Functional
+              Software, Inc. (Sentry) under Standard Contractual Clauses. We
+              process this data under our <strong>legitimate interests</strong>{" "}
+              in maintaining a reliable service (GDPR Art. 6(1)(f)). Session
+              replays are retained by Sentry for 90 days.
+            </p>
+            <p className="mt-2">
+              To object to session replay processing, email{" "}
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="text-primary underline"
+              >
+                {CONTACT_EMAIL}
+              </a>{" "}
+              and we will configure your account to be excluded.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold mb-3">7. Data retention</h2>
             <ul className="list-disc pl-5 space-y-1">
               <li>
                 Performance run data is retained while your account is active.
@@ -156,7 +197,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-3">7. Your rights</h2>
+            <h2 className="text-lg font-semibold mb-3">8. Your rights</h2>
             <p>You have the right to:</p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
               <li>
@@ -193,7 +234,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-3">8. Data security</h2>
+            <h2 className="text-lg font-semibold mb-3">9. Data security</h2>
             <p>
               We use industry-standard security measures including TLS in
               transit, encrypted database connections, and hashed API key
@@ -204,7 +245,7 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              9. Third-party services
+              10. Third-party services
             </h2>
             <ul className="list-disc pl-5 space-y-1">
               <li>
@@ -231,12 +272,26 @@ export default function PrivacyPolicy() {
                 data (logs, IP addresses) is processed per Vercel&apos;s privacy
                 policy.
               </li>
+              <li>
+                <strong>Sentry:</strong> error monitoring and session replay
+                (see Section 6). Data processed in the US under Standard
+                Contractual Clauses.{" "}
+                <a
+                  href="https://sentry.io/privacy/"
+                  className="text-primary underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Sentry Privacy Policy
+                </a>
+                .
+              </li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-lg font-semibold mb-3">
-              10. Changes to this policy
+              11. Changes to this policy
             </h2>
             <p>
               We may update this policy to reflect changes in our practices or
@@ -247,7 +302,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold mb-3">11. Contact</h2>
+            <h2 className="text-lg font-semibold mb-3">12. Contact</h2>
             <p>
               For privacy questions or to exercise your rights, contact us at{" "}
               <a
