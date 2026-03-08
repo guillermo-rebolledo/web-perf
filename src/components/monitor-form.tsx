@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog";
 import posthog from "posthog-js";
 import { AnalyticsEvent } from "@/lib/analytics-events";
+import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
 
 const scheduleSchema = z.object({
   siteId: z.string(),
@@ -67,6 +68,7 @@ interface MonitorFormProps {
   baseUrl?: string;
   onSuccess?: () => void;
   triggerButton?: React.ReactNode;
+  retentionDays?: number;
 }
 
 const cadenceLabels: Record<number, string> = {
@@ -253,6 +255,7 @@ export function MonitorForm({
   baseUrl = "",
   onSuccess,
   triggerButton,
+  retentionDays = DEFAULT_RUN_RETENTION_DAYS,
 }: MonitorFormProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -556,6 +559,10 @@ export function MonitorForm({
                       )}
                     </p>
                   </div>
+                  <p className="text-xs text-muted-foreground/70 text-center">
+                    Run history and alerts are retained for{" "}
+                    <span className="font-medium text-muted-foreground">{retentionDays} days</span>.
+                  </p>
                 </div>
                 <DialogFooter>
                   <Button
@@ -627,6 +634,10 @@ export function MonitorForm({
                     </p>
                   </div>
                   {error && <p className="text-sm text-destructive">{error}</p>}
+                  <p className="text-xs text-muted-foreground/70 text-center">
+                    Run history and alerts are retained for{" "}
+                    <span className="font-medium text-muted-foreground">{retentionDays} days</span>.
+                  </p>
                 </div>
                 <DialogFooter>
                   <Button

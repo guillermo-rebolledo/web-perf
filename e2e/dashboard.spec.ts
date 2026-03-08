@@ -51,7 +51,9 @@ test.describe("Dashboard (authenticated)", () => {
 
   test("can navigate to the seeded site detail page", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.getByText(TEST_SITE.name).click();
+    // Target the wrapping <a> link directly rather than an inner text node,
+    // which may not propagate the click to the anchor in all environments.
+    await page.getByRole("link", { name: new RegExp(TEST_SITE.name) }).click();
     await expect(page).toHaveURL(new RegExp(`/sites/${TEST_SITE.id}`));
     await expect(page.getByText(TEST_SITE.url)).toBeVisible();
   });

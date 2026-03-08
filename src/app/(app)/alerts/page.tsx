@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { env } from "@/env";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -152,7 +153,8 @@ export default async function AlertsPage({
             Regression Alerts
           </h1>
           <p className="text-muted-foreground font-sans tracking-tight -mt-2">
-            Performance regressions detected across your monitored sites
+            Performance regressions detected across your monitored sites &mdash; alerts are kept for{" "}
+            <span className="font-medium text-foreground">{env.RUN_RETENTION_DAYS} days</span>.
           </p>
         </div>
       </div>

@@ -3,6 +3,7 @@ import nodeCron from "node-cron";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob, enqueueDigestJob } from "@/lib/queue";
 import { cleanupOldScreenshots } from "@/lib/screenshot-cleanup";
+import { cleanupOldRuns } from "@/lib/data-retention";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { env } from "@/env";
 import { addMinutes } from "date-fns";
@@ -49,6 +50,21 @@ export function startScheduler() {
       }
     },
     { name: "scheduler-screenshot-cleanup" },
+  );
+
+  cron.schedule(
+    "0 4 * * *",
+    async () => {
+      try {
+        console.log(
+          `[Scheduler] Running daily data retention cleanup (window: ${env.RUN_RETENTION_DAYS} days)`
+        );
+        await cleanupOldRuns(env.RUN_RETENTION_DAYS);
+      } catch (error) {
+        console.error("[Scheduler] Error during data retention cleanup:", error);
+      }
+    },
+    { name: "scheduler-data-retention" },
   );
 }
 
