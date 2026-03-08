@@ -180,7 +180,7 @@ export default async function RunPage({
                 {previousRun && isSuccess && (
                   <Link
                     href={`/runs/${previousRun.id}/compare/${run.id}`}
-                    className="text-secondary tracking-tighter text-xs flex items-center gap-1 hover:underline focus:underline shrink-0 w-fit"
+                    className="text-primary tracking-tighter text-xs flex items-center gap-1 hover:underline focus:underline shrink-0 w-fit"
                   >
                     <GitCompare className="size-3" />
                     Compare with previous
@@ -680,7 +680,9 @@ function ScoreCard({
           </span>
           {Icon && <Icon className={cn(scoreClassName, "size-4")} />}
         </div>
-        <span className={cn(scoreClassName, "text-4xl font-extrabold tabular-nums")}>
+        <span
+          className={cn(scoreClassName, "text-4xl font-extrabold tabular-nums")}
+        >
           {score !== null ? Math.round(score) : "--"}
         </span>
         <div className="mt-4 h-1.5 w-full rounded-full bg-muted overflow-hidden">

@@ -102,11 +102,11 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-secondary/15 text-secondary transition-colors duration-150">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary/15 text-primary transition-colors duration-150">
                   <Activity className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">Performance Lab</span>
+                  <span className="font-semibold">PerfLabs</span>
                   <span className="text-xs text-muted-foreground">
                     Monitor &amp; Analyze
                   </span>
