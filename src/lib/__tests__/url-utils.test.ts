@@ -1,15 +1,78 @@
 import { describe, it, expect } from "vitest";
-import { canonicalizeUrl, validateUrl, extractDomain, extractFilename } from "@/lib/url-utils";
+import { canonicalizeUrl, isPublicUrl, validateUrl, extractDomain, extractFilename } from "@/lib/url-utils";
+
+describe("isPublicUrl", () => {
+  it("accepts public https URLs", () => {
+    expect(isPublicUrl("https://example.com")).toBe(true);
+    expect(isPublicUrl("https://my-app.vercel.app/path")).toBe(true);
+  });
+
+  it("accepts public http URLs", () => {
+    expect(isPublicUrl("http://example.com")).toBe(true);
+  });
+
+  it("rejects localhost", () => {
+    expect(isPublicUrl("http://localhost")).toBe(false);
+    expect(isPublicUrl("http://localhost:3000")).toBe(false);
+  });
+
+  it("rejects loopback 127.x.x.x", () => {
+    expect(isPublicUrl("http://127.0.0.1")).toBe(false);
+    expect(isPublicUrl("http://127.1.2.3")).toBe(false);
+  });
+
+  it("rejects private 10.x.x.x range", () => {
+    expect(isPublicUrl("http://10.0.0.1")).toBe(false);
+    expect(isPublicUrl("https://10.255.255.255")).toBe(false);
+  });
+
+  it("rejects private 192.168.x.x range", () => {
+    expect(isPublicUrl("http://192.168.1.1")).toBe(false);
+  });
+
+  it("rejects private 172.16-31.x.x range", () => {
+    expect(isPublicUrl("http://172.16.0.1")).toBe(false);
+    expect(isPublicUrl("http://172.31.255.255")).toBe(false);
+    expect(isPublicUrl("http://172.15.0.1")).toBe(true); // just outside range
+  });
+
+  it("rejects link-local 169.254.x.x (AWS/cloud metadata)", () => {
+    expect(isPublicUrl("http://169.254.169.254")).toBe(false);
+  });
+
+  it("rejects IPv6 loopback", () => {
+    expect(isPublicUrl("http://[::1]")).toBe(false);
+  });
+
+  it("rejects GCP metadata hostname", () => {
+    expect(isPublicUrl("http://metadata.google.internal")).toBe(false);
+  });
+
+  it("rejects non-http schemes", () => {
+    expect(isPublicUrl("ftp://example.com")).toBe(false);
+    expect(isPublicUrl("file:///etc/passwd")).toBe(false);
+    expect(isPublicUrl("javascript:alert(1)")).toBe(false);
+  });
+
+  it("returns false for invalid URLs", () => {
+    expect(isPublicUrl("not-a-url")).toBe(false);
+    expect(isPublicUrl("")).toBe(false);
+  });
+});
 
 describe("canonicalizeUrl", () => {
-  it("upgrades http to https for non-localhost URLs", () => {
+  it("upgrades http to https", () => {
     expect(canonicalizeUrl("http://example.com")).toBe("https://example.com/");
   });
 
-  it("keeps http for localhost", () => {
-    expect(canonicalizeUrl("http://localhost:3000")).toBe(
-      "http://localhost:3000/"
-    );
+  it("rejects localhost", () => {
+    expect(() => canonicalizeUrl("http://localhost:3000")).toThrow();
+  });
+
+  it("rejects private IP ranges", () => {
+    expect(() => canonicalizeUrl("http://192.168.1.1")).toThrow();
+    expect(() => canonicalizeUrl("http://10.0.0.1")).toThrow();
+    expect(() => canonicalizeUrl("http://169.254.169.254")).toThrow();
   });
 
   it("strips www. prefix", () => {
