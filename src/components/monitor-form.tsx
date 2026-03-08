@@ -430,31 +430,45 @@ export function MonitorForm({
             {/* Step 1: Trigger type selector */}
             <fieldset className="grid gap-2">
               <Label className="text-sm font-medium">Trigger Type</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {triggerCards.map((card) => (
-                  <button
-                    key={card.value}
-                    type="button"
-                    onClick={() => setTriggerType(card.value)}
-                    className={`flex flex-col gap-1.5 rounded-lg border p-4 text-left transition-colors hover:bg-accent/50 ${
-                      triggerType === card.value
-                        ? "border-secondary bg-secondary/5"
-                        : "border-border"
-                    }`}
-                  >
-                    <card.icon
-                      className={`size-5 ${triggerType === card.value ? "text-secondary" : "text-muted-foreground"}`}
-                      aria-hidden="true"
-                    />
-                    <span className="text-sm font-medium leading-none tracking-tight">
-                      {card.label}
-                    </span>
-                    <span className="text-xs text-muted-foreground leading-none tracking-tight">
-                      {card.description}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <RadioGroup
+                value={triggerType}
+                onValueChange={(v: TriggerType) => setTriggerType(v)}
+                className="grid grid-cols-2 gap-3"
+              >
+                {triggerCards.map((card) => {
+                  const labelId = `trigger-${card.value}-label`;
+                  const descId = `trigger-${card.value}-desc`;
+                  return (
+                    <label
+                      key={card.value}
+                      className="relative flex cursor-pointer flex-col gap-1.5 rounded-lg border border-border p-4 transition-colors has-data-[state=checked]:border-primary has-data-[state=checked]:bg-primary/5 has-focus-visible:ring-2 has-focus-visible:ring-ring has-focus-visible:ring-offset-2 hover:bg-accent/50"
+                    >
+                      <RadioGroupItem
+                        value={card.value}
+                        aria-labelledby={labelId}
+                        aria-describedby={descId}
+                        className="sr-only"
+                      />
+                      <card.icon
+                        className="size-5 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <span
+                        id={labelId}
+                        className="text-sm font-medium leading-none tracking-tight"
+                      >
+                        {card.label}
+                      </span>
+                      <span
+                        id={descId}
+                        className="text-xs text-muted-foreground leading-none tracking-tight"
+                      >
+                        {card.description}
+                      </span>
+                    </label>
+                  );
+                })}
+              </RadioGroup>
             </fieldset>
 
             {/* Step 2a: Schedule path */}

@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -27,8 +26,8 @@ import {
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
-import { ScreenshotThumbnail } from "@/components/screenshot-thumbnail";
-import { ArrowLeft, TrendingDown, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import {
   compareRuns,
   formatMetricValue,
@@ -36,6 +35,11 @@ import {
   type MetricDelta,
 } from "@/lib/metrics-compare";
 import { format } from "date-fns";
+import {
+  Comparison,
+  ComparisonHandle,
+  ComparisonItem,
+} from "@/components/kibo-ui/comparison";
 
 function StatusBadge({ metric }: { metric: MetricDelta }) {
   if (metric.significance === "none") {
@@ -111,6 +115,7 @@ export default async function CompareRunsPage({
   }
 
   const comparison = compareRuns(run1, run2);
+  const bothScreenshots = !!(run1.screenshotData && run2.screenshotData);
 
   return (
     <div className="container mx-auto py-8 flex flex-col gap-8">
@@ -127,45 +132,14 @@ export default async function CompareRunsPage({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href={`/runs/${run2.id}`}>
-              Run Details
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
             <BreadcrumbPage>Compare Runs</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="mb-8">
-        <Link href={`/sites/${run1.monitor.siteId}`}>
-          <Button variant="ghost" size="sm" className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Site
-          </Button>
-        </Link>
-        <h1 className="text-3xl font-bold">Compare Runs</h1>
-        <p className="text-muted-foreground">{run1.monitor.site.name}</p>
-      </div>
-
-      <div className="mb-8 grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2">
         <Card>
-          <CardContent className="flex gap-4 p-4">
-            {run1.screenshotData ? (
-              <div className="w-28 shrink-0">
-                <ScreenshotThumbnail
-                  screenshotData={run1.screenshotData}
-                  siteName={run1.monitor.site.name}
-                  strategy={run1.monitor.strategy}
-                  compact
-                />
-              </div>
-            ) : (
-              <div className="w-28 h-20 shrink-0 rounded-md border bg-muted flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">No image</span>
-              </div>
-            )}
+          <CardContent className="flex gap-4 pt-6">
             <div className="flex flex-col justify-between min-w-0">
               <div>
                 <h3 className="font-semibold">Run 1 (Before)</h3>
@@ -174,13 +148,12 @@ export default async function CompareRunsPage({
                     ? format(new Date(run1.completedAt), "PPpp")
                     : "Incomplete"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {run1.monitor.strategy.charAt(0).toUpperCase() +
-                    run1.monitor.strategy.slice(1)}
+                <p className="text-xs text-muted-foreground mt-1 capitalize">
+                  {run1.monitor.strategy}
                 </p>
               </div>
               <Link href={`/runs/${run1.id}`}>
-                <Button variant="outline" size="sm" className="mt-2">
+                <Button variant="outline" size="sm" className="mt-4">
                   View Details
                 </Button>
               </Link>
@@ -188,21 +161,7 @@ export default async function CompareRunsPage({
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="flex gap-4 p-4">
-            {run2.screenshotData ? (
-              <div className="w-28 shrink-0">
-                <ScreenshotThumbnail
-                  screenshotData={run2.screenshotData}
-                  siteName={run2.monitor.site.name}
-                  strategy={run2.monitor.strategy}
-                  compact
-                />
-              </div>
-            ) : (
-              <div className="w-28 h-20 shrink-0 rounded-md border bg-muted flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">No image</span>
-              </div>
-            )}
+          <CardContent className="flex gap-4 pt-6">
             <div className="flex flex-col justify-between min-w-0">
               <div>
                 <h3 className="font-semibold">Run 2 (After)</h3>
@@ -211,13 +170,12 @@ export default async function CompareRunsPage({
                     ? format(new Date(run2.completedAt), "PPpp")
                     : "Incomplete"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {run2.monitor.strategy.charAt(0).toUpperCase() +
-                    run2.monitor.strategy.slice(1)}
+                <p className="text-xs text-muted-foreground mt-1 capitalize">
+                  {run2.monitor.strategy}
                 </p>
               </div>
               <Link href={`/runs/${run2.id}`}>
-                <Button variant="outline" size="sm" className="mt-2">
+                <Button variant="outline" size="sm" className="mt-4">
                   View Details
                 </Button>
               </Link>
@@ -226,11 +184,78 @@ export default async function CompareRunsPage({
         </Card>
       </div>
 
-      <Card className="mb-8">
+      {(run1.screenshotData || run2.screenshotData) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Screenshot Comparison</CardTitle>
+            <CardDescription>
+              {bothScreenshots
+                ? "Drag the handle to compare screenshots between runs"
+                : "Screenshot only available for one run"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0! overflow-hidden rounded-b-xl">
+            {bothScreenshots ? (
+              <Comparison className="h-80">
+                <ComparisonItem position="left">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={run1.screenshotData!}
+                    alt="Run 1 screenshot"
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                  />
+                </ComparisonItem>
+                <ComparisonItem position="right">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={run2.screenshotData!}
+                    alt="Run 2 screenshot"
+                    className="absolute inset-0 h-full w-full object-cover object-top"
+                  />
+                </ComparisonItem>
+                <ComparisonHandle />
+              </Comparison>
+            ) : (
+              <div className="flex h-48 items-stretch">
+                <div className="flex flex-1 flex-col items-center justify-center border-r border-border">
+                  {run1.screenshotData ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={run1.screenshotData}
+                      alt="Run 1 screenshot"
+                      className="h-full w-full object-cover object-top"
+                    />
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      No screenshot
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col items-center justify-center">
+                  {run2.screenshotData ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={run2.screenshotData}
+                      alt="Run 2 screenshot"
+                      className="h-full w-full object-cover object-top"
+                    />
+                  ) : (
+                    <span className="text-sm text-muted-foreground">
+                      No screenshot
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
         <CardHeader>
           <CardTitle>Scores Comparison</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0! overflow-hidden min-w-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -273,11 +298,11 @@ export default async function CompareRunsPage({
         </CardContent>
       </Card>
 
-      <Card className="mb-8">
+      <Card>
         <CardHeader>
           <CardTitle>Core Web Vitals Comparison</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0! overflow-hidden min-w-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -326,7 +351,7 @@ export default async function CompareRunsPage({
             <CardTitle>Audits Comparison</CardTitle>
             <CardDescription>Audits that changed between runs</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0! overflow-hidden min-w-0">
             <Table>
               <TableHeader>
                 <TableRow>

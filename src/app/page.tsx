@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Activity, Clock, Flag, Sparkles } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { TerminalWindow } from "@/components/terminal-window";
+import { AppPreviewCarousel } from "@/components/app-preview-carousel";
 import { auth } from "@/lib/auth";
 
 export const metadata: Metadata = {
@@ -239,7 +239,9 @@ export default async function Home() {
                 Connect a GitHub webhook and every successful deployment
                 triggers an audit automatically. Works with Vercel, Railway,
                 Netlify, and any CI that emits{" "}
-                <code className="font-geist-mono text-xs">deployment_status</code>{" "}
+                <code className="font-geist-mono text-xs">
+                  deployment_status
+                </code>{" "}
                 events — no polling, no cron lag, no manual runs.
               </div>
             </div>
@@ -265,6 +267,26 @@ export default async function Home() {
           </div>
         </section>
 
+        <section className="mx-auto max-w-5xl flex flex-col gap-4 py-8 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
+          <h2 className="text-5xl md:text-6xl font-extrabold text-center tracking-tighter md:tracking-[-0.2rem]">
+            A full picture, not just a score.
+          </h2>
+          <p className="text-center text-muted-foreground text-sm md:text-lg leading-5">
+            Every run lands in your dashboard, your alert feed, and your history
+            log — so you always know what changed, when it changed, and which
+            site needs attention first.
+          </p>
+
+          {/* Extra top padding absorbs the upward stack overflow of back cards */}
+          <div
+            className="w-full flex justify-center"
+            style={{ paddingTop: 160, paddingBottom: 32 }}
+          >
+            <AppPreviewCarousel />
+          </div>
+        </section>
+
+        {/* CLI section — temporarily commented out
         <section className="mx-auto max-w-4xl flex flex-col gap-4 py-8 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
           <h2 className="text-5xl md:text-6xl font-extrabold text-center tracking-tighter md:tracking-[-0.2rem]">
             Run an audit
@@ -278,18 +300,22 @@ export default async function Home() {
             the full report in your dashboard.
           </p>
 
-          <div className="w-full flex justify-center">
-            <TerminalWindow title="zsh — perflabs" className="w-full max-w-xl">
-              <div className="p-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[#6ee7b7]">$</span>
-                  <code className="whitespace-pre-wrap break-all">
-                    perflabs run --url https://yoursite.com/
-                  </code>
-                </div>
+          <div className="w-full flex justify-center py-8">
+            <div className="w-full max-w-xl">
+              <TerminalWindow
+                title="zsh — perflabs"
+                className="relative w-full"
+              >
+                <div className="p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#6ee7b7]">$</span>
+                    <code className="whitespace-pre-wrap break-all">
+                      perflabs run --url https://yoursite.com/
+                    </code>
+                  </div>
 
-                <pre className="whitespace-pre text-[12px] leading-relaxed text-[#e5e5e7] overflow-x-auto">
-                  {`✓ Run queued (ID: cm9xyz456)
+                  <pre className="whitespace-pre text-[12px] leading-relaxed text-[#e5e5e7] overflow-x-auto">
+                    {`✓ Run queued (ID: cm9xyz456)
 ✓ Run completed
 
 ╭──────────────────────────────╮
@@ -316,11 +342,13 @@ export default async function Home() {
   • FCP    +22.4% moderate
 
 Full results: https://perflabs.dev/runs/cm9xyz456`}
-                </pre>
-              </div>
-            </TerminalWindow>
+                  </pre>
+                </div>
+              </TerminalWindow>
+            </div>
           </div>
         </section>
+        */}
 
         <section className="mx-auto max-w-4xl flex flex-col gap-4 py-8 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
           <h2 className="text-5xl md:text-6xl font-extrabold text-center tracking-tighter md:tracking-[-0.2rem]">
@@ -472,10 +500,16 @@ Full results: https://perflabs.dev/runs/cm9xyz456`}
               © {new Date().getFullYear()} PerfLabs. All rights reserved.
             </p>
             <div className="flex gap-5 text-xs text-muted-foreground">
-              <Link href="/legal/privacy" className="transition-colors hover:text-foreground">
+              <Link
+                href="/legal/privacy"
+                className="transition-colors hover:text-foreground"
+              >
                 Privacy Policy
               </Link>
-              <Link href="/legal/terms" className="transition-colors hover:text-foreground">
+              <Link
+                href="/legal/terms"
+                className="transition-colors hover:text-foreground"
+              >
                 Terms of Service
               </Link>
             </div>
