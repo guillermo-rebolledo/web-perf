@@ -20,7 +20,10 @@ export default async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
-    "/sites/:path*",
+    "/history/:path*",
+    "/alerts/:path*",
     "/runs/:path*",
+    "/settings/:path*",
+    "/sites/:path*",
   ],
 };
