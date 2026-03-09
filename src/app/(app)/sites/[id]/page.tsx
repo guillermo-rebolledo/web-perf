@@ -49,6 +49,7 @@ import {
   Rocket,
   Smartphone,
 } from "lucide-react";
+import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
 
 export default async function SitePage({
   params,
@@ -142,7 +143,11 @@ export default async function SitePage({
               .
             </p>
           </div>
-          <MonitorForm siteId={site.id} baseUrl={env.NEXTAUTH_URL} retentionDays={env.RUN_RETENTION_DAYS} />
+          <MonitorForm
+            siteId={site.id}
+            baseUrl={env.NEXTAUTH_URL}
+            retentionDays={env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS}
+          />
         </div>
 
         {allRuns.length > 0 && (
@@ -189,12 +194,16 @@ export default async function SitePage({
                             )}
                             {monitor.strategy} Monitor
                           </span>
-                          {monitor.triggerType === "deployment" && monitor.githubBranch && (
-                            <Badge variant="outline" className="gap-1 font-mono text-xs font-normal">
-                              <GitBranch className="size-3" />
-                              {monitor.githubBranch}
-                            </Badge>
-                          )}
+                          {monitor.triggerType === "deployment" &&
+                            monitor.githubBranch && (
+                              <Badge
+                                variant="outline"
+                                className="gap-1 font-mono text-xs font-normal"
+                              >
+                                <GitBranch className="size-3" />
+                                {monitor.githubBranch}
+                              </Badge>
+                            )}
                         </CardTitle>
                         <CardDescription className="mt-1">
                           {monitor.triggerType === "deployment" ? (
@@ -203,7 +212,9 @@ export default async function SitePage({
                               Runs on deployment
                             </span>
                           ) : (
-                            <>Runs every {formatCadence(monitor.cadenceMinutes)}</>
+                            <>
+                              Runs every {formatCadence(monitor.cadenceMinutes)}
+                            </>
                           )}
                         </CardDescription>
                         {/* Metadata chips */}
@@ -212,20 +223,27 @@ export default async function SitePage({
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                               <History className="size-3 shrink-0" />
                               Last run{" "}
-                              {formatDistanceToNow(new Date(monitor.lastRunAt), {
-                                addSuffix: true,
-                              })}
+                              {formatDistanceToNow(
+                                new Date(monitor.lastRunAt),
+                                {
+                                  addSuffix: true,
+                                },
+                              )}
                             </span>
                           )}
-                          {monitor.triggerType === "schedule" && monitor.isActive && (
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="size-3 shrink-0" />
-                              Next run{" "}
-                              {formatDistanceToNow(new Date(monitor.nextRunAt), {
-                                addSuffix: true,
-                              })}
-                            </span>
-                          )}
+                          {monitor.triggerType === "schedule" &&
+                            monitor.isActive && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="size-3 shrink-0" />
+                                Next run{" "}
+                                {formatDistanceToNow(
+                                  new Date(monitor.nextRunAt),
+                                  {
+                                    addSuffix: true,
+                                  },
+                                )}
+                              </span>
+                            )}
                           {(() => {
                             const successCount = monitor.runs.filter(
                               (r) => r.status === RunStatus.success,
@@ -238,12 +256,13 @@ export default async function SitePage({
                               </span>
                             ) : null;
                           })()}
-                          {monitor.triggerType === "deployment" && monitor.githubRepo && (
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
-                              <GitBranch className="size-3 shrink-0" />
-                              {monitor.githubRepo}
-                            </span>
-                          )}
+                          {monitor.triggerType === "deployment" &&
+                            monitor.githubRepo && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground font-mono">
+                                <GitBranch className="size-3 shrink-0" />
+                                {monitor.githubRepo}
+                              </span>
+                            )}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -261,7 +280,8 @@ export default async function SitePage({
                             activeRunId={
                               monitor.runs.find(
                                 (r) =>
-                                  r.status === RunStatus.queued || r.status === RunStatus.running,
+                                  r.status === RunStatus.queued ||
+                                  r.status === RunStatus.running,
                               )?.id
                             }
                           />
@@ -278,7 +298,8 @@ export default async function SitePage({
                           </p>
                           {monitor.triggerType === "deployment" && (
                             <p className="mt-1 text-xs text-muted-foreground/70">
-                              Results will appear here after a successful deployment triggers this monitor.
+                              Results will appear here after a successful
+                              deployment triggers this monitor.
                             </p>
                           )}
                         </div>

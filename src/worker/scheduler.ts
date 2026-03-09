@@ -8,6 +8,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { env } from "@/env";
 import { addMinutes } from "date-fns";
 import { RunStatus } from "@prisma/client";
+import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
 
 const cron = Sentry.cron.instrumentNodeCron(nodeCron);
 
@@ -57,11 +58,16 @@ export function startScheduler() {
     async () => {
       try {
         console.log(
-          `[Scheduler] Running daily data retention cleanup (window: ${env.RUN_RETENTION_DAYS} days)`
+          `[Scheduler] Running daily data retention cleanup (window: ${env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS} days)`,
         );
-        await cleanupOldRuns(env.RUN_RETENTION_DAYS);
+        await cleanupOldRuns(
+          env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS,
+        );
       } catch (error) {
-        console.error("[Scheduler] Error during data retention cleanup:", error);
+        console.error(
+          "[Scheduler] Error during data retention cleanup:",
+          error,
+        );
       }
     },
     { name: "scheduler-data-retention" },
@@ -104,7 +110,7 @@ export async function processDueMonitors() {
       // Idempotency check: skip if there's already a queued or running job
       if (monitor.runs.length > 0) {
         console.log(
-          `[Scheduler] Monitor ${monitor.id} already has a ${monitor.runs[0].status} run, skipping`
+          `[Scheduler] Monitor ${monitor.id} already has a ${monitor.runs[0].status} run, skipping`,
         );
         continue;
       }
@@ -118,7 +124,7 @@ export async function processDueMonitors() {
       );
       if (!quota.success) {
         console.warn(
-          `[Scheduler] Scheduled-run quota exceeded for user ${monitor.site.userId}, skipping monitor ${monitor.id} (resets ${quota.reset.toISOString()})`
+          `[Scheduler] Scheduled-run quota exceeded for user ${monitor.site.userId}, skipping monitor ${monitor.id} (resets ${quota.reset.toISOString()})`,
         );
         await prisma.monitor.update({
           where: { id: monitor.id },
@@ -160,12 +166,12 @@ export async function processDueMonitors() {
       });
 
       console.log(
-        `[Scheduler] Enqueued run ${run.id} for monitor ${monitor.id} (${monitor.site.url}), next run at ${nextRunAt.toISOString()}`
+        `[Scheduler] Enqueued run ${run.id} for monitor ${monitor.id} (${monitor.site.url}), next run at ${nextRunAt.toISOString()}`,
       );
     } catch (error) {
       console.error(
         `[Scheduler] Error processing monitor ${monitor.id}:`,
-        error
+        error,
       );
     }
   }

@@ -19,6 +19,7 @@ import { EmptyAlerts } from "@/components/empty-alerts";
 import { Button } from "@/components/ui/button";
 import { AlertsList } from "@/components/alerts-list";
 import { AlertsDatePicker } from "@/components/alerts-date-picker";
+import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
 
 const INITIAL_LOAD_LIMIT = 20;
 
@@ -153,8 +154,12 @@ export default async function AlertsPage({
             Regression Alerts
           </h1>
           <p className="text-muted-foreground font-sans tracking-tight -mt-2">
-            Performance regressions detected across your monitored sites &mdash; alerts are kept for{" "}
-            <span className="font-medium text-foreground">{env.RUN_RETENTION_DAYS} days</span>.
+            Performance regressions detected across your monitored sites &mdash;
+            alerts are kept for{" "}
+            <span className="font-medium text-foreground">
+              {env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS} days
+            </span>
+            .
           </p>
         </div>
       </div>

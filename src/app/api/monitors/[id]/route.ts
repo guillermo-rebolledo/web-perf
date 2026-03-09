@@ -4,7 +4,7 @@ import { z } from "zod";
 import { resolveUser } from "@/lib/resolve-user";
 
 const updateMonitorSchema = z.object({
-  cadenceMinutes: z.number().int().min(30).max(43200).optional(),
+  cadenceMinutes: z.number().int().min(60).max(43200).optional(),
   strategy: z.enum(["mobile", "desktop"]).optional(),
   isActive: z.boolean().optional(),
   githubRepo: z.string().max(200).optional().nullable(),
