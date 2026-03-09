@@ -5,6 +5,7 @@ import { ApiKeyManager } from "@/components/api-key-manager";
 import { IntegrationsManager } from "@/components/integrations-manager";
 import { DigestToggle } from "@/components/digest-toggle";
 import { AccountSection } from "@/components/account-section";
+import { MAX_INTEGRATIONS_PER_USER } from "@/lib/limits";
 
 export const metadata = { title: "Settings" };
 
@@ -88,6 +89,7 @@ export default async function SettingsPage() {
         <IntegrationsManager
           initialIntegrations={serializedIntegrations}
           monitors={serializedMonitors}
+          limit={MAX_INTEGRATIONS_PER_USER}
         />
       </section>
 

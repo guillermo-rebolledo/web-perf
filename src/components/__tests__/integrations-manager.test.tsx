@@ -29,18 +29,18 @@ describe("IntegrationsManager", () => {
 
   describe("empty state", () => {
     it("shows 'no integrations' empty state when user has monitors but no integrations", () => {
-      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} />);
+      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} limit={10} />);
       expect(screen.getByText(/No integrations yet/)).toBeInTheDocument();
     });
 
     it("shows 'no monitors' state and disables Add button when user has no monitors", () => {
-      render(<IntegrationsManager initialIntegrations={[]} monitors={[]} />);
+      render(<IntegrationsManager initialIntegrations={[]} monitors={[]} limit={10} />);
       expect(screen.getByText(/No monitors yet/)).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /Add Integration/i })).toBeDisabled();
     });
 
     it("shows 'Add Integration' button enabled when monitors exist", () => {
-      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} />);
+      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} limit={10} />);
       const buttons = screen.getAllByRole("button", { name: /Add/i });
       expect(buttons.length).toBeGreaterThanOrEqual(1);
     });
@@ -54,7 +54,7 @@ describe("IntegrationsManager", () => {
             makeIntegration({ name: "Slack #perf" }),
             makeIntegration({ id: "int-2", name: "Slack #general" }),
           ]}
-          monitors={monitors}
+          monitors={monitors} limit={10}
         />,
       );
       expect(screen.getByText("Slack #perf")).toBeInTheDocument();
@@ -65,7 +65,7 @@ describe("IntegrationsManager", () => {
       render(
         <IntegrationsManager
           initialIntegrations={[makeIntegration({ monitorCount: 0 })]}
-          monitors={monitors}
+          monitors={monitors} limit={10}
         />,
       );
       expect(screen.getByText("All monitors")).toBeInTheDocument();
@@ -75,7 +75,7 @@ describe("IntegrationsManager", () => {
       render(
         <IntegrationsManager
           initialIntegrations={[makeIntegration({ monitorCount: 3 })]}
-          monitors={monitors}
+          monitors={monitors} limit={10}
         />,
       );
       expect(screen.getByText("3 monitors")).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("IntegrationsManager", () => {
       render(
         <IntegrationsManager
           initialIntegrations={[makeIntegration()]}
-          monitors={monitors}
+          monitors={monitors} limit={10}
         />,
       );
 
@@ -117,7 +117,7 @@ describe("IntegrationsManager", () => {
       render(
         <IntegrationsManager
           initialIntegrations={[makeIntegration()]}
-          monitors={monitors}
+          monitors={monitors} limit={10}
         />,
       );
 
@@ -137,7 +137,7 @@ describe("IntegrationsManager", () => {
       render(
         <IntegrationsManager
           initialIntegrations={[makeIntegration({ name: "Delete Me" })]}
-          monitors={monitors}
+          monitors={monitors} limit={10}
         />,
       );
       expect(screen.getByText("Delete Me")).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe("IntegrationsManager", () => {
       render(
         <IntegrationsManager
           initialIntegrations={[makeIntegration({ name: "Sticky" })]}
-          monitors={monitors}
+          monitors={monitors} limit={10}
         />,
       );
 
@@ -176,7 +176,7 @@ describe("IntegrationsManager", () => {
       render(
         <IntegrationsManager
           initialIntegrations={[makeIntegration({ isActive: true })]}
-          monitors={monitors}
+          monitors={monitors} limit={10}
         />,
       );
 
@@ -197,7 +197,7 @@ describe("IntegrationsManager", () => {
   describe("add integration dialog", () => {
     it("opens dialog when Add Integration is clicked", async () => {
       const user = userEvent.setup();
-      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} />);
+      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} limit={10} />);
 
       // Click the header button
       await user.click(screen.getAllByRole("button", { name: /Add/i })[0]);
@@ -209,7 +209,7 @@ describe("IntegrationsManager", () => {
 
     it("validates that name field is required", async () => {
       const user = userEvent.setup();
-      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} />);
+      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} limit={10} />);
       await user.click(screen.getAllByRole("button", { name: /Add/i })[0]);
       await waitFor(() => screen.getByText("Add Slack Integration"));
 
@@ -228,7 +228,7 @@ describe("IntegrationsManager", () => {
         json: async () => ({ integration: newItem }),
       });
 
-      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} />);
+      render(<IntegrationsManager initialIntegrations={[]} monitors={monitors} limit={10} />);
       await user.click(screen.getAllByRole("button", { name: /Add/i })[0]);
       await waitFor(() => screen.getByText("Add Slack Integration"));
 

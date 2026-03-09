@@ -278,10 +278,7 @@ export default async function Home() {
           </p>
 
           {/* Extra top padding absorbs the upward stack overflow of back cards */}
-          <div
-            className="w-full flex justify-center"
-            style={{ paddingTop: 160, paddingBottom: 32 }}
-          >
+          <div className="w-full flex justify-center pt-[160px] pb-8">
             <AppPreviewCarousel />
           </div>
         </section>
