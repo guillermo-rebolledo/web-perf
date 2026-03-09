@@ -50,6 +50,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
+import { MAX_MONITORS_PER_SITE } from "@/lib/limits";
 
 export default async function SitePage({
   params,
@@ -142,11 +143,16 @@ export default async function SitePage({
               </Link>
               .
             </p>
+            <p className="text-xs text-muted-foreground/60 mt-1">
+              {site.monitors.length} / {MAX_MONITORS_PER_SITE} monitors
+            </p>
           </div>
           <MonitorForm
             siteId={site.id}
             baseUrl={env.NEXTAUTH_URL}
             retentionDays={env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS}
+            monitorCount={site.monitors.length}
+            monitorLimit={MAX_MONITORS_PER_SITE}
           />
         </div>
 

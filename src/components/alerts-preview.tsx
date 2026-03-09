@@ -146,10 +146,10 @@ export function AlertsPreview({ className }: Props) {
             {/* User footer */}
             <div className="p-3 border-t border-border">
               <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-md">
-                <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-medium shrink-0">G</div>
+                <div className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-medium shrink-0">J</div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold truncate">Guillermo</div>
-                  <div className="text-[10px] text-muted-foreground truncate">gortiz.dev@gmail.com</div>
+                  <div className="text-xs font-semibold truncate">John Doe</div>
+                  <div className="text-[10px] text-muted-foreground truncate">john@example.com</div>
                 </div>
                 <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
               </div>

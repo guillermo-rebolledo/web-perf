@@ -26,9 +26,10 @@ import type { IntegrationItem, MonitorOption } from "@/types/api";
 interface Props {
   initialIntegrations: IntegrationItem[];
   monitors: MonitorOption[];
+  limit: number;
 }
 
-export function IntegrationsManager({ initialIntegrations, monitors }: Props) {
+export function IntegrationsManager({ initialIntegrations, monitors, limit }: Props) {
   const [integrations, setIntegrations] = useState<IntegrationItem[]>(initialIntegrations);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<IntegrationItem | null>(null);
@@ -110,27 +111,36 @@ export function IntegrationsManager({ initialIntegrations, monitors }: Props) {
   }
 
   const hasMonitors = monitors.length > 0;
+  const atLimit = integrations.length >= limit;
   const noMonitorsReason = "You need at least one monitor before setting up notifications.";
+  const atLimitReason = `Integration limit reached (${integrations.length} / ${limit})`;
 
   return (
     <TooltipProvider>
       <>
         <div className="rounded-xl border border-border bg-card">
           <div className="border-b border-border p-4 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              Receive Slack notifications after every audit completes.
-            </p>
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm text-muted-foreground">
+                Receive Slack notifications after every audit completes.
+              </p>
+              <p className="text-xs text-muted-foreground/60">
+                {integrations.length} / {limit} integrations
+              </p>
+            </div>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="inline-block">
-                  <Button size="sm" disabled={!hasMonitors} onClick={openCreate}>
+                  <Button size="sm" disabled={!hasMonitors || atLimit} onClick={openCreate}>
                     <Plus className="mr-1.5 h-4 w-4" />
                     Add Integration
                   </Button>
                 </span>
               </TooltipTrigger>
-              {!hasMonitors && (
-                <TooltipContent side="left">{noMonitorsReason}</TooltipContent>
+              {(!hasMonitors || atLimit) && (
+                <TooltipContent side="left">
+                  {atLimit ? atLimitReason : noMonitorsReason}
+                </TooltipContent>
               )}
             </Tooltip>
           </div>

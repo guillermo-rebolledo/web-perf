@@ -38,6 +38,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import posthog from "posthog-js";
 import { AnalyticsEvent } from "@/lib/analytics-events";
 import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
@@ -69,6 +75,8 @@ interface MonitorFormProps {
   onSuccess?: () => void;
   triggerButton?: React.ReactNode;
   retentionDays?: number;
+  monitorCount?: number;
+  monitorLimit?: number;
 }
 
 const cadenceLabels: Record<number, string> = {
@@ -255,7 +263,13 @@ export function MonitorForm({
   onSuccess,
   triggerButton,
   retentionDays = DEFAULT_RUN_RETENTION_DAYS,
+  monitorCount,
+  monitorLimit,
 }: MonitorFormProps) {
+  const atMonitorLimit =
+    monitorCount !== undefined &&
+    monitorLimit !== undefined &&
+    monitorCount >= monitorLimit;
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -390,6 +404,23 @@ export function MonitorForm({
       description: "Fires on every successful deploy",
     },
   ];
+
+  if (atMonitorLimit && !triggerButton) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-block">
+              <Button disabled>Create Monitor</Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            Monitor limit reached ({monitorCount} / {monitorLimit})
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
