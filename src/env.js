@@ -39,7 +39,7 @@ export const env = createEnv({
     SCHEDULER_SECRET: z.string().min(32),
     HEALTH_SECRET: z.string().min(16).optional(),
     RATE_LIMIT_RUNS_PER_DAY: z.coerce.number().default(100),
-    RATE_LIMIT_SCHEDULED_RUNS_PER_DAY: z.coerce.number().default(500),
+    RATE_LIMIT_SCHEDULED_RUNS_PER_DAY: z.coerce.number().default(100),
     SCREENSHOT_TTL_DAYS: z.coerce.number().default(30),
     RUN_RETENTION_DAYS: z.coerce.number().default(DEFAULT_RUN_RETENTION_DAYS),
     OPENAI_API_KEY: z.string().min(1),

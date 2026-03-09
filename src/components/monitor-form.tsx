@@ -45,7 +45,7 @@ import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
 const scheduleSchema = z.object({
   siteId: z.string(),
   triggerType: z.literal("schedule"),
-  cadenceMinutes: z.number().int().min(30).max(43200),
+  cadenceMinutes: z.number().int().min(60).max(43200),
   strategy: z.enum(["mobile", "desktop"]),
   isActive: z.boolean(),
 });
@@ -72,7 +72,6 @@ interface MonitorFormProps {
 }
 
 const cadenceLabels: Record<number, string> = {
-  30: "30 minutes",
   60: "1 hour",
   360: "6 hours",
   720: "12 hours",
@@ -492,7 +491,6 @@ export function MonitorForm({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="30">Every 30 minutes</SelectItem>
                         <SelectItem value="60">Every hour</SelectItem>
                         <SelectItem value="360">Every 6 hours</SelectItem>
                         <SelectItem value="720">Every 12 hours</SelectItem>

@@ -10,7 +10,7 @@ import { MAX_MONITORS_PER_SITE } from "@/lib/limits";
 const createMonitorSchema = z.object({
   siteId: z.string().cuid(),
   triggerType: z.enum(["schedule", "deployment"]).default("schedule"),
-  cadenceMinutes: z.number().int().min(30).max(43200).default(1440),
+  cadenceMinutes: z.number().int().min(60).max(43200).default(1440),
   strategy: z.enum(["mobile", "desktop"]).default("mobile"),
   isActive: z.boolean().default(true),
   githubRepo: z.string().max(200).optional().nullable(),
