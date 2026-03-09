@@ -1,6 +1,10 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
 import { DEFAULT_RUN_RETENTION_DAYS } from "./lib/retention";
+import {
+  DEFAULT_RATE_LIMIT_RUNS_PER_DAY,
+  DEFAULT_RATE_LIMIT_SCHEDULED_RUNS_PER_DAY,
+} from "./lib/limits";
 
 export const env = createEnv({
   /**
@@ -38,8 +42,8 @@ export const env = createEnv({
     PAGESPEED_API_KEY: z.string().min(1),
     SCHEDULER_SECRET: z.string().min(32),
     HEALTH_SECRET: z.string().min(16).optional(),
-    RATE_LIMIT_RUNS_PER_DAY: z.coerce.number().default(100),
-    RATE_LIMIT_SCHEDULED_RUNS_PER_DAY: z.coerce.number().default(100),
+    RATE_LIMIT_RUNS_PER_DAY: z.coerce.number().default(DEFAULT_RATE_LIMIT_RUNS_PER_DAY),
+    RATE_LIMIT_SCHEDULED_RUNS_PER_DAY: z.coerce.number().default(DEFAULT_RATE_LIMIT_SCHEDULED_RUNS_PER_DAY),
     SCREENSHOT_TTL_DAYS: z.coerce.number().default(30),
     RUN_RETENTION_DAYS: z.coerce.number().default(DEFAULT_RUN_RETENTION_DAYS),
     OPENAI_API_KEY: z.string().min(1),
