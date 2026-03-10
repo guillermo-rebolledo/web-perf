@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
 import { MAX_MONITORS_PER_SITE } from "@/lib/limits";
+import { PatternInsightsSection } from "@/components/pattern-insights-section";
 
 export default async function SitePage({
   params,
@@ -295,6 +296,12 @@ export default async function SitePage({
                       </div>
                     </CardHeader>
                     <CardContent className="min-w-0 overflow-hidden p-0!">
+                      <div className="p-6 pt-0 empty:hidden">
+                        <PatternInsightsSection
+                          monitorId={monitor.id}
+                          userId={session.user.id}
+                        />
+                      </div>
                       {recentRuns.length === 0 ? (
                         <div className="px-6 py-8 text-center">
                           <p className="text-sm font-medium text-muted-foreground">

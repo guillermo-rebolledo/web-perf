@@ -292,6 +292,92 @@ export async function processAuditJob(job: Job<AuditJobData>) {
       }
     })();
 
+    // Pattern insight generation (fire-and-forget — triggers after 3+ regressions)
+    void (async () => {
+      try {
+        const monitorWithSite = await prisma.monitor.findUnique({
+          where: { id: monitorId },
+          include: { site: { select: { userId: true } } },
+        });
+        if (!monitorWithSite?.site?.userId) return;
+
+        const totalAlertCount = await prisma.regressionAlert.count({
+          where: {
+            run: { monitorId },
+            createdAt: {
+              gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+            },
+          },
+        });
+
+        console.log(
+          `[Worker] Pattern insight check: ${totalAlertCount} alert(s) in last 90 days for monitor ${monitorId}`
+        );
+        if (totalAlertCount >= 3) {
+          const { FEATURE_FLAGS } = await import("@/lib/feature-flags");
+          const { isFeatureEnabled } = await import("@/lib/posthog-server");
+          const flagEnabled = await isFeatureEnabled(
+            FEATURE_FLAGS.PATTERN_INSIGHT,
+            monitorWithSite.site.userId,
+            { defaultValue: false }
+          );
+          if (flagEnabled) {
+            const { generatePatternInsight } = await import(
+              "@/lib/ai/pattern-insight"
+            );
+            await generatePatternInsight(monitorId, monitorWithSite.site.userId);
+          } else {
+            console.log(
+              `[Worker] Pattern insight skipped: PATTERN_INSIGHT flag is disabled (enable in PostHog or set defaultValue: true in processor.ts for local dev)`
+            );
+          }
+        }
+      } catch (err) {
+        console.error(
+          `[Worker] Pattern insight generation error for monitor ${monitorId}:`,
+          err
+        );
+      }
+    })();
+
+    // First-run health report (fire-and-forget — fires exactly once per monitor)
+    void (async () => {
+      try {
+        const monitorWithSite = await prisma.monitor.findUnique({
+          where: { id: monitorId },
+          include: { site: { select: { userId: true } } },
+        });
+        if (!monitorWithSite?.site?.userId) return;
+
+        const previousSuccessCount = await prisma.run.count({
+          where: {
+            monitorId,
+            status: RunStatus.success,
+            id: { not: runId },
+          },
+        });
+
+        console.log(
+          `[Worker] Health report check: previousSuccessCount=${previousSuccessCount} for run ${runId}`
+        );
+        if (previousSuccessCount === 0) {
+          await prisma.run.update({
+            where: { id: runId },
+            data: { isFirstRun: true },
+          });
+          const { generateHealthReport } = await import(
+            "@/lib/ai/health-report"
+          );
+          await generateHealthReport(runId, monitorWithSite.site.userId);
+        }
+      } catch (err) {
+        console.error(
+          `[Worker] Health report generation error for run ${runId}:`,
+          err
+        );
+      }
+    })();
+
     // Update monitor lastRunAt
     await prisma.monitor.update({
       where: { id: monitorId },

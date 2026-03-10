@@ -1,4 +1,4 @@
-import type { User, Site, Monitor, Run, Audit, Integration } from "@prisma/client";
+import type { User, Site, Monitor, Run, Audit, Integration, MonitorInsight } from "@prisma/client";
 import { RunStatus } from "@prisma/client";
 import type { PSIResponse } from "@/lib/psi-parser";
 
@@ -84,6 +84,10 @@ export function createRun(overrides: Partial<Run> = {}): Run {
     aiSummary: null,
     aiSummaryAt: null,
     aiSummaryModel: null,
+    isFirstRun: false,
+    healthReport: null,
+    healthReportAt: null,
+    healthReportModel: null,
     ...overrides,
   };
 }
@@ -113,6 +117,24 @@ export function createIntegration(overrides: Partial<Integration> = {}): Integra
     isActive: true,
     createdAt: new Date("2025-01-01"),
     updatedAt: new Date("2025-01-01"),
+    ...overrides,
+  };
+}
+
+export function createMonitorInsight(overrides: Partial<MonitorInsight> = {}): MonitorInsight {
+  return {
+    id: "test-insight-id",
+    monitorId: "test-monitor-id",
+    metricName: null,
+    generatedAt: new Date("2026-03-10T00:00:00Z"),
+    summary:
+      "### Pattern Summary\nLCP has regressed 4 times due to JS bundle growth.\n\n### Recurrence Analysis\nEach regression coincided with a bundle size increase.\n\n### Root Cause\nThe `vendor.chunk.js` file has grown by 20-40% across each incident.\n\n### Recommendation\nAdd a performance budget check to your CI pipeline.\n\n<!-- DOMINANT_CAUSE: js-bloat -->",
+    recurrenceCount: 4,
+    dominantCause: "js-bloat",
+    recommendation:
+      "Add a performance budget check to your CI pipeline to catch bundle size increases before they ship.",
+    model: "gpt-4o-mini",
+    inputHash: "abc123def456",
     ...overrides,
   };
 }

@@ -18,6 +18,8 @@ All flag keys in PostHog **must use snake_case** (e.g. `run_ai_summary`). This m
 // src/lib/feature-flags.ts
 export const FEATURE_FLAGS = {
   RUN_AI_SUMMARY: "run_ai_summary",
+  PATTERN_INSIGHT: "pattern_insight",
+  HEALTH_REPORT: "health_report",
 } as const;
 ```
 
@@ -140,6 +142,8 @@ This acts as a server-side double-check — even if a user calls the endpoint di
 | Constant | PostHog key | Description |
 |---|---|---|
 | `FEATURE_FLAGS.RUN_AI_SUMMARY` | `run_ai_summary` | Enables the AI Analysis card on the run detail page |
+| `FEATURE_FLAGS.PATTERN_INSIGHT` | `pattern_insight` | Enables cross-run regression pattern analysis (background-generated, `defaultValue: false` in worker) |
+| `FEATURE_FLAGS.HEALTH_REPORT` | `health_report` | Enables first-run site health report (background-generated, `defaultValue: false` in worker) |
 
 ---
 
