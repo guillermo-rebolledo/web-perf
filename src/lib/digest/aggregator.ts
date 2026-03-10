@@ -1,8 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { subDays, startOfDay } from "date-fns";
 
-// ── Public types ────────────────────────────────────────────────────────────
-
 export interface WeekMetrics {
   avgPerformanceScore: number | null;
   avgAccessibilityScore: number | null;
@@ -45,8 +43,6 @@ export interface UserDigestData {
   };
 }
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
-
 type RunSlice = {
   completedAt: Date | null;
   performanceScore: number | null;
@@ -79,7 +75,7 @@ function computeWeekMetrics(runs: RunSlice[]): WeekMetrics {
 
 function computeTrend(
   thisScore: number | null,
-  lastScore: number | null
+  lastScore: number | null,
 ): "improving" | "declining" | "stable" {
   if (thisScore === null || lastScore === null) return "stable";
   const delta = thisScore - lastScore;
@@ -95,7 +91,7 @@ function computeTrend(
  * Returns null if the user has no sites or no successful runs in the last 7 days.
  */
 export async function aggregateUserDigest(
-  userId: string
+  userId: string,
 ): Promise<UserDigestData | null> {
   const now = new Date();
   const weekEnd = startOfDay(now);
@@ -185,20 +181,20 @@ export async function aggregateUserDigest(
     if (!monitor) continue;
 
     const thisWeekRuns = monitor.runs.filter(
-      (r) => r.completedAt !== null && r.completedAt >= weekStart
+      (r) => r.completedAt !== null && r.completedAt >= weekStart,
     );
     const lastWeekRuns = monitor.runs.filter(
       (r) =>
         r.completedAt !== null &&
         r.completedAt >= prevWeekStart &&
-        r.completedAt < weekStart
+        r.completedAt < weekStart,
     );
 
     const thisWeek = computeWeekMetrics(thisWeekRuns);
     const lastWeek = computeWeekMetrics(lastWeekRuns);
     const trend = computeTrend(
       thisWeek.avgPerformanceScore,
-      lastWeek.avgPerformanceScore
+      lastWeek.avgPerformanceScore,
     );
 
     const openAlerts = { critical: 0, moderate: 0, minor: 0 };
@@ -252,9 +248,14 @@ export async function aggregateUserDigest(
     sitesDeclining: siteDigests.filter((s) => s.trend === "declining").length,
     totalCriticalAlerts: siteDigests.reduce(
       (acc, s) => acc + s.openAlerts.critical,
-      0
+      0,
     ),
   };
 
-  return { user, weekRange: { start: weekStart, end: weekEnd }, sites: siteDigests, summary };
+  return {
+    user,
+    weekRange: { start: weekStart, end: weekEnd },
+    sites: siteDigests,
+    summary,
+  };
 }

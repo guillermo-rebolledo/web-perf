@@ -164,13 +164,27 @@ export default async function Home() {
                   <Sparkles className="size-4 text-purple-600" />
                 </span>
                 <div className="font-bold text-base">
-                  AI explains the root cause
+                  AI works at every layer
                 </div>
               </div>
-              <div>
-                A summary tells you whether the regression came from a new
-                render-blocking script, a layout shift from a new component, a
-                third-party slowdown, or something else entirely.
+              <div className="flex flex-col gap-3">
+                <div>
+                  <span className="font-semibold">On every run —</span> a
+                  narrative summary explains whether the regression came from a
+                  new render-blocking script, a layout shift, a third-party
+                  slowdown, or something else entirely.
+                </div>
+                <div>
+                  <span className="font-semibold">On your first run —</span> a
+                  full health report assesses your site&apos;s performance
+                  posture: quick wins, risk areas, and a maturity score. Context
+                  before you have a baseline.
+                </div>
+                <div>
+                  <span className="font-semibold">Across runs —</span> when the
+                  same metric keeps regressing, pattern analysis identifies the
+                  dominant root cause and gives you one concrete fix.
+                </div>
               </div>
             </div>
           </div>
@@ -262,6 +276,27 @@ export default async function Home() {
                 open alerts by severity for every site you monitor. Forward it
                 to stakeholders, bring it to your retro, or just skip the
                 dashboard entirely.
+              </div>
+            </div>
+            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+              <div className="font-bold text-base">Regression Pattern Analysis</div>
+              <div>
+                When the same metric keeps regressing, something structural is
+                wrong. After three regressions in a 90-day window, the AI
+                identifies the dominant root cause across all incidents, shows
+                how often it recurs, and gives you one concrete fix — not a
+                list of symptoms.
+              </div>
+            </div>
+            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+              <div className="font-bold text-base">First-Run Health Report</div>
+              <div>
+                The moment your monitor runs for the first time, the AI
+                produces a full performance assessment — quick wins ranked by
+                effort vs. impact, risk areas approaching critical thresholds,
+                a recommended monitoring strategy, and a performance maturity
+                score. Context from day one, before you have a baseline to
+                compare against.
               </div>
             </div>
           </div>

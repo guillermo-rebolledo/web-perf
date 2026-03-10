@@ -82,6 +82,10 @@ interface RunPageScalars {
   aiSummary: string | null;
   aiSummaryAt: Date | null;
   aiSummaryModel: string | null;
+  isFirstRun: boolean;
+  healthReport: string | null;
+  healthReportAt: Date | null;
+  healthReportModel: string | null;
 }
 
 /** Regression alert for run detail page */

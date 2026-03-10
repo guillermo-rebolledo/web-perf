@@ -59,6 +59,7 @@ model Monitor {
   runs                Run[]
   regressionBaselines RegressionBaseline[]
   monitorIntegrations MonitorIntegration[]
+  monitorInsights     MonitorInsight[]
 
   @@index([siteId])
   @@index([isActive, nextRunAt])
@@ -102,6 +103,12 @@ model Run {
   aiSummary      String?   @db.Text
   aiSummaryAt    DateTime?
   aiSummaryModel String?
+
+  // First-run health report (generated once per monitor lifetime)
+  isFirstRun        Boolean   @default(false)
+  healthReport      String?   @db.Text
+  healthReportAt    DateTime?
+  healthReportModel String?
 
   audits             Audit[]
   insights           Insight[]
@@ -283,4 +290,23 @@ model MonitorIntegration {
   @@id([integrationId, monitorId])
   @@index([integrationId])
   @@index([monitorId])
+}
+
+model MonitorInsight {
+  id              String   @id @default(cuid())
+  monitorId       String
+  metricName      String?  // null = cross-metric pattern; "lcp" etc. = single-metric
+  generatedAt     DateTime @default(now())
+  summary         String   @db.Text
+  recurrenceCount Int
+  dominantCause   String
+  recommendation  String   @db.Text
+  model           String
+  inputHash       String
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId])
+  @@index([monitorId, metricName])
+  @@index([generatedAt])
 }

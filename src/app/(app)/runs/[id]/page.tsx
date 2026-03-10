@@ -51,6 +51,7 @@ import { extractFilename } from "@/lib/url-utils";
 import { MetricCard } from "@/components/metric-card";
 import { RegressionAlertCard } from "@/components/regression-alert-card";
 import { RunAISummary } from "@/components/run-ai-summary";
+import { RunHealthReport } from "@/components/run-health-report";
 import { Badge } from "@/components/ui/badge";
 import { isFeatureEnabled } from "@/lib/posthog-server";
 import { FEATURE_FLAGS } from "@/lib/feature-flags";
@@ -90,21 +91,23 @@ export default async function RunPage({
 
   // Only look for runs completed *before* this one so the first-ever run
   // doesn't incorrectly show a "Compare with Previous" button.
-  const [previousRun, aiSummaryEnabled] = await Promise.all([
-    run.completedAt
-      ? prisma.run.findFirst({
-          where: {
-            monitorId: run.monitorId,
-            id: { not: id },
-            status: RunStatus.success,
-            completedAt: { not: null, lt: run.completedAt },
-          },
-          orderBy: { completedAt: "desc" },
-          select: { id: true },
-        })
-      : null,
-    isFeatureEnabled(FEATURE_FLAGS.RUN_AI_SUMMARY, session.user.id),
-  ]);
+  const [previousRun, aiSummaryEnabled, healthReportEnabled] =
+    await Promise.all([
+      run.completedAt
+        ? prisma.run.findFirst({
+            where: {
+              monitorId: run.monitorId,
+              id: { not: id },
+              status: RunStatus.success,
+              completedAt: { not: null, lt: run.completedAt },
+            },
+            orderBy: { completedAt: "desc" },
+            select: { id: true },
+          })
+        : null,
+      isFeatureEnabled(FEATURE_FLAGS.RUN_AI_SUMMARY, session.user.id),
+      isFeatureEnabled(FEATURE_FLAGS.HEALTH_REPORT, session.user.id),
+    ]);
 
   const duration =
     run.startedAt && run.completedAt
@@ -281,6 +284,20 @@ export default async function RunPage({
           aiSummaryModel={run.aiSummaryModel}
         />
       )}
+
+      {healthReportEnabled &&
+        run.isFirstRun &&
+        run.healthReport &&
+        run.healthReportAt &&
+        run.healthReportModel && (
+          <>
+            <hr className="border-border" />
+            <RunHealthReport
+              healthReport={run.healthReport}
+              healthReportAt={run.healthReportAt}
+            />
+          </>
+        )}
 
       {run.regressionAlerts && run.regressionAlerts.length > 0 && (
         <>

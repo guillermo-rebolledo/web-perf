@@ -118,3 +118,22 @@ export interface MonitorOption {
   id: string;
   label: string;
 }
+
+// GET /api/monitors/[id]/pattern-insights
+export interface PatternInsightItem {
+  id: string;
+  monitorId: string;
+  metricName: string | null;
+  generatedAt: string;
+  summary: string;
+  recurrenceCount: number;
+  dominantCause: string;
+  recommendation: string;
+  model: string;
+}
+
+export interface PatternInsightsResult {
+  insights: PatternInsightItem[];
+  /** True when background generation was triggered (client may poll). */
+  isGenerating: boolean;
+}
