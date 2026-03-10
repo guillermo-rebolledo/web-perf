@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
 import {
   mockAuthenticated,
-  mockUnauthenticated,
+  mockUnauthenticated as _mockUnauthenticated,
 } from "@/__tests__/helpers/auth-mock";
 import { prismaMock } from "@/__tests__/helpers/prisma-mock";
 import { createMonitor, createSite, createMonitorInsight } from "@/__tests__/helpers/fixtures";

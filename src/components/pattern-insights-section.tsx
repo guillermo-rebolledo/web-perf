@@ -30,8 +30,10 @@ export async function PatternInsightsSection({
   try {
     // Only show insights while the pattern is still active — hide once the
     // site recovers and recent regressions drop below the generation threshold.
+    // eslint-disable-next-line react-hooks/purity -- async server component; Date.now() is safe here
+    const nowMs = Date.now();
     const lookbackDate = new Date(
-      Date.now() - PATTERN_INSIGHT.LOOKBACK_DAYS * 24 * 60 * 60 * 1000
+      nowMs - PATTERN_INSIGHT.LOOKBACK_DAYS * 24 * 60 * 60 * 1000
     );
     const recentAlertCount = await prisma.regressionAlert.count({
       where: { run: { monitorId }, createdAt: { gte: lookbackDate } },
