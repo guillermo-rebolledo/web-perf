@@ -36,8 +36,8 @@ export async function isFeatureEnabled(
 
   try {
     const result = await client.isFeatureEnabled(flag, distinctId);
-    // PostHog returns `undefined` when the flag doesn't exist yet — treat as disabled
-    return result ?? false;
+    // PostHog returns `undefined` when the flag doesn't exist yet — fall back to defaultValue
+    return result ?? defaultValue;
   } finally {
     // Must be awaited to ensure the client shuts down cleanly in serverless
     await client.shutdown();

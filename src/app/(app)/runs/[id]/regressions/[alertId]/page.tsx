@@ -12,6 +12,7 @@ import {
 import { RootCausePanel } from "@/components/root-cause-panel";
 import { RegressionHeader } from "@/components/regression-header";
 import { DiffSummarySection } from "@/components/diff-summary-section";
+import { FixItSuggestionsPanel } from "@/components/fix-it-suggestions-panel";
 import { parseRegressionCauses, parseDiffSummary } from "@/lib/alert-utils";
 import { ChartBar } from "lucide-react";
 
@@ -95,6 +96,12 @@ export default async function RegressionDetailsPage({
         </h2>
         <RootCausePanel causes={likelyCauses} />
       </section>
+
+      <FixItSuggestionsPanel
+        alertId={alert.id}
+        cachedSuggestions={alert.fixItSuggestions ?? null}
+        cachedAt={alert.fixItSuggestionsAt ?? null}
+      />
 
       {/* Diff Summary */}
       {diffSummary && <DiffSummarySection diffSummary={diffSummary} />}

@@ -242,6 +242,11 @@ model RegressionAlert {
   likelyCauses Json? // Array of ranked root causes with evidence
   diffSummary  Json? // Before/after deltas across network/mainThread/rendering/backend
 
+  // AI-generated fix-it code suggestions (cached after first generation)
+  fixItSuggestions      String?   @db.Text
+  fixItSuggestionsAt    DateTime?
+  fixItSuggestionsModel String?
+
   // Status tracking
   status         String    @default("open") // "open", "acknowledged", "resolved"
   acknowledgedAt DateTime?
