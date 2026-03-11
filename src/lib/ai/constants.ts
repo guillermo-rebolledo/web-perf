@@ -56,6 +56,30 @@ export const PATTERN_INSIGHT = {
   RATE_LIMIT_GEN_KEY: "pattern-insight-gen",
 } as const;
 
+/** Shared constants for the per-alert AI fix-it code suggestions feature. */
+export const FIX_IT_SUGGESTIONS = {
+  /** OpenAI model used for fix generation. */
+  MODEL: "gpt-4o-mini",
+
+  /** Redis key prefix for the per-user daily rate limit. */
+  RATE_LIMIT_KEY: "fix-it-suggestions",
+
+  /** Maximum number of fix-it generations a user can trigger per day. */
+  DAILY_LIMIT: 5,
+
+  /** Minimum minutes between regenerations for the same alert. */
+  COOLDOWN_MINUTES: 60,
+
+  /** API error codes returned by the route (and parsed client-side). */
+  ERROR_CODES: {
+    COOLDOWN: "cooldown",
+    DAILY_LIMIT: "daily_limit",
+  },
+} as const;
+
+export type FixItSuggestionsErrorCode =
+  (typeof FIX_IT_SUGGESTIONS.ERROR_CODES)[keyof typeof FIX_IT_SUGGESTIONS.ERROR_CODES];
+
 /** Shared constants for the first-run site health report feature. */
 export const HEALTH_REPORT = {
   /** OpenAI model used for health report generation. */

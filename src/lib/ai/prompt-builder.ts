@@ -1,4 +1,5 @@
 import type { RunPageAudit } from "@/types/prisma";
+import type { RegressionCause, DiffSummary } from "@/lib/alert-utils";
 
 interface PromptInsight {
   id: string;
@@ -456,6 +457,203 @@ export function buildHealthReportPrompt(run: RunForHealthReport): string {
   lines.push("### Performance Maturity");
   lines.push(
     "Rate the site's current performance posture on a scale of 1-5 (1=poor, 5=excellent) and explain why, referencing specific scores."
+  );
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Fix-It Suggestions Prompt
+// ---------------------------------------------------------------------------
+
+/** Maps regression rule IDs to the Lighthouse audit IDs most relevant for fix suggestions. */
+const RULE_TO_AUDIT_IDS: Record<string, string[]> = {
+  "render-blocking": ["render-blocking-resources", "unused-css-rules"],
+  "js-bloat": ["bootup-time", "unused-javascript", "total-byte-weight"],
+  "lcp-resource": ["largest-contentful-paint-element", "uses-optimized-images"],
+  "legacy-js": ["legacy-javascript"],
+  "cls": ["layout-shift-elements", "non-composited-animations"],
+  "third-party": ["third-party-summary", "third-party-facades"],
+  "main-thread": ["long-tasks", "mainthread-work-breakdown"],
+  "ttfb": ["server-response-time", "redirects"],
+};
+
+interface AlertForFixIt {
+  metricName: string;
+  severity: string;
+  percentChange: number;
+  baselineValue: number;
+  actualValue: number;
+}
+
+interface SiteForFixIt {
+  name: string;
+  url: string;
+}
+
+interface AuditForFixIt {
+  auditId: string;
+  title: string;
+  score: number | null;
+  displayValue: string | null;
+  details: unknown;
+}
+
+/** Returns the relevant audit IDs for a set of regression cause rule IDs. */
+export function getRelevantAuditIds(causeRuleIds: string[]): string[] {
+  return [...new Set(causeRuleIds.flatMap((id) => RULE_TO_AUDIT_IDS[id] ?? []))];
+}
+
+/**
+ * Builds the LLM prompt for per-alert AI fix-it code suggestions.
+ * Produces 2-3 specific, implementation-ready fixes per root cause.
+ *
+ * @param alert   The RegressionAlert record
+ * @param causes  Parsed likelyCauses array
+ * @param diffSummary  Parsed diffSummary or null
+ * @param relevantAudits  Pre-filtered Audit records relevant to the detected causes
+ * @param site    The site that owns the monitor
+ * @param strategy  "mobile" or "desktop"
+ */
+export function buildFixItSuggestionsPrompt(
+  alert: AlertForFixIt,
+  causes: RegressionCause[],
+  diffSummary: DiffSummary | null,
+  relevantAudits: AuditForFixIt[],
+  site: SiteForFixIt,
+  strategy: string
+): string {
+  const safeSiteName = sanitizeForPrompt(site.name);
+  const safeSiteUrl = sanitizeForPrompt(site.url);
+
+  const lines: string[] = [];
+
+  lines.push(
+    "You are a senior web performance engineer. Provide specific, implementation-ready code fixes for a performance regression."
+  );
+  lines.push("");
+
+  lines.push("## Regression");
+  lines.push(`Site: ${safeSiteName} (${safeSiteUrl})`);
+  lines.push(
+    `Metric: **${alert.metricName.toUpperCase()}** regressed **${alert.percentChange.toFixed(1)}%** (${alert.baselineValue.toFixed(alert.metricName === "cls" ? 3 : 0)} → ${alert.actualValue.toFixed(alert.metricName === "cls" ? 3 : 0)}${alert.metricName === "cls" ? "" : " ms"})`
+  );
+  lines.push(`Severity: ${alert.severity} | Strategy: ${strategy}`);
+  lines.push("");
+
+  if (causes.length > 0) {
+    lines.push("## Root Causes Identified");
+    for (const cause of causes) {
+      lines.push(`### ${cause.title} (confidence: ${cause.confidence}%)`);
+      lines.push(cause.description);
+      if (cause.evidence.length > 0) {
+        lines.push("Evidence:");
+        for (const ev of cause.evidence.slice(0, 6)) {
+          const before = typeof ev.before === "number" ? ev.before.toFixed(2) : String(ev.before);
+          const after = typeof ev.after === "number" ? ev.after.toFixed(2) : String(ev.after);
+          lines.push(`- ${ev.label}: ${before} → ${after} (Δ ${ev.delta})`);
+        }
+      }
+      if (cause.recommendations.length > 0) {
+        lines.push(`Current recommendations: ${cause.recommendations.slice(0, 3).join("; ")}`);
+      }
+      lines.push("");
+    }
+  }
+
+  if (diffSummary) {
+    lines.push("## What Changed");
+    const { network, mainThread, rendering, backend } = diffSummary;
+    if (Math.abs(network.totalBytesDelta) > 1024) {
+      lines.push(
+        `- Total transfer: ${network.totalBytesDelta > 0 ? "+" : ""}${Math.round(network.totalBytesDelta / 1024)} KB`
+      );
+    }
+    if (Math.abs(network.jsBytesDelta) > 1024)
+      lines.push(`- JS bytes: ${network.jsBytesDelta > 0 ? "+" : ""}${Math.round(network.jsBytesDelta / 1024)} KB`);
+    if (Math.abs(network.cssBytesDelta) > 512)
+      lines.push(`- CSS bytes: ${network.cssBytesDelta > 0 ? "+" : ""}${Math.round(network.cssBytesDelta / 1024)} KB`);
+    if (Math.abs(network.imageBytesDelta) > 1024)
+      lines.push(`- Image bytes: ${network.imageBytesDelta > 0 ? "+" : ""}${Math.round(network.imageBytesDelta / 1024)} KB`);
+    if (network.newDomains.length > 0)
+      lines.push(`- New third-party domains: ${network.newDomains.map((d) => sanitizeForPrompt(d, 100)).join(", ")}`);
+    if (Math.abs(mainThread.totalMainThreadTimeDelta) > 50)
+      lines.push(
+        `- Main thread time: ${mainThread.totalMainThreadTimeDelta > 0 ? "+" : ""}${Math.round(mainThread.totalMainThreadTimeDelta)} ms`
+      );
+    if (Math.abs(mainThread.scriptingTimeDelta) > 50)
+      lines.push(
+        `- JS scripting time: ${mainThread.scriptingTimeDelta > 0 ? "+" : ""}${Math.round(mainThread.scriptingTimeDelta)} ms`
+      );
+    if (mainThread.longTaskCountDelta !== 0)
+      lines.push(
+        `- Long tasks: ${mainThread.longTaskCountDelta > 0 ? "+" : ""}${mainThread.longTaskCountDelta}`
+      );
+    if (rendering.lcpResourceChanged) {
+      lines.push(`- LCP resource changed: ${sanitizeForPrompt(rendering.lcpResourceBefore, 200)} → ${sanitizeForPrompt(rendering.lcpResourceAfter, 200)}`);
+    }
+    if (rendering.clsShiftSourcesChanged)
+      lines.push("- CLS shift sources changed between runs");
+    if (Math.abs(backend.ttfbDelta) > 50)
+      lines.push(`- TTFB: ${backend.ttfbDelta > 0 ? "+" : ""}${Math.round(backend.ttfbDelta)} ms`);
+    lines.push("");
+  }
+
+  if (relevantAudits.length > 0) {
+    lines.push("## Lighthouse Audit Details");
+    for (const audit of relevantAudits) {
+      const scoreLabel = audit.score !== null ? ` (score: ${Math.round(audit.score * 100)})` : "";
+      const displayLabel = audit.displayValue ? `, ${audit.displayValue}` : "";
+      lines.push(`### ${audit.title}${scoreLabel}${displayLabel}`);
+
+      // Extract top items from audit.details safely
+      if (
+        audit.details !== null &&
+        typeof audit.details === "object" &&
+        !Array.isArray(audit.details)
+      ) {
+        const details = audit.details as Record<string, unknown>;
+        if (Array.isArray(details.items)) {
+          const items = (details.items as unknown[]).slice(0, 8);
+          for (const item of items) {
+            if (item !== null && typeof item === "object" && !Array.isArray(item)) {
+              const row = item as Record<string, unknown>;
+              const parts: string[] = [];
+              if (typeof row.url === "string") parts.push(`url: ${sanitizeForPrompt(row.url, 200)}`);
+              if (typeof row.wastedBytes === "number") parts.push(`wastedBytes: ${Math.round(row.wastedBytes / 1024)} KB`);
+              if (typeof row.wastedMs === "number") parts.push(`wastedMs: ${Math.round(row.wastedMs)} ms`);
+              if (typeof row.totalBytes === "number") parts.push(`totalBytes: ${Math.round(row.totalBytes / 1024)} KB`);
+              if (typeof row.blockingTime === "number") parts.push(`blockingTime: ${Math.round(row.blockingTime)} ms`);
+              if (parts.length > 0) lines.push(`- ${parts.join(", ")}`);
+            }
+          }
+        }
+      }
+      lines.push("");
+    }
+  }
+
+  lines.push("---");
+  lines.push(
+    "For each root cause above, provide 2–3 specific fixes. Format your response as:"
+  );
+  lines.push("");
+  lines.push("## {Cause Title}");
+  lines.push("");
+  lines.push("### Fix: {Descriptive Fix Name}");
+  lines.push("**Why this helps:** {one sentence}");
+  lines.push("**Before:**");
+  lines.push("```html|css|js");
+  lines.push("{before code}");
+  lines.push("```");
+  lines.push("**After:**");
+  lines.push("```html|css|js");
+  lines.push("{after code}");
+  lines.push("```");
+  lines.push("**Expected impact:** {estimated improvement to regressed metric}");
+  lines.push("");
+  lines.push(
+    "Focus on the specific resources and files named in the audit details. Prefer concrete changes over generic advice."
   );
 
   return lines.join("\n");

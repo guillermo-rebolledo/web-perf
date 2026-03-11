@@ -13,7 +13,7 @@ import { env } from "@/env";
 
 export async function POST(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 
@@ -45,7 +45,7 @@ export async function POST(
   const featureEnabled = await isFeatureEnabled(
     FEATURE_FLAGS.RUN_AI_SUMMARY,
     session.user.id,
-    { defaultValue: true }
+    { defaultValue: true },
   );
   if (!featureEnabled) {
     return new Response(JSON.stringify({ error: "Feature not available" }), {
@@ -56,8 +56,10 @@ export async function POST(
 
   if (run.status !== RunStatus.success) {
     return new Response(
-      JSON.stringify({ error: "AI analysis is only available for successful runs" }),
-      { status: 422, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: "AI analysis is only available for successful runs",
+      }),
+      { status: 422, headers: { "Content-Type": "application/json" } },
     );
   }
 
@@ -68,14 +70,17 @@ export async function POST(
     if (elapsedMs < cooldownMs) {
       const retryAfterSeconds = Math.ceil((cooldownMs - elapsedMs) / 1000);
       return new Response(
-        JSON.stringify({ error: AI_SUMMARY.ERROR_CODES.COOLDOWN, retryAfterSeconds }),
+        JSON.stringify({
+          error: AI_SUMMARY.ERROR_CODES.COOLDOWN,
+          retryAfterSeconds,
+        }),
         {
           status: 429,
           headers: {
             "Content-Type": "application/json",
             "Retry-After": String(retryAfterSeconds),
           },
-        }
+        },
       );
     }
   }
@@ -84,12 +89,15 @@ export async function POST(
   const rateLimit = await checkRateLimit(
     session.user.id,
     AI_SUMMARY.DAILY_LIMIT,
-    AI_SUMMARY.RATE_LIMIT_KEY
+    AI_SUMMARY.RATE_LIMIT_KEY,
   );
   if (!rateLimit.success) {
     return new Response(
-      JSON.stringify({ error: AI_SUMMARY.ERROR_CODES.DAILY_LIMIT, limit: AI_SUMMARY.DAILY_LIMIT }),
-      { status: 429, headers: { "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: AI_SUMMARY.ERROR_CODES.DAILY_LIMIT,
+        limit: AI_SUMMARY.DAILY_LIMIT,
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } },
     );
   }
 
@@ -109,6 +117,9 @@ export async function POST(
           aiSummaryModel: AI_SUMMARY.MODEL,
         },
       });
+    },
+    onError: (err) => {
+      console.error("[ai-summary] Failed to save summary:", err);
     },
   });
 
