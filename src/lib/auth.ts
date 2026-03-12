@@ -1,6 +1,6 @@
 import NextAuth, { type Session, type User } from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import EmailProvider from "next-auth/providers/email";
+import ResendProvider from "next-auth/providers/resend";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import type { JWT } from "next-auth/jwt";
@@ -19,18 +19,11 @@ export const { handlers, auth } = NextAuth({
       clientId: env.GITHUB_CLIENT_ID,
       clientSecret: env.GITHUB_CLIENT_SECRET,
     }),
-    ...(env.EMAIL_SERVER_HOST && env.EMAIL_FROM
+    ...(env.RESEND_API_KEY
       ? [
-          EmailProvider({
-            server: {
-              host: env.EMAIL_SERVER_HOST,
-              port: env.EMAIL_SERVER_PORT,
-              auth: {
-                user: env.EMAIL_SERVER_USER,
-                pass: env.EMAIL_SERVER_PASSWORD,
-              },
-            },
-            from: env.EMAIL_FROM,
+          ResendProvider({
+            apiKey: env.RESEND_API_KEY,
+            from: env.RESEND_FROM_EMAIL,
           }),
         ]
       : []),
