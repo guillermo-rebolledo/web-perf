@@ -131,8 +131,6 @@ export async function POST(
     model: openai(FIX_IT_SUGGESTIONS.MODEL),
     prompt,
     onFinish: async ({ text }) => {
-      console.log("AYO");
-      console.log(text);
       await prisma.regressionAlert.update({
         where: { id: alertId },
         data: {
