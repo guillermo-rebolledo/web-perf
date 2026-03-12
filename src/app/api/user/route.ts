@@ -72,7 +72,10 @@ export async function DELETE(request: NextRequest) {
 
     const token = generateDeleteAccountToken(userId);
     const appUrl = env.NEXTAUTH_URL;
-    const confirmUrl = `${appUrl}/api/user/confirm-delete?token=${token}`;
+    // Link to the UI confirmation page, not the API directly.
+    // This prevents link pre-fetchers (Microsoft SafeLinks, etc.) from
+    // triggering account deletion via a GET request.
+    const confirmUrl = `${appUrl}/confirm-delete?token=${token}`;
 
     const resend = new Resend(env.RESEND_API_KEY);
     await resend.emails.send({

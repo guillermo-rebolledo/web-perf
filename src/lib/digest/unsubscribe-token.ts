@@ -39,6 +39,9 @@ export function verifyUnsubscribeToken(token: string): string | null {
 }
 
 function sign(payload: string): string {
-  const secret = env.NEXTAUTH_SECRET ?? "dev-secret-not-for-production";
+  const secret = env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error("NEXTAUTH_SECRET is required for signing unsubscribe tokens");
+  }
   return createHmac("sha256", secret).update(payload).digest("hex");
 }
