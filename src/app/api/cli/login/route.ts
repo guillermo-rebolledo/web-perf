@@ -48,9 +48,12 @@ export async function POST(_request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Prefer x-real-ip (set by the infrastructure proxy and not spoofable by
+    // clients) over x-forwarded-for where the client-supplied segment comes
+    // first and can be forged to bypass or flood a victim's rate limit bucket.
     const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
       request.headers.get("x-real-ip") ??
+      request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() ??
       "unknown";
 
     const ipLimit = await checkIpRateLimit(ip, 60, 60, "cli-poll");

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import Redis from "ioredis";
 import { env } from "@/env";
@@ -7,7 +8,13 @@ export async function GET(request: NextRequest) {
   // If HEALTH_SECRET is configured, require it via x-health-secret header.
   if (env.HEALTH_SECRET) {
     const provided = request.headers.get("x-health-secret");
-    if (provided !== env.HEALTH_SECRET) {
+    const expected = Buffer.from(env.HEALTH_SECRET);
+    const actual = provided ? Buffer.from(provided) : null;
+    const authorized =
+      actual !== null &&
+      actual.length === expected.length &&
+      timingSafeEqual(actual, expected);
+    if (!authorized) {
       return new NextResponse(null, { status: 401 });
     }
   }

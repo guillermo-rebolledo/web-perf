@@ -3,12 +3,30 @@ import { prisma } from "@/lib/prisma";
 import { verifyDeleteAccountToken } from "@/lib/delete-account-token";
 
 /**
- * GET /api/user/confirm-delete?token=...
- * Verifies the deletion confirmation token and permanently deletes the account.
- * Redirects to the homepage on success.
+ * POST /api/user/confirm-delete
+ *
+ * Verifies the deletion confirmation token (from the email link) and
+ * permanently deletes the account. Requires an explicit POST so that:
+ *  - Link pre-fetchers and email safety scanners (which only send GET) cannot
+ *    accidentally trigger the deletion.
+ *  - The action is clearly intentional (user clicked "Confirm" in the UI).
+ *
+ * The token is submitted as a JSON body field, not a query param, to avoid
+ * it appearing in server access logs.
  */
-export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token");
+export async function POST(request: NextRequest) {
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const token =
+    body !== null && typeof body === "object" && "token" in body
+      ? String((body as Record<string, unknown>).token)
+      : null;
+
   if (!token) {
     return NextResponse.json({ error: "Missing token" }, { status: 400 });
   }
@@ -23,12 +41,5 @@ export async function GET(request: NextRequest) {
 
   await prisma.user.delete({ where: { id: userId } });
 
-  // Redirect to sign-in and clear the JWT session cookie so the browser
-  // doesn't remain authenticated. NextAuth v5 uses a JWT strategy, so deleting
-  // the user doesn't invalidate the in-browser token automatically.
-  const response = NextResponse.redirect(new URL("/auth/signin", request.url));
-  // Delete both the plain (dev) and Secure-prefixed (prod HTTPS) variants.
-  response.cookies.delete("next-auth.session-token");
-  response.cookies.delete("__Secure-next-auth.session-token");
-  return response;
+  return NextResponse.json({ ok: true });
 }
