@@ -7,11 +7,29 @@ import { Button } from "@/components/ui/button";
 export default function SignInPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await signIn("email", { email, callbackUrl: "/dashboard" });
+    setError(null);
+    try {
+      const result = await signIn("email", {
+        email,
+        callbackUrl: "/dashboard",
+        redirect: false,
+      });
+      if (result?.error) {
+        setError("Failed to send magic link. Please try again or use a social login.");
+      } else {
+        setSent(true);
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -74,29 +92,38 @@ export default function SignInPage() {
           </div>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email" className="sr-only">
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="relative block w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm"
-              placeholder="Email address"
-            />
-          </div>
-          <div>
-            <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? "Sending link..." : "Send magic link"}
-            </Button>
-          </div>
-        </form>
+        {sent ? (
+          <p className="text-center text-sm text-muted-foreground">
+            Check your inbox — we sent a magic link to <strong>{email}</strong>.
+          </p>
+        ) : (
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="email" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="relative block w-full appearance-none rounded-md border border-input bg-background px-3 py-2 text-foreground placeholder-muted-foreground focus:z-10 focus:border-primary focus:outline-none focus:ring-primary sm:text-sm"
+                placeholder="Email address"
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
+            <div>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Sending link..." : "Send magic link"}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
