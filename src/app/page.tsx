@@ -85,16 +85,10 @@ export default async function Home() {
             where to look before your users feel it.
           </p>
 
-          <div className="py-6 flex flex-col md:flex-row items-center justify-center gap-3">
+          <div className="py-6 flex items-center justify-center">
             <Button asChild size="lg" className="w-auto shrink-0">
               <Link href="/dashboard">Start Monitoring Free</Link>
             </Button>
-
-            <div className="relative flex w-fit min-w-0 max-w-full items-center rounded-lg h-11 px-4 border border-border bg-card overflow-x-auto">
-              <code className="font-geist-mono text-sm whitespace-nowrap">
-                npm install -g @perflabs/cli
-              </code>
-            </div>
           </div>
         </section>
 
@@ -279,22 +273,24 @@ export default async function Home() {
               </div>
             </div>
             <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">Regression Pattern Analysis</div>
+              <div className="font-bold text-base">
+                Regression Pattern Analysis
+              </div>
               <div>
                 When the same metric keeps regressing, something structural is
                 wrong. After three regressions in a 90-day window, the AI
                 identifies the dominant root cause across all incidents, shows
-                how often it recurs, and gives you one concrete fix — not a
-                list of symptoms.
+                how often it recurs, and gives you one concrete fix — not a list
+                of symptoms.
               </div>
             </div>
             <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
               <div className="font-bold text-base">First-Run Health Report</div>
               <div>
-                The moment your monitor runs for the first time, the AI
-                produces a full performance assessment — quick wins ranked by
-                effort vs. impact, risk areas approaching critical thresholds,
-                a recommended monitoring strategy, and a performance maturity
+                The moment your monitor runs for the first time, the AI produces
+                a full performance assessment — quick wins ranked by effort vs.
+                impact, risk areas approaching critical thresholds, a
+                recommended monitoring strategy, and a performance maturity
                 score. Context from day one, before you have a baseline to
                 compare against.
               </div>
@@ -443,11 +439,6 @@ Full results: https://perflabs.dev/runs/cm9xyz456`}
                     Sign in
                   </Link>
                 </li>
-                <li>
-                  <code className="text-xs text-muted-foreground font-geist-mono select-all">
-                    npm i -g @perflabs/cli
-                  </code>
-                </li>
               </ul>
             </div>
 
@@ -529,7 +520,7 @@ Full results: https://perflabs.dev/runs/cm9xyz456`}
           {/* Bottom bar */}
           <div className="flex flex-col gap-3 border-t border-border py-6 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} PerfLabs. All rights reserved.
+              PerfLabs {new Date().getFullYear()}
             </p>
             <div className="flex gap-5 text-xs text-muted-foreground">
               <Link
