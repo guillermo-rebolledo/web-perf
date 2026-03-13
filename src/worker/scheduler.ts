@@ -72,6 +72,48 @@ export function startScheduler() {
     },
     { name: "scheduler-data-retention" },
   );
+
+  cron.schedule(
+    "*/10 * * * *",
+    async () => {
+      try {
+        await reapStuckRuns();
+      } catch (error) {
+        console.error("[Scheduler] Error during stuck-run reaper:", error);
+      }
+    },
+    { name: "scheduler-stuck-run-reaper" },
+  );
+}
+
+/** Timeout after which a queued or running run is considered stuck (ms). */
+const STUCK_RUN_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
+/**
+ * Marks runs that have been stuck in `queued` or `running` for longer than
+ * STUCK_RUN_TIMEOUT_MS as `failed`. This unblocks the idempotency check so
+ * the monitor can accept a new run the next time it is due.
+ */
+export async function reapStuckRuns() {
+  const cutoff = new Date(Date.now() - STUCK_RUN_TIMEOUT_MS);
+
+  const { count } = await prisma.run.updateMany({
+    where: {
+      OR: [
+        { status: RunStatus.queued, queuedAt: { lt: cutoff } },
+        { status: RunStatus.running, startedAt: { lt: cutoff } },
+      ],
+    },
+    data: {
+      status: RunStatus.failed,
+      completedAt: new Date(),
+      errorMessage: "Run timed out — marked failed by stuck-run reaper",
+    },
+  });
+
+  if (count > 0) {
+    console.warn(`[Scheduler] Reaped ${count} stuck run(s) older than 30 minutes`);
+  }
 }
 
 export async function processDueMonitors() {
