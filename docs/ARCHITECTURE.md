@@ -121,6 +121,7 @@ Web Performance Lab (PerfLabs) is a production-ready SaaS for monitoring website
 │  ┌───────────────────────────────────────────────────────────────────────┐  │
 │  │  Scheduler (node-cron)                                                │  │
 │  │  • Every minute: checks for due monitors, enqueues audit jobs        │  │
+│  │  • Every 10 min: reaps stuck queued/running runs (30 min timeout)    │  │
 │  │  • Monday 9 AM: enqueues weekly digest job                           │  │
 │  │  • Daily 3 AM: cleans up old screenshots                             │  │
 │  └───────────────────────────────────────────────────────────────────────┘  │
@@ -574,12 +575,20 @@ Runs inside the worker process:
 // Every minute: find and enqueue due monitors
 cron.schedule("* * * * *", async () => processDueMonitors());
 
+// Every 10 minutes: reap stuck runs
+cron.schedule("*/10 * * * *", async () => reapStuckRuns());
+
 // Monday 9 AM: enqueue weekly digest
 cron.schedule("0 9 * * 1", async () => enqueueDigestJob());
 
 // Daily 3 AM: clean up old screenshots
 cron.schedule("0 3 * * *", async () => cleanupOldScreenshots(env.SCREENSHOT_TTL_DAYS));
+
+// Daily 4 AM: enforce data retention window
+cron.schedule("0 4 * * *", async () => cleanupOldRuns(env.RUN_RETENTION_DAYS));
 ```
+
+**Stuck-run reaper**: `reapStuckRuns()` marks any run stuck in `queued` (for 30+ minutes since `queuedAt`) or `running` (for 30+ minutes since `startedAt`) as `failed`. This unblocks the idempotency check so the monitor can accept a new run on its next scheduled tick. Runs get stuck when the BullMQ job is lost (Redis restart, worker crash) while the DB record is never updated.
 
 **Screenshot TTL**: Default 30 days (configurable via `SCREENSHOT_TTL_DAYS`). Cleanup sets `screenshotData = null` on old runs (keeps the run record).
 
