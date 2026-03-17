@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob } from "@/lib/queue";
 import { verifyGitHubSignature, isSuccessfulDeployment } from "@/lib/github-webhook";
 import { RunStatus } from "@prisma/client";
+import { recordActivity } from "@/lib/activity";
 
 // POST /api/webhooks/github/[monitorId]
 // Receives GitHub deployment_status webhook events and triggers a performance audit.
@@ -96,6 +97,20 @@ export async function POST(
       where: { id: run.id },
       data: { jobId },
     });
+
+    try {
+      await recordActivity(prisma, monitor.site.userId, "deployment_run_triggered", run.id, {
+        type: "deployment_run_triggered",
+        siteName: monitor.site.name,
+        siteUrl: monitor.site.url,
+        siteId: monitor.site.id,
+        monitorId: monitor.id,
+        githubRepo: monitor.githubRepo,
+        githubBranch: monitor.githubBranch,
+      });
+    } catch (activityError) {
+      console.error("[activity] deployment_run_triggered:", activityError);
+    }
 
     return NextResponse.json({ runId: run.id, jobId }, { status: 202 });
   } catch (error) {

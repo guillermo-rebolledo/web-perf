@@ -32,7 +32,8 @@
     "cli:test": "pnpm --dir cli test",
     "cli:test:watch": "pnpm --dir cli test:watch",
     "seed:decline": "tsx prisma/seed-decline.ts",
-    "seed:improvement": "tsx prisma/seed-improvement.ts"
+    "seed:improvement": "tsx prisma/seed-improvement.ts",
+    "seed:activity": "tsx prisma/seed-activity.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.33",

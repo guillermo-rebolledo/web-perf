@@ -474,6 +474,9 @@ pnpm seed:regressions your-email@example.com
 pnpm seed:decline your-email@example.com
 pnpm seed:improvement your-email@example.com
 
+# Seed Activity feed events (50 events across all types, last 30 days)
+pnpm seed:activity your-email@example.com
+
 # Clean database (preserves users/sessions)
 pnpm seed:clean
 

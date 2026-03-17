@@ -137,3 +137,18 @@ export interface PatternInsightsResult {
   /** True when background generation was triggered (client may poll). */
   isGenerating: boolean;
 }
+
+export type ActivityEventRow = {
+  id: string;
+  type: string;
+  entityId: string;
+  entityType: string;
+  metadata: unknown;
+  createdAt: string;
+};
+
+export type ActivityApiResponse = {
+  events: ActivityEventRow[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};

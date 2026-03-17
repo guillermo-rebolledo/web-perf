@@ -11,6 +11,7 @@ import { detectRegressions } from "@/lib/regression/detector";
 import { calculateBaselines } from "@/lib/regression/baseline-calculator";
 import { analyzeRootCauses } from "@/lib/regression/rules-engine";
 import { calculateDiffSummary } from "@/lib/regression/diff-engine";
+import { recordActivity } from "@/lib/activity";
 
 /** Enabled when NODE_ENV is not production and --debug-psi is passed as a CLI argument */
 const PSI_DEBUG_ENABLED =
@@ -201,6 +202,28 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           console.log(
             `[Worker] Saved ${enrichedRegressions.length} regression alert(s) with root cause analysis`,
           );
+
+          // Activity: regression_detected (fire-and-forget)
+          void (async () => {
+            try {
+              const runForActivity = await prisma.run.findUnique({
+                where: { id: runId },
+                include: { monitor: { include: { site: true } } },
+              });
+              if (runForActivity) {
+                await recordActivity(prisma, runForActivity.monitor.site.userId, "regression_detected", runForActivity.id, {
+                  type: "regression_detected",
+                  siteName: runForActivity.monitor.site.name,
+                  siteUrl: runForActivity.monitor.site.url,
+                  siteId: runForActivity.monitor.site.id,
+                  alertCount: enrichedRegressions.length,
+                  severities: enrichedRegressions.map((r) => r.severity),
+                });
+              }
+            } catch (err) {
+              console.error("[activity] regression_detected:", err);
+            }
+          })();
         }
 
         // Asynchronously recalculate baselines (don't await - fire and forget)
@@ -378,6 +401,28 @@ export async function processAuditJob(job: Job<AuditJobData>) {
       }
     })();
 
+    // Activity: run_completed (fire-and-forget)
+    void (async () => {
+      try {
+        const completedRun = await prisma.run.findUnique({
+          where: { id: runId },
+          include: { monitor: { include: { site: true } } },
+        });
+        if (completedRun) {
+          await recordActivity(prisma, completedRun.monitor.site.userId, "run_completed", completedRun.id, {
+            type: "run_completed",
+            siteName: completedRun.monitor.site.name,
+            siteUrl: completedRun.monitor.site.url,
+            siteId: completedRun.monitor.site.id,
+            monitorId: completedRun.monitor.id,
+            performanceScore: completedRun.performanceScore,
+          });
+        }
+      } catch (err) {
+        console.error("[activity] run_completed:", err);
+      }
+    })();
+
     // Update monitor lastRunAt
     await prisma.monitor.update({
       where: { id: monitorId },
@@ -402,6 +447,28 @@ export async function processAuditJob(job: Job<AuditJobData>) {
         errorMessage: sanitizeErrorMessage(error),
       },
     });
+
+    // Activity: run_failed (fire-and-forget)
+    void (async () => {
+      try {
+        const failedRun = await prisma.run.findUnique({
+          where: { id: runId },
+          include: { monitor: { include: { site: true } } },
+        });
+        if (failedRun) {
+          await recordActivity(prisma, failedRun.monitor.site.userId, "run_failed", failedRun.id, {
+            type: "run_failed",
+            siteName: failedRun.monitor.site.name,
+            siteUrl: failedRun.monitor.site.url,
+            siteId: failedRun.monitor.site.id,
+            monitorId: failedRun.monitor.id,
+            errorMessage: failedRun.errorMessage,
+          });
+        }
+      } catch (err) {
+        console.error("[activity] run_failed:", err);
+      }
+    })();
 
     throw error; // Re-throw to mark job as failed
   }
