@@ -6,15 +6,15 @@ import type { ActivityEventRow } from "@/types/api";
 
 type EventMeta = Record<string, unknown>;
 
-function getIcon(type: string) {
+function EventTypeIcon({ type, className }: { type: string; className?: string }) {
   switch (type) {
-    case "site_created": return Globe;
-    case "monitor_created": return Monitor;
-    case "run_completed": return CheckCircle2;
-    case "run_failed": return XCircle;
-    case "regression_detected": return TrendingDown;
-    case "deployment_run_triggered": return GitBranch;
-    default: return Globe;
+    case "site_created": return <Globe className={className} />;
+    case "monitor_created": return <Monitor className={className} />;
+    case "run_completed": return <CheckCircle2 className={className} />;
+    case "run_failed": return <XCircle className={className} />;
+    case "regression_detected": return <TrendingDown className={className} />;
+    case "deployment_run_triggered": return <GitBranch className={className} />;
+    default: return <Globe className={className} />;
   }
 }
 
@@ -91,7 +91,6 @@ function RelativeTime({ dateStr }: { dateStr: string }) {
 
 export function ActivityEventCard({ event }: { event: ActivityEventRow }) {
   const meta = event.metadata as EventMeta;
-  const Icon = getIcon(event.type);
   const dotColor = getDotColor(event.type);
   const description = getDescription(event.type, meta);
   const href = getEntityHref(event);
@@ -108,7 +107,7 @@ export function ActivityEventCard({ event }: { event: ActivityEventRow }) {
         href={href}
         className="flex-1 mb-4 flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
       >
-        <Icon className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
+        <EventTypeIcon type={event.type} className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
         <span className="flex-1 text-sm">{description}</span>
         <RelativeTime dateStr={event.createdAt} />
       </Link>
