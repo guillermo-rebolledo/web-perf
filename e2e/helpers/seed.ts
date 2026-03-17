@@ -189,6 +189,65 @@ export async function cleanupLimitIntegrations() {
   });
 }
 
+export const TEST_ACTIVITY_EVENTS = [
+  {
+    id: "e2e-activity-run-completed",
+    type: "run_completed",
+    entityId: TEST_RUN.id,
+    entityType: "run",
+    metadata: {
+      type: "run_completed",
+      siteName: TEST_SITE.name,
+      siteUrl: TEST_SITE.url,
+      siteId: TEST_SITE.id,
+      monitorId: TEST_MONITOR.id,
+      performanceScore: TEST_RUN.performanceScore,
+    },
+  },
+  {
+    id: "e2e-activity-site-created",
+    type: "site_created",
+    entityId: TEST_SITE.id,
+    entityType: "site",
+    metadata: {
+      type: "site_created",
+      siteName: TEST_SITE.name,
+      siteUrl: TEST_SITE.url,
+    },
+  },
+  {
+    id: "e2e-activity-run-failed",
+    type: "run_failed",
+    entityId: TEST_RUN.id,
+    entityType: "run",
+    metadata: {
+      type: "run_failed",
+      siteName: TEST_SITE.name,
+      siteUrl: TEST_SITE.url,
+      siteId: TEST_SITE.id,
+      monitorId: TEST_MONITOR.id,
+      errorMessage: "PSI API timeout after 30s",
+    },
+  },
+];
+
+export async function seedActivityEvents() {
+  const now = new Date();
+  await prisma.activityEvent.createMany({
+    data: TEST_ACTIVITY_EVENTS.map((e, i) => ({
+      ...e,
+      userId: TEST_USER.id,
+      createdAt: new Date(now.getTime() - i * 60_000), // 1 min apart, newest first
+    })),
+  });
+}
+
+export async function cleanupActivityEvents() {
+  await prisma.activityEvent.deleteMany({
+    where: { id: { in: TEST_ACTIVITY_EVENTS.map((e) => e.id) } },
+  });
+}
+
 export async function cleanup() {
   // Delete user -- cascading deletes will remove sites, monitors, runs, audits
   try {
