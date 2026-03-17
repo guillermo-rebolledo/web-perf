@@ -12,6 +12,7 @@ The project includes several utility scripts to help you manage test data:
 | `prisma/seed-decline.ts` | `pnpm seed:decline` | Runs that gradually decline over time (for Run History) |
 | `prisma/seed-improvement.ts` | `pnpm seed:improvement` | Runs that gradually improve over time (for Run History) |
 | `prisma/seed-failed-runs.ts` | `pnpm seed:failed-runs` | Failed, running, and queued run states |
+| `prisma/seed-activity.ts` | `pnpm seed:activity` | Mock activity events across all 6 event types (for Activity feed) |
 | `prisma/clean-db.ts` | `pnpm seed:clean` | Cleans all performance data while preserving user sessions |
 
 > **Run History seed scripts** (`seed-decline` / `seed-improvement`) are documented in detail in **[docs/RUN-HISTORY.md](./docs/RUN-HISTORY.md)**.
@@ -136,6 +137,49 @@ After running the seed script:
 5. **Use the status filter** (All / Open / Acknowledged / Resolved) to test the alert lifecycle UI
 6. **Change an alert's status** using the inline Actions dropdown or the full controls on the detail page
 7. **Visit the Dashboard** to see the test site with performance trends
+
+---
+
+### 🌱 Seed Script: `seed-activity.ts`
+
+Creates mock activity events spread across the last 30 days for testing the Activity feed (header sheet and `/activity` page).
+
+#### What it Creates
+
+- A weighted spread of all **6 event types** across the last 30 days with realistic metadata
+- Each event gets a ±30 min time jitter so the timeline looks natural
+
+#### Event Type Distribution
+
+| Event Type | Approx. % | Notes |
+|---|---|---|
+| `run_completed` | 40% | Includes realistic performance scores (55–95) |
+| `regression_detected` | 20% | 1–3 alerts per event, varied severities |
+| `run_failed` | 15% | Realistic error messages (timeouts, quota, etc.) |
+| `deployment_run_triggered` | 12% | Fake GitHub repos and branches |
+| `monitor_created` | 8% | Mobile/desktop strategies, schedule/deployment types |
+| `site_created` | 5% | — |
+
+#### Usage
+
+```bash
+# 50 events (default)
+pnpm seed:activity your-email@example.com
+
+# Custom count (1–1000)
+pnpm seed:activity your-email@example.com 100
+```
+
+**Arguments:**
+- `email` (required) — Must exactly match your login email
+- `numEvents` (optional) — Number of events to create, 1–1000 (defaults to 50)
+
+#### Verifying the Data
+
+1. Sign in with the seeded email
+2. Click the **Activity icon** in the top header bar to open the sheet
+3. Verify events appear across all types — use the filter dropdown to narrow by type
+4. Navigate to `/activity` for the full paginated view
 
 ---
 

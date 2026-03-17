@@ -3,12 +3,12 @@ import nodeCron from "node-cron";
 import { prisma } from "@/lib/prisma";
 import { enqueueAuditJob, enqueueDigestJob } from "@/lib/queue";
 import { cleanupOldScreenshots } from "@/lib/screenshot-cleanup";
-import { cleanupOldRuns } from "@/lib/data-retention";
+import { cleanupOldRuns, cleanupOldActivityEvents } from "@/lib/data-retention";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { env } from "@/env";
 import { addMinutes } from "date-fns";
 import { RunStatus } from "@prisma/client";
-import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
+import { DEFAULT_RUN_RETENTION_DAYS, DEFAULT_ACTIVITY_RETENTION_DAYS } from "@/lib/retention";
 
 const cron = Sentry.cron.instrumentNodeCron(nodeCron);
 
@@ -63,6 +63,7 @@ export function startScheduler() {
         await cleanupOldRuns(
           env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS,
         );
+        await cleanupOldActivityEvents(DEFAULT_ACTIVITY_RETENTION_DAYS);
       } catch (error) {
         console.error(
           "[Scheduler] Error during data retention cleanup:",

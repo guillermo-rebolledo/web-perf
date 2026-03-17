@@ -41,6 +41,7 @@ This is a **web performance monitoring SaaS** built with Next.js 15 App Router. 
 ### Two-Process Design
 
 The app runs as two separate processes:
+
 1. **Next.js server** (`src/app/`) — API routes and UI
 2. **BullMQ worker** (`src/worker/`) — Background job processor that fetches PSI scores and detects regressions
 
@@ -66,6 +67,7 @@ User creates Site → Monitor → Scheduler enqueues Run job
 ### Regression Detection System (`src/lib/regression/`)
 
 The most complex part of the codebase:
+
 - `detector.ts` — compares current run metrics against baselines
 - `baseline-calculator.ts` — computes rolling medians
 - `rules-engine.ts` — runs specialized rules for root cause analysis
@@ -75,6 +77,7 @@ The most complex part of the codebase:
 ### API Routes (`src/app/api/`)
 
 All routes require authentication (NextAuth session). Notable patterns:
+
 - Manual run trigger (`POST /api/monitors/[id]/run`) has Redis-based rate limiting
 - Alerts endpoint (`GET /api/alerts`) uses cursor-based pagination
 - Scheduler endpoint (`POST /api/scheduler/tick`) requires `x-scheduler-secret` header
@@ -82,6 +85,7 @@ All routes require authentication (NextAuth session). Notable patterns:
 ### GitHub Webhook Integration (Deployment Monitors)
 
 `triggerType` is a **first-class Monitor property** chosen at creation time and is immutable:
+
 - `"schedule"` — runs on a cron cadence (existing behavior)
 - `"deployment"` — fires on every successful GitHub `deployment_status` event (webhook-driven)
 
@@ -90,6 +94,7 @@ The two modes are mutually exclusive. A deployment monitor has `nextRunAt = 2999
 **Supported platforms:** Vercel, Netlify, Render, and any GitHub Actions workflow that emits `deployment_status` events.
 
 **Flow:**
+
 ```
 GitHub deploys → emits deployment_status (state: success, environment: production)
 → POST /api/webhooks/github/[monitorId]
@@ -101,6 +106,7 @@ GitHub deploys → emits deployment_status (state: success, environment: product
 **Auth:** No user session — HMAC-SHA256 signature (`x-hub-signature-256` header) is the auth mechanism. The raw secret is auto-generated at monitor creation (`randomBytes(32).toString("hex")`) and stored plaintext because verification requires the raw value. It is returned once in the creation API response and shown once in the UI setup view.
 
 **Key files:**
+
 - `src/lib/github-webhook.ts` — `verifyGitHubSignature()` + `isSuccessfulDeployment()` helpers
 - `src/app/api/webhooks/github/[monitorId]/route.ts` — webhook receiver (no user auth, HMAC only); checks `triggerType === "deployment"`
 - `src/app/api/monitors/[id]/webhook-secret/route.ts` — secret rotation endpoint (requires user auth)
@@ -116,6 +122,7 @@ GitHub deploys → emits deployment_status (state: success, environment: product
 Users can connect Slack channels to receive audit result notifications after every run. Integration is via Incoming Webhooks (no OAuth).
 
 **Key files:**
+
 - `src/lib/notifications/types.ts` — `NotificationContext`, `IntegrationConfig` discriminated union
 - `src/lib/notifications/slack.ts` — Block Kit payload builder, `sendSlackNotification()`, `sendSlackTestMessage()`
 - `src/lib/notifications/dispatcher.ts` — routes by `config.type`; add a `case` here when adding new providers
@@ -131,6 +138,7 @@ Users can connect Slack channels to receive audit result notifications after eve
 **"All monitors" convention:** zero `MonitorIntegration` rows for an integration = fires for every run. Specific rows restrict to those monitors. No nullable column needed.
 
 **Adding a new provider (e.g. Discord):**
+
 1. Add the type to `IntegrationConfig` union in `types.ts`
 2. Create `src/lib/notifications/discord.ts` with a send function
 3. Add `case "discord"` to `dispatcher.ts` (TS exhaustive check enforces completeness)
@@ -178,40 +186,48 @@ All env vars are validated at startup via `src/env.js` (T3 Env pattern). Check t
 ## Frontend Design Guidelines
 
 ### Quality Bar
+
 UI work in this project follows production-grade standards. Avoid generic "AI slop" aesthetics — every component should feel intentionally designed for a performance monitoring tool.
 
 ### Typography
+
 - Choose distinctive fonts; avoid Inter, Roboto, Arial, or system-ui defaults
 - Pair a display/heading font with a refined body font
 - Use CSS variables for font stacks so themes stay consistent
 
 ### Color & Theme
+
 - Commit to a cohesive palette — dominant base colors with sharp accents
 - Define all colors as CSS custom properties; never hardcode hex values in component JSX
 - Avoid cliché schemes (purple-gradient-on-white is banned)
 
 ### Motion
+
 - Prefer CSS-only animations for simple transitions; use the Motion library for complex React sequences
 - One well-orchestrated page-load stagger beats scattered micro-interactions — be selective
 - Hover states and scroll-triggered reveals should surprise, not distract
 
 ### Layout & Composition
+
 - Prefer intentional asymmetry and generous negative space over default centered stacks
 - Break out of the grid where it adds impact; don't default to uniform card grids
 - Spatial rhythm matters: consistent spacing scale (Tailwind's scale) everywhere
 
 ### Backgrounds & Depth
+
 - Build atmosphere with gradient meshes, subtle noise textures, or layered transparencies
 - Dramatic shadows and decorative borders beat flat/borderless defaults
 - Solid backgrounds are a last resort — add at least subtle depth
 
 ### Accessibility
+
 - All interactive elements must have keyboard focus styles
 - Color contrast must meet WCAG AA minimum
 - Motion must respect `prefers-reduced-motion`
 - Use semantic HTML elements; ARIA only when semantics fall short
 
 ### Code Reviews
+
 Use the `web-design-guidelines` skill (`/web-design-guidelines`) to audit UI files against Vercel's Web Interface Guidelines before considering UI work complete.
 
 > Full design reference: `.agents/skills/frontend-design/SKILL.md`
@@ -226,6 +242,7 @@ When asked to review security, find vulnerabilities, audit code, or check for OW
 > Reference files: `.agents/skills/security-review/references/` (injection, xss, authorization, authentication, cryptography, ssrf, csrf, api-security, business-logic, misconfiguration, data-protection, logging, modern-threats, supply-chain, error-handling)
 
 **Project-specific context for audits:**
+
 - All API routes authenticate via `resolveUser()` in `src/lib/resolve-user.ts` (Bearer API key or NextAuth session)
 - Webhook routes use HMAC-SHA256 (`x-hub-signature-256`) — no user session
 - PSI fetcher in `src/worker/processor.ts` makes outbound HTTP requests to Google with user-supplied URLs — **SSRF surface**
@@ -247,35 +264,39 @@ Before writing, check for `.claude/product-marketing-context.md`. If it exists, 
 
 Apply these rules when writing or reviewing React components, Next.js pages, data fetching, or anything that affects bundle size or runtime performance.
 
-| Priority | Category | Prefix |
-|----------|----------|--------|
-| CRITICAL | Eliminating Waterfalls | `async-` |
-| CRITICAL | Bundle Size Optimization | `bundle-` |
-| HIGH | Server-Side Performance | `server-` |
-| MEDIUM-HIGH | Client-Side Data Fetching | `client-` |
-| MEDIUM | Re-render Optimization | `rerender-` |
-| MEDIUM | Rendering Performance | `rendering-` |
-| LOW-MEDIUM | JavaScript Performance | `js-` |
-| LOW | Advanced Patterns | `advanced-` |
+| Priority    | Category                  | Prefix       |
+| ----------- | ------------------------- | ------------ |
+| CRITICAL    | Eliminating Waterfalls    | `async-`     |
+| CRITICAL    | Bundle Size Optimization  | `bundle-`    |
+| HIGH        | Server-Side Performance   | `server-`    |
+| MEDIUM-HIGH | Client-Side Data Fetching | `client-`    |
+| MEDIUM      | Re-render Optimization    | `rerender-`  |
+| MEDIUM      | Rendering Performance     | `rendering-` |
+| LOW-MEDIUM  | JavaScript Performance    | `js-`        |
+| LOW         | Advanced Patterns         | `advanced-`  |
 
 ### Must-follow rules (CRITICAL)
 
 **Waterfalls**
+
 - Use `Promise.all()` for independent async operations — never await them sequentially
 - Start promises early, await late inside API routes and Server Components
 - Use Suspense boundaries to stream content instead of blocking the full page
 
 **Bundle size**
+
 - Import directly from source, not from barrel/index files
 - Use `next/dynamic` for heavy components not needed on initial load
 - Load analytics, logging, and other non-critical third-party scripts after hydration
 
 **Server components**
+
 - Use `React.cache()` for per-request deduplication of expensive calls
 - Minimize data serialized into RSC props — pass only what the client component needs
 - Parallelize server fetches by restructuring component trees, not co-locating awaits
 
 **Re-renders**
+
 - Derive state during render instead of syncing it through effects
 - Use `useRef` for transient, frequently-changing values that don't affect layout
 - Use functional `setState` callbacks to keep state-updater functions stable
@@ -284,3 +305,7 @@ Apply these rules when writing or reviewing React components, Next.js pages, dat
 > Full rules with examples: `.claude/skills/vercel-react-best-practices/SKILL.md`
 > Complete compiled guide (all 57 rules): `.claude/skills/vercel-react-best-practices/AGENTS.md`
 > Individual rule files: `.claude/skills/vercel-react-best-practices/rules/`
+
+**Typescript**
+
+- Never typecast. Avoid using `as` as much as possible.

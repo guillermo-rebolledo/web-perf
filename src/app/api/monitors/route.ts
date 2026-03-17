@@ -6,6 +6,7 @@ import { RunStatus } from "@prisma/client";
 import { resolveUser } from "@/lib/resolve-user";
 import { randomBytes } from "crypto";
 import { MAX_MONITORS_PER_SITE } from "@/lib/limits";
+import { recordActivity } from "@/lib/activity";
 
 const createMonitorSchema = z.object({
   siteId: z.string().cuid(),
@@ -128,6 +129,19 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      try {
+        await recordActivity(prisma, userId, "monitor_created", monitor.id, {
+          type: "monitor_created",
+          siteName: site.name,
+          siteUrl: site.url,
+          siteId: site.id,
+          strategy: monitor.strategy,
+          triggerType: monitor.triggerType,
+        });
+      } catch (activityError) {
+        console.error("[activity] monitor_created:", activityError);
+      }
+
       return NextResponse.json(
         { ...monitor, webhookSecret },
         { status: 201 }
@@ -167,6 +181,19 @@ export async function POST(request: NextRequest) {
       where: { id: run.id },
       data: { jobId },
     });
+
+    try {
+      await recordActivity(prisma, userId, "monitor_created", monitor.id, {
+        type: "monitor_created",
+        siteName: site.name,
+        siteUrl: site.url,
+        siteId: site.id,
+        strategy: monitor.strategy,
+        triggerType: monitor.triggerType,
+      });
+    } catch (activityError) {
+      console.error("[activity] monitor_created:", activityError);
+    }
 
     return NextResponse.json(
       { ...monitor, runId: run.id },

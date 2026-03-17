@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_RUN_RETENTION_DAYS } from "@/lib/retention";
+import { DEFAULT_RUN_RETENTION_DAYS, DEFAULT_ACTIVITY_RETENTION_DAYS } from "@/lib/retention";
 
 interface RetentionStats {
   runsDeleted: number;
@@ -59,4 +59,44 @@ export async function cleanupOldRuns(
 
   console.log(`[Retention] Cleanup complete. Runs deleted: ${totalDeleted}`);
   return { runsDeleted: totalDeleted };
+}
+
+/**
+ * Delete ActivityEvent rows older than the specified number of days.
+ *
+ * Batched (500 rows at a time) to avoid long-running transactions.
+ */
+export async function cleanupOldActivityEvents(
+  olderThanDays: number = DEFAULT_ACTIVITY_RETENTION_DAYS
+): Promise<number> {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+
+  console.log(
+    `[Retention] Deleting activity events older than ${olderThanDays} days (before ${cutoffDate.toISOString()})`
+  );
+
+  const BATCH_SIZE = 500;
+  let totalDeleted = 0;
+
+  while (true) {
+    const batch = await prisma.activityEvent.findMany({
+      where: { createdAt: { lt: cutoffDate } },
+      select: { id: true },
+      take: BATCH_SIZE,
+    });
+
+    if (batch.length === 0) break;
+
+    const { count } = await prisma.activityEvent.deleteMany({
+      where: { id: { in: batch.map((e) => e.id) } },
+    });
+
+    totalDeleted += count;
+
+    if (batch.length < BATCH_SIZE) break;
+  }
+
+  console.log(`[Retention] Activity events deleted: ${totalDeleted}`);
+  return totalDeleted;
 }

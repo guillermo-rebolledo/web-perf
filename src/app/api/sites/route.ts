@@ -5,6 +5,7 @@ import { canonicalizeUrl } from "@/lib/url-utils";
 import { RunStatus } from "@prisma/client";
 import { resolveUser } from "@/lib/resolve-user";
 import { MAX_SITES_PER_USER } from "@/lib/limits";
+import { recordActivity } from "@/lib/activity";
 
 const createSiteSchema = z.object({
   name: z.string().min(1).max(100),
@@ -98,6 +99,16 @@ export async function POST(request: NextRequest) {
         userId,
       },
     });
+
+    try {
+      await recordActivity(prisma, userId, "site_created", site.id, {
+        type: "site_created",
+        siteName: site.name,
+        siteUrl: site.url,
+      });
+    } catch (activityError) {
+      console.error("[activity] site_created:", activityError);
+    }
 
     return NextResponse.json(site, { status: 201 });
   } catch (error) {
