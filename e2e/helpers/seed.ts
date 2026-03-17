@@ -232,6 +232,8 @@ export const TEST_ACTIVITY_EVENTS = [
 ];
 
 export async function seedActivityEvents() {
+  // Delete first so a crashed previous run never causes duplicate-ID errors
+  await cleanupActivityEvents();
   const now = new Date();
   await prisma.activityEvent.createMany({
     data: TEST_ACTIVITY_EVENTS.map((e, i) => ({

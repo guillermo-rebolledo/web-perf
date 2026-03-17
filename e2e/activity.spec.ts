@@ -2,10 +2,15 @@ import { test, expect } from "@playwright/test";
 import {
   seedActivityEvents,
   cleanupActivityEvents,
+  disconnect,
   TEST_ACTIVITY_EVENTS,
   TEST_RUN,
   TEST_SITE,
 } from "./helpers/seed";
+
+// Fixed IDs are shared across all describe blocks — run serially to prevent
+// parallel workers racing on the same rows.
+test.describe.configure({ mode: "serial" });
 
 // ── Unauthenticated ───────────────────────────────────────────────────────────
 
@@ -207,6 +212,10 @@ test.describe("Activity Sheet (authenticated)", () => {
 
   test.afterEach(async () => {
     await cleanupActivityEvents();
+  });
+
+  test.afterAll(async () => {
+    await disconnect();
   });
 
   test("activity icon button is visible in the header", async ({ page }) => {
