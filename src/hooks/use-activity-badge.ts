@@ -14,7 +14,9 @@ export function useActivityBadge(pathname: string) {
     try {
       const since = localStorage.getItem(LS_KEY);
       if (!since) return;
-      const res = await fetch(`/api/activity/unread-count?since=${encodeURIComponent(since)}`);
+      const res = await fetch(
+        `/api/activity/unread-count?since=${encodeURIComponent(since)}`,
+      );
       if (!res.ok) return;
       const { count } = (await res.json()) as { count: number };
       setUnreadCount(count);
@@ -38,7 +40,6 @@ export function useActivityBadge(pathname: string) {
     void fetchCount();
     window.addEventListener("focus", fetchCount);
     return () => window.removeEventListener("focus", fetchCount);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { unreadCount, setUnreadCount };
