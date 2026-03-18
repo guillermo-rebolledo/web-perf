@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:keys");
 
 // DELETE /api/keys/[id] — revoke an API key
 export async function DELETE(
@@ -28,7 +31,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting API key:", error);
+    log.error("Error deleting API key", error);
     return NextResponse.json(
       { error: "Failed to delete API key" },
       { status: 500 }

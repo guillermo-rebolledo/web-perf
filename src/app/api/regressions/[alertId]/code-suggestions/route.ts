@@ -13,6 +13,9 @@ import { parseRegressionCauses, parseDiffSummary } from "@/lib/alert-utils";
 import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:regressions");
 
 export async function POST(
   _request: NextRequest,
@@ -141,7 +144,7 @@ export async function POST(
       });
     },
     onError: (err) => {
-      console.error("[ai-fix-it] Failed to save suggestions:", err);
+      log.error("Failed to save fix-it suggestions", err, { alertId });
     },
   });
 

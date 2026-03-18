@@ -3,6 +3,9 @@ import { customAlphabet } from "nanoid";
 import { redis } from "@/lib/redis";
 import { env } from "@/env";
 import { checkIpRateLimit } from "@/lib/rate-limit";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:cli");
 
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
 
@@ -33,7 +36,7 @@ export async function POST(_request: NextRequest) {
       expiresInSeconds: TTL_SECONDS,
     });
   } catch (error) {
-    console.error("Error starting CLI login:", error);
+    log.error("Error starting CLI login", error);
     return NextResponse.json(
       { error: "Failed to start login flow" },
       { status: 500 }
@@ -96,7 +99,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ status: "pending" });
   } catch (error) {
-    console.error("Error polling CLI login:", error);
+    log.error("Error polling CLI login", error);
     return NextResponse.json(
       { error: "Failed to check login status" },
       { status: 500 }

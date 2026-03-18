@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { resolveUser } from "@/lib/resolve-user";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:monitors");
 
 const updateMonitorSchema = z.object({
   cadenceMinutes: z.number().int().min(60).max(43200).optional(),
@@ -56,7 +59,7 @@ export async function PUT(
         { status: 400 }
       );
     }
-    console.error("Error updating monitor:", error);
+    log.error("Error updating monitor", error);
     return NextResponse.json(
       { error: "Failed to update monitor" },
       { status: 500 }
@@ -102,7 +105,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting monitor:", error);
+    log.error("Error deleting monitor", error);
     return NextResponse.json(
       { error: "Failed to delete monitor" },
       { status: 500 }

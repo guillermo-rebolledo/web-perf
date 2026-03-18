@@ -6,6 +6,9 @@ import {
   sendRailwayDeployNotification,
   type RailwayWebhookPayload,
 } from "@/lib/notifications/railway-deployment";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Webhook:Railway");
 
 // POST /api/webhooks/railway
 // Receives Railway deployment webhook events and forwards a Slack notification.
@@ -63,7 +66,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     await sendRailwayDeployNotification(env.RAILWAY_SLACK_WEBHOOK_URL, payload);
   } catch (error) {
-    console.error("Failed to send Railway deploy Slack notification:", error);
+    log.error("Failed to send Railway deploy Slack notification", error);
     return NextResponse.json(
       { error: "Failed to send notification" },
       { status: 502 },

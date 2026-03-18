@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { randomBytes } from "crypto";
 import { resolveUser } from "@/lib/resolve-user";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:monitors");
 
 // POST /api/monitors/[id]/webhook-secret
 // Generates (or rotates) a webhook secret for a monitor's GitHub integration.
@@ -41,7 +44,7 @@ export async function POST(
       headers: { "Cache-Control": "no-store, private" },
     });
   } catch (error) {
-    console.error("Error generating webhook secret:", error);
+    log.error("Error generating webhook secret", error);
     return NextResponse.json(
       { error: "Failed to generate webhook secret" },
       { status: 500 }

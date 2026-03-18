@@ -1,6 +1,8 @@
 import { PrismaClient, RunStatus } from "@prisma/client";
+import { createLogger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
+const log = createLogger("BaselineCalc");
 
 /**
  * Metric names that we track for regression detection
@@ -72,9 +74,7 @@ export async function calculateBaselines(
 
   // Need at least MIN_SAMPLE_SIZE runs to establish a baseline
   if (runs.length < MIN_SAMPLE_SIZE) {
-    console.log(
-      `[Baseline Calculator] Not enough runs (${runs.length}/${MIN_SAMPLE_SIZE}) for monitor ${monitorId}`,
-    );
+    log.debug("Not enough runs for baseline", { runs: runs.length, required: MIN_SAMPLE_SIZE, monitorId });
     return;
   }
 
@@ -87,9 +87,7 @@ export async function calculateBaselines(
 
     // Skip if no valid values
     if (values.length < MIN_SAMPLE_SIZE) {
-      console.log(
-        `[Baseline Calculator] Not enough valid values for ${metricName} (${values.length}/${MIN_SAMPLE_SIZE})`,
-      );
+      log.debug("Not enough valid values for metric baseline", { metricName, values: values.length, required: MIN_SAMPLE_SIZE });
       continue;
     }
 
@@ -116,8 +114,6 @@ export async function calculateBaselines(
       },
     });
 
-    console.log(
-      `[Baseline Calculator] Updated baseline for ${metricName}: ${medianValue.toFixed(2)} (n=${values.length})`,
-    );
+    log.debug("Updated baseline", { metricName, medianValue: parseFloat(medianValue.toFixed(2)), sampleSize: values.length, monitorId });
   }
 }

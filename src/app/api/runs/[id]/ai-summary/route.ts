@@ -10,6 +10,9 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { streamText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:runs");
 
 export async function POST(
   _request: NextRequest,
@@ -119,7 +122,7 @@ export async function POST(
       });
     },
     onError: (err) => {
-      console.error("[ai-summary] Failed to save summary:", err);
+      log.error("Failed to save AI summary", err, { runId: id });
     },
   });
 

@@ -6,6 +6,9 @@ import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { isFeatureEnabled } from "@/lib/posthog-server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { PatternInsightsResult } from "@/types/api";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:monitors");
 
 export async function GET(
   request: NextRequest,
@@ -76,10 +79,7 @@ export async function GET(
         );
         await generatePatternInsight(monitorId, userId);
       } catch (err) {
-        console.error(
-          `[API] Pattern insight background generation error for monitor ${monitorId}:`,
-          err
-        );
+        log.error("Pattern insight background generation error", err, { monitorId });
       }
     })();
   }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveUser } from "@/lib/resolve-user";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:runs");
 
 // GET /api/runs/[id]/status - Lightweight status check for polling
 export async function GET(
@@ -38,7 +41,7 @@ export async function GET(
       errorMessage: run.errorMessage,
     });
   } catch (error) {
-    console.error("Error fetching run status:", error);
+    log.error("Error fetching run status", error);
     return NextResponse.json(
       { error: "Failed to fetch run status" },
       { status: 500 }

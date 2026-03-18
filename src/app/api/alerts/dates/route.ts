@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveUser } from "@/lib/resolve-user";
 import { format, subDays } from "date-fns";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:alerts");
 
 // GET /api/alerts/dates?severity=critical
 // Returns { dates: string[] } — YYYY-MM-DD strings for days with alerts in the last 30 days
@@ -37,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ dates: Array.from(dateSet) });
   } catch (error) {
-    console.error("Error fetching alert dates:", error);
+    log.error("Error fetching alert dates", error);
     return NextResponse.json(
       { error: "Failed to fetch alert dates" },
       { status: 500 },

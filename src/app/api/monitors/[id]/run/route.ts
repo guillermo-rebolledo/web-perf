@@ -4,6 +4,9 @@ import { enqueueAuditJob } from "@/lib/queue";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { RunStatus } from "@prisma/client";
 import { resolveUser } from "@/lib/resolve-user";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:monitors");
 
 // POST /api/monitors/[id]/run - Trigger on-demand run
 export async function POST(
@@ -99,7 +102,7 @@ export async function POST(
       { status: 202 }
     );
   } catch (error) {
-    console.error("Error triggering run:", error);
+    log.error("Error triggering run", error);
     return NextResponse.json(
       { error: "Failed to trigger run" },
       { status: 500 }

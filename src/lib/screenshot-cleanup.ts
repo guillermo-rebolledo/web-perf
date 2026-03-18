@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Cleanup");
 
 /**
  * Cleanup utility to remove old screenshot data from the database
@@ -22,9 +25,7 @@ export async function cleanupOldScreenshots(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-  console.log(
-    `[Cleanup] Removing screenshots from runs older than ${olderThanDays} days (before ${cutoffDate.toISOString()})`
-  );
+  log.info("Removing old screenshots", { cutoffDate: cutoffDate.toISOString(), olderThanDays });
 
   // Find runs with screenshots that are older than the cutoff
   const runsWithScreenshots = await prisma.run.findMany({
@@ -43,7 +44,7 @@ export async function cleanupOldScreenshots(
   });
 
   if (runsWithScreenshots.length === 0) {
-    console.log("[Cleanup] No old screenshots found to clean up");
+    log.info("No old screenshots to clean up");
     return {
       runsProcessed: 0,
       screenshotsDeleted: 0,
@@ -74,12 +75,11 @@ export async function cleanupOldScreenshots(
     bytesFreed,
   };
 
-  console.log(
-    `[Cleanup] Successfully removed ${stats.screenshotsDeleted} screenshots from ${stats.runsProcessed} runs`
-  );
-  console.log(
-    `[Cleanup] Approximate space freed: ${(stats.bytesFreed / 1024 / 1024).toFixed(2)} MB`
-  );
+  log.info("Screenshot cleanup complete", {
+    screenshotsDeleted: stats.screenshotsDeleted,
+    runsProcessed: stats.runsProcessed,
+    approxMbFreed: parseFloat((stats.bytesFreed / 1024 / 1024).toFixed(2)),
+  });
 
   return stats;
 }

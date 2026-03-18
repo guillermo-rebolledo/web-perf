@@ -6,6 +6,9 @@ import { RunStatus } from "@prisma/client";
 import { resolveUser } from "@/lib/resolve-user";
 import { MAX_SITES_PER_USER } from "@/lib/limits";
 import { recordActivity } from "@/lib/activity";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:sites");
 
 const createSiteSchema = z.object({
   name: z.string().min(1).max(100),
@@ -46,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(sites);
   } catch (error) {
-    console.error("Error fetching sites:", error);
+    log.error("Error fetching sites", error);
     return NextResponse.json(
       { error: "Failed to fetch sites" },
       { status: 500 }
@@ -107,7 +110,7 @@ export async function POST(request: NextRequest) {
         siteUrl: site.url,
       });
     } catch (activityError) {
-      console.error("[activity] site_created:", activityError);
+      log.error("Activity tracking failed", activityError, { event: "site_created", siteId: site.id });
     }
 
     return NextResponse.json(site, { status: 201 });
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error("Error creating site:", error);
+    log.error("Error creating site", error);
     return NextResponse.json(
       { error: "Failed to create site" },
       { status: 500 }

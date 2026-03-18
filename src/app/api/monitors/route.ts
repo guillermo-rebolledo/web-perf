@@ -7,6 +7,9 @@ import { resolveUser } from "@/lib/resolve-user";
 import { randomBytes } from "crypto";
 import { MAX_MONITORS_PER_SITE } from "@/lib/limits";
 import { recordActivity } from "@/lib/activity";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:monitors");
 
 const createMonitorSchema = z.object({
   siteId: z.string().cuid(),
@@ -70,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(monitors);
   } catch (error) {
-    console.error("Error fetching monitors:", error);
+    log.error("Error fetching monitors", error);
     return NextResponse.json(
       { error: "Failed to fetch monitors" },
       { status: 500 }
@@ -139,7 +142,7 @@ export async function POST(request: NextRequest) {
           triggerType: monitor.triggerType,
         });
       } catch (activityError) {
-        console.error("[activity] monitor_created:", activityError);
+        log.error("Activity tracking failed", activityError, { event: "monitor_created", monitorId: monitor.id });
       }
 
       return NextResponse.json(
@@ -192,7 +195,7 @@ export async function POST(request: NextRequest) {
         triggerType: monitor.triggerType,
       });
     } catch (activityError) {
-      console.error("[activity] monitor_created:", activityError);
+      log.error("Activity tracking failed", activityError, { event: "monitor_created", monitorId: monitor.id });
     }
 
     return NextResponse.json(
@@ -206,7 +209,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error("Error creating monitor:", error);
+    log.error("Error creating monitor", error);
     return NextResponse.json(
       { error: "Failed to create monitor" },
       { status: 500 }
