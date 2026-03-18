@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { dispatch } from "./dispatcher";
 import type { IntegrationConfig, NotificationContext } from "./types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Notifications");
 
 export type { NotificationContext, NotificationRegression, NotificationRun } from "./types";
 
@@ -31,10 +34,7 @@ export async function fireIntegrations(ctx: NotificationContext): Promise<void> 
     matched.map((integration) => {
       const config = integration.config as IntegrationConfig;
       return dispatch(config, ctx).catch((err: unknown) => {
-        console.error(
-          `[Notifications] Failed to dispatch to integration ${integration.id} (${integration.type}):`,
-          err,
-        );
+        log.error("Failed to dispatch to integration", err, { integrationId: integration.id, type: integration.type });
         throw err;
       });
     }),
@@ -42,6 +42,6 @@ export async function fireIntegrations(ctx: NotificationContext): Promise<void> 
 
   const failed = results.filter((r) => r.status === "rejected").length;
   if (failed > 0) {
-    console.error(`[Notifications] ${failed}/${matched.length} notification(s) failed`);
+    log.error("Some notifications failed", undefined, { failed, total: matched.length });
   }
 }

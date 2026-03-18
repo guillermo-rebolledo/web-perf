@@ -4,6 +4,9 @@ import { z } from "zod";
 import { canonicalizeUrl } from "@/lib/url-utils";
 import { RunStatus } from "@prisma/client";
 import { resolveUser } from "@/lib/resolve-user";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:sites");
 
 const updateSiteSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -50,7 +53,7 @@ export async function GET(
 
     return NextResponse.json(site);
   } catch (error) {
-    console.error("Error fetching site:", error);
+    log.error("Error fetching site", error);
     return NextResponse.json(
       { error: "Failed to fetch site" },
       { status: 500 }
@@ -102,7 +105,7 @@ export async function PUT(
         { status: 400 }
       );
     }
-    console.error("Error updating site:", error);
+    log.error("Error updating site", error);
     return NextResponse.json(
       { error: "Failed to update site" },
       { status: 500 }
@@ -140,7 +143,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting site:", error);
+    log.error("Error deleting site", error);
     return NextResponse.json(
       { error: "Failed to delete site" },
       { status: 500 }

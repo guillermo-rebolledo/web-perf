@@ -1,6 +1,8 @@
 import { PrismaClient, Run, RunStatus } from "@prisma/client";
+import { createLogger } from "@/lib/logger";
 
 const prisma = new PrismaClient();
+const log = createLogger("RegressionDetector");
 
 /**
  * Regression thresholds per metric
@@ -116,9 +118,7 @@ export async function detectRegressions(
   });
 
   if (baselines.length === 0) {
-    console.log(
-      `[Regression Detector] No baselines found for monitor ${run.monitor.id}`,
-    );
+    log.debug("No baselines found for monitor", { monitorId: run.monitor.id });
     return [];
   }
 
@@ -128,9 +128,7 @@ export async function detectRegressions(
     const threshold = REGRESSION_THRESHOLDS[metricName];
 
     if (!threshold) {
-      console.warn(
-        `[Regression Detector] Unknown metric: ${metricName}`,
-      );
+      log.warn("Unknown metric encountered", { metricName });
       continue;
     }
 
@@ -170,9 +168,16 @@ export async function detectRegressions(
         confidence,
       });
 
-      console.log(
-        `[Regression Detector] Regression detected: ${metricName} = ${actualValue.toFixed(2)} (baseline: ${baselineValue.toFixed(2)}, +${percentChange.toFixed(1)}%, severity: ${severity}, confidence: ${confidence})`,
-      );
+      log.info("Regression detected", {
+        metricName,
+        actualValue: parseFloat(actualValue.toFixed(2)),
+        baselineValue: parseFloat(baselineValue.toFixed(2)),
+        percentChange: parseFloat(percentChange.toFixed(1)),
+        severity,
+        confidence,
+        runId: run.id,
+        monitorId: run.monitor.id,
+      });
     }
   }
 

@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { resolveUser } from "@/lib/resolve-user";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:runs");
 
 /**
  * GET /api/runs/[id]/regressions
@@ -42,7 +45,7 @@ export async function GET(
 
     return NextResponse.json({ alerts });
   } catch (error) {
-    console.error("Error fetching regression alerts:", error);
+    log.error("Error fetching regression alerts", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

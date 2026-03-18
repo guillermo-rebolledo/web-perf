@@ -5,6 +5,9 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("AI:HealthReport");
 
 /**
  * Generates an initial site health report for the first successful run of a monitor.
@@ -31,9 +34,7 @@ export async function generateHealthReport(
       { defaultValue: false }
     );
     if (!flagEnabled) {
-      console.log(
-        `[AI] Health report skipped for run ${runId}: HEALTH_REPORT flag is disabled (enable in PostHog, or temporarily set defaultValue: true in health-report.ts for local dev)`
-      );
+      log.debug("Skipped: HEALTH_REPORT flag disabled", { runId });
       return;
     }
 
@@ -44,9 +45,7 @@ export async function generateHealthReport(
       HEALTH_REPORT.RATE_LIMIT_KEY
     );
     if (!rateLimit.success) {
-      console.log(
-        `[AI] Health report daily limit reached for user ${userId}`
-      );
+      log.info("Daily generation limit reached", { userId });
       return;
     }
 
@@ -136,9 +135,9 @@ export async function generateHealthReport(
       },
     });
 
-    console.log(`[AI] Health report generated for run ${runId}`);
+    log.info("Health report generated", { runId });
   } catch (err) {
-    console.error(`[AI] Health report generation error for run ${runId}:`, err);
+    log.error("Health report generation error", err, { runId });
     // Never throw — fire-and-forget callers must not crash
   }
 }

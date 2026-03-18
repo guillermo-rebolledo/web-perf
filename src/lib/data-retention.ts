@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_RUN_RETENTION_DAYS, DEFAULT_ACTIVITY_RETENTION_DAYS } from "@/lib/retention";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Retention");
 
 interface RetentionStats {
   runsDeleted: number;
@@ -23,9 +26,7 @@ export async function cleanupOldRuns(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-  console.log(
-    `[Retention] Deleting runs completed before ${cutoffDate.toISOString()} (older than ${olderThanDays} days)`
-  );
+  log.info("Deleting old runs", { cutoffDate: cutoffDate.toISOString(), olderThanDays });
 
   const BATCH_SIZE = 500;
   let totalDeleted = 0;
@@ -50,14 +51,12 @@ export async function cleanupOldRuns(
     });
 
     totalDeleted += result.count;
-    console.log(
-      `[Retention] Deleted batch of ${result.count} runs (total so far: ${totalDeleted})`
-    );
+    log.debug("Deleted batch of runs", { batchCount: result.count, totalDeleted });
 
     if (batch.length < BATCH_SIZE) break;
   }
 
-  console.log(`[Retention] Cleanup complete. Runs deleted: ${totalDeleted}`);
+  log.info("Run cleanup complete", { totalDeleted });
   return { runsDeleted: totalDeleted };
 }
 
@@ -72,9 +71,7 @@ export async function cleanupOldActivityEvents(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
-  console.log(
-    `[Retention] Deleting activity events older than ${olderThanDays} days (before ${cutoffDate.toISOString()})`
-  );
+  log.info("Deleting old activity events", { cutoffDate: cutoffDate.toISOString(), olderThanDays });
 
   const BATCH_SIZE = 500;
   let totalDeleted = 0;
@@ -97,6 +94,6 @@ export async function cleanupOldActivityEvents(
     if (batch.length < BATCH_SIZE) break;
   }
 
-  console.log(`[Retention] Activity events deleted: ${totalDeleted}`);
+  log.info("Activity event cleanup complete", { totalDeleted });
   return totalDeleted;
 }

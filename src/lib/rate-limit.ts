@@ -1,6 +1,9 @@
 import { redis } from "./redis";
 import { env } from "@/env";
 import { format } from "date-fns";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("RateLimit");
 
 export interface RateLimitResult {
   success: boolean;
@@ -43,7 +46,7 @@ export async function checkRateLimit(
       reset: endOfDay,
     };
   } catch (error) {
-    console.error("Rate limit check failed:", error);
+    log.error("Rate limit check failed", error, { userId, keyPrefix });
     if (failOpen) {
       return { success: true, remaining: limit, limit, reset: new Date() };
     }
@@ -100,7 +103,7 @@ export async function checkIpRateLimit(
     );
     return { success: current <= limit, remaining, limit, reset };
   } catch (error) {
-    console.error("IP rate limit check failed:", error);
+    log.error("IP rate limit check failed", error, { ip, keyPrefix });
     // Fail open — don't break the CLI device flow during a Redis blip
     return { success: true, remaining: limit, limit, reset: new Date() };
   }

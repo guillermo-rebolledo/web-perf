@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { compareRuns } from "@/lib/metrics-compare";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:runs");
 
 // GET /api/runs/[id]/compare/[id2] - Compare two runs
 export async function GET(
@@ -70,7 +73,7 @@ export async function GET(
       comparison,
     });
   } catch (error) {
-    console.error("Error comparing runs:", error);
+    log.error("Error comparing runs", error);
     return NextResponse.json(
       { error: "Failed to compare runs" },
       { status: 500 }

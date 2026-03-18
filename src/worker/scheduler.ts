@@ -9,11 +9,14 @@ import { env } from "@/env";
 import { addMinutes } from "date-fns";
 import { RunStatus } from "@prisma/client";
 import { DEFAULT_RUN_RETENTION_DAYS, DEFAULT_ACTIVITY_RETENTION_DAYS } from "@/lib/retention";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Scheduler");
 
 const cron = Sentry.cron.instrumentNodeCron(nodeCron);
 
 export function startScheduler() {
-  console.log("[Scheduler] Starting cron scheduler (runs every minute)");
+  log.info("Starting cron scheduler");
 
   cron.schedule(
     "*/1 * * * *",
@@ -21,7 +24,7 @@ export function startScheduler() {
       try {
         await processDueMonitors();
       } catch (error) {
-        console.error("[Scheduler] Error processing due monitors:", error);
+        log.error("Error processing due monitors", error);
       }
     },
     { name: "scheduler-process-due-monitors" },
@@ -31,10 +34,10 @@ export function startScheduler() {
     "0 9 * * 1",
     async () => {
       try {
-        console.log("[Scheduler] Enqueuing weekly digest job");
+        log.info("Enqueuing weekly digest job");
         await enqueueDigestJob();
       } catch (error) {
-        console.error("[Scheduler] Error enqueuing weekly digest:", error);
+        log.error("Error enqueuing weekly digest", error);
       }
     },
     { name: "scheduler-weekly-digest" },
@@ -44,10 +47,10 @@ export function startScheduler() {
     "0 3 * * *",
     async () => {
       try {
-        console.log("[Scheduler] Running daily screenshot cleanup");
+        log.info("Running daily screenshot cleanup", { ttlDays: env.SCREENSHOT_TTL_DAYS });
         await cleanupOldScreenshots(env.SCREENSHOT_TTL_DAYS);
       } catch (error) {
-        console.error("[Scheduler] Error during screenshot cleanup:", error);
+        log.error("Error during screenshot cleanup", error);
       }
     },
     { name: "scheduler-screenshot-cleanup" },
@@ -57,18 +60,12 @@ export function startScheduler() {
     "0 4 * * *",
     async () => {
       try {
-        console.log(
-          `[Scheduler] Running daily data retention cleanup (window: ${env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS} days)`,
-        );
-        await cleanupOldRuns(
-          env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS,
-        );
+        const retentionDays = env.RUN_RETENTION_DAYS ?? DEFAULT_RUN_RETENTION_DAYS;
+        log.info("Running daily data retention cleanup", { retentionDays, activityRetentionDays: DEFAULT_ACTIVITY_RETENTION_DAYS });
+        await cleanupOldRuns(retentionDays);
         await cleanupOldActivityEvents(DEFAULT_ACTIVITY_RETENTION_DAYS);
       } catch (error) {
-        console.error(
-          "[Scheduler] Error during data retention cleanup:",
-          error,
-        );
+        log.error("Error during data retention cleanup", error);
       }
     },
     { name: "scheduler-data-retention" },
@@ -80,7 +77,7 @@ export function startScheduler() {
       try {
         await reapStuckRuns();
       } catch (error) {
-        console.error("[Scheduler] Error during stuck-run reaper:", error);
+        log.error("Error during stuck-run reaper", error);
       }
     },
     { name: "scheduler-stuck-run-reaper" },
@@ -113,7 +110,7 @@ export async function reapStuckRuns() {
   });
 
   if (count > 0) {
-    console.warn(`[Scheduler] Reaped ${count} stuck run(s) older than 30 minutes`);
+    log.warn("Reaped stuck runs", { count, timeoutMinutes: 30 });
   }
 }
 
@@ -146,15 +143,16 @@ export async function processDueMonitors() {
     return;
   }
 
-  console.log(`[Scheduler] Found ${dueMonitors.length} due monitor(s)`);
+  log.info("Found due monitors", { count: dueMonitors.length });
 
   for (const monitor of dueMonitors) {
     try {
       // Idempotency check: skip if there's already a queued or running job
       if (monitor.runs.length > 0) {
-        console.log(
-          `[Scheduler] Monitor ${monitor.id} already has a ${monitor.runs[0].status} run, skipping`,
-        );
+        log.debug("Monitor already has an active run, skipping", {
+          monitorId: monitor.id,
+          runStatus: monitor.runs[0].status,
+        });
         continue;
       }
 
@@ -166,9 +164,11 @@ export async function processDueMonitors() {
         true, // failOpen — Redis error must not halt all scheduled monitoring
       );
       if (!quota.success) {
-        console.warn(
-          `[Scheduler] Scheduled-run quota exceeded for user ${monitor.site.userId}, skipping monitor ${monitor.id} (resets ${quota.reset.toISOString()})`,
-        );
+        log.warn("Scheduled-run quota exceeded, skipping monitor", {
+          userId: monitor.site.userId,
+          monitorId: monitor.id,
+          quotaResetsAt: quota.reset.toISOString(),
+        });
         await prisma.monitor.update({
           where: { id: monitor.id },
           data: { nextRunAt: addMinutes(now, monitor.cadenceMinutes) },
@@ -208,14 +208,14 @@ export async function processDueMonitors() {
         },
       });
 
-      console.log(
-        `[Scheduler] Enqueued run ${run.id} for monitor ${monitor.id} (${monitor.site.url}), next run at ${nextRunAt.toISOString()}`,
-      );
+      log.info("Enqueued run for monitor", {
+        runId: run.id,
+        monitorId: monitor.id,
+        siteUrl: monitor.site.url,
+        nextRunAt: nextRunAt.toISOString(),
+      });
     } catch (error) {
-      console.error(
-        `[Scheduler] Error processing monitor ${monitor.id}:`,
-        error,
-      );
+      log.error("Error processing monitor", error, { monitorId: monitor.id });
     }
   }
 }

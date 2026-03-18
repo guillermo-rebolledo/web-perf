@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ALERT_STATUSES } from "@/lib/alert-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:regressions");
 
 const patchSchema = z.object({
   status: z.enum(ALERT_STATUSES).optional(),
@@ -47,7 +50,7 @@ export async function GET(
 
     return NextResponse.json({ alert });
   } catch (error) {
-    console.error("Error fetching regression alert:", error);
+    log.error("Error fetching regression alert", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -127,7 +130,7 @@ export async function PATCH(
 
     return NextResponse.json({ alert: updated });
   } catch (error) {
-    console.error("Error updating regression alert:", error);
+    log.error("Error updating regression alert", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

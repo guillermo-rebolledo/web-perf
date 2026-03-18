@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { RunStatus } from "@prisma/client";
 import { subDays } from "date-fns";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:runs");
 
 // GET /api/runs?monitorId=X&limit=10&offset=0&days=7&status=success - List runs
 export async function GET(request: NextRequest) {
@@ -74,7 +77,7 @@ export async function GET(request: NextRequest) {
       offset,
     });
   } catch (error) {
-    console.error("Error fetching runs:", error);
+    log.error("Error fetching runs", error);
     return NextResponse.json(
       { error: "Failed to fetch runs" },
       { status: 500 }

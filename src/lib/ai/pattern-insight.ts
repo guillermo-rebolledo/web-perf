@@ -7,6 +7,9 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { env } from "@/env";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("AI:PatternInsight");
 
 /**
  * Computes a deterministic SHA-256 hash of the alert data used as input.
@@ -66,9 +69,7 @@ export async function generatePatternInsight(
       PATTERN_INSIGHT.RATE_LIMIT_GEN_KEY
     );
     if (!rateLimit.success) {
-      console.log(
-        `[AI] Pattern insight daily limit reached for user ${userId}`
-      );
+      log.info("Daily generation limit reached", { userId });
       return;
     }
 
@@ -82,9 +83,7 @@ export async function generatePatternInsight(
       "NX"
     );
     if (!acquired) {
-      console.log(
-        `[AI] Pattern insight generation already in progress for monitor ${monitorId}`
-      );
+      log.debug("Generation already in progress", { monitorId });
       return;
     }
 
@@ -194,14 +193,9 @@ export async function generatePatternInsight(
       });
     }
 
-    console.log(
-      `[AI] Pattern insight generated for monitor ${monitorId} (${alerts.length} alerts, dominant cause: ${dominantCause})`
-    );
+    log.info("Pattern insight generated", { monitorId, alertCount: alerts.length, dominantCause });
   } catch (err) {
-    console.error(
-      `[AI] Pattern insight generation error for monitor ${monitorId}:`,
-      err
-    );
+    log.error("Pattern insight generation error", err, { monitorId });
     // Never throw — fire-and-forget callers must not crash
   }
 }

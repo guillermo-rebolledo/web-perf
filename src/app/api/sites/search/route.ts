@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { resolveUser } from "@/lib/resolve-user";
 import Fuse from "fuse.js";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:sites");
 
 const searchSchema = z.object({
   q: z.string().min(1).max(100),
@@ -58,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ results });
   } catch (error) {
-    console.error("Error searching sites:", error);
+    log.error("Error searching sites", error);
     return NextResponse.json(
       { error: "Failed to search sites" },
       { status: 500 }

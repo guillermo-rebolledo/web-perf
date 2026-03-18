@@ -12,6 +12,9 @@ import { calculateBaselines } from "@/lib/regression/baseline-calculator";
 import { analyzeRootCauses } from "@/lib/regression/rules-engine";
 import { calculateDiffSummary } from "@/lib/regression/diff-engine";
 import { recordActivity } from "@/lib/activity";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Worker");
 
 /** Enabled when NODE_ENV is not production and --debug-psi is passed as a CLI argument */
 const PSI_DEBUG_ENABLED =
@@ -27,9 +30,9 @@ async function writeDebugFile(data: unknown, filename = "psi-debug.json") {
   try {
     const debugPath = join(process.cwd(), filename);
     await writeFile(debugPath, JSON.stringify(data, null, 2), "utf-8");
-    console.log(`[Worker] Debug file written to: ${debugPath}`);
+    log.debug("Debug file written", { path: debugPath });
   } catch (error) {
-    console.error("[Worker] Failed to write debug file:", error);
+    log.error("Failed to write debug file", error);
     // Don't throw - debug file is optional
   }
 }
@@ -47,7 +50,7 @@ function sanitizeErrorMessage(error: unknown): string {
 export async function processAuditJob(job: Job<AuditJobData>) {
   const { runId, monitorId, siteUrl, strategy } = job.data;
 
-  console.log(`[Worker] Processing audit job ${job.id} for run ${runId}`);
+  log.info("Processing audit job", { jobId: job.id, runId, monitorId, strategy });
 
   try {
     // Update run status to running
@@ -60,7 +63,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
     });
 
     // Fetch PageSpeed Insights data
-    console.log(`[Worker] Fetching PSI data for ${siteUrl} (${strategy})`);
+    log.info("Fetching PSI data", { siteUrl, strategy });
     const psiResponse = await fetchPageSpeedInsights(
       siteUrl,
       strategy,
@@ -73,12 +76,10 @@ export async function processAuditJob(job: Job<AuditJobData>) {
 
     // Parse the response
     const metrics = parsePSIResponse(psiResponse);
-    console.log(`[Worker] Parsed metrics:`, {
+    log.debug("Parsed PSI response", {
       performanceScore: metrics.performanceScore,
       lcp: metrics.lcp,
       cls: metrics.cls,
-    });
-    console.log(`[Worker] Environment metadata:`, {
       browserUserAgent: metrics.browserUserAgent,
       benchmarkIndex: metrics.benchmarkIndex,
       emulatedFormFactor: metrics.emulatedFormFactor,
@@ -165,9 +166,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
         const regressions = await detectRegressions(updatedRun);
 
         if (regressions.length > 0) {
-          console.log(
-            `[Worker] Detected ${regressions.length} regression(s) for run ${runId}`,
-          );
+          log.info("Detected regressions", { count: regressions.length, runId, monitorId });
 
           // Analyze root causes and calculate diff summary for each regression
           const enrichedRegressions = await Promise.all(
@@ -184,10 +183,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
                   diffSummary: diffSummary as unknown as Prisma.InputJsonValue,
                 };
               } catch (err) {
-                console.error(
-                  `[Worker] Error analyzing root causes for ${regression.metricName}:`,
-                  err,
-                );
+                log.error("Error analyzing root causes", err, { metric: regression.metricName, runId });
                 // Return regression without analysis if it fails
                 return regression;
               }
@@ -199,9 +195,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
             data: enrichedRegressions,
           });
 
-          console.log(
-            `[Worker] Saved ${enrichedRegressions.length} regression alert(s) with root cause analysis`,
-          );
+          log.info("Saved regression alerts", { count: enrichedRegressions.length, runId, monitorId });
 
           // Activity: regression_detected (fire-and-forget)
           void (async () => {
@@ -221,24 +215,18 @@ export async function processAuditJob(job: Job<AuditJobData>) {
                 });
               }
             } catch (err) {
-              console.error("[activity] regression_detected:", err);
+              log.error("Activity tracking failed", err, { event: "regression_detected", runId });
             }
           })();
         }
 
         // Asynchronously recalculate baselines (don't await - fire and forget)
         void calculateBaselines(updatedRun.monitor.id, prisma).catch((err) => {
-          console.error(
-            `[Worker] Error calculating baselines for monitor ${updatedRun.monitor.id}:`,
-            err,
-          );
+          log.error("Error calculating baselines", err, { monitorId: updatedRun.monitor.id });
         });
       }
     } catch (error) {
-      console.error(
-        `[Worker] Error during regression detection for run ${runId}:`,
-        error,
-      );
+      log.error("Error during regression detection", error, { runId, monitorId });
       // Don't fail the job if regression detection fails
     }
 
@@ -279,9 +267,11 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           runWithSite.regressionAlerts.length > 0 &&
           newRegressions.length === 0
         ) {
-          console.log(
-            `[Notifications] All ${runWithSite.regressionAlerts.length} regression(s) suppressed for run ${runId} (already open/acknowledged)`,
-          );
+          log.info("All regressions suppressed (already open/acknowledged)", {
+            count: runWithSite.regressionAlerts.length,
+            runId,
+            monitorId,
+          });
           return;
         }
 
@@ -311,7 +301,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           appBaseUrl: env.NEXTAUTH_URL ?? "http://localhost:3000",
         });
       } catch (err) {
-        console.error("[Worker] Notification dispatch error:", err);
+        log.error("Notification dispatch error", err, { runId, monitorId });
       }
     })();
 
@@ -333,9 +323,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           },
         });
 
-        console.log(
-          `[Worker] Pattern insight check: ${totalAlertCount} alert(s) in last 90 days for monitor ${monitorId}`
-        );
+        log.debug("Pattern insight check", { totalAlertCount, monitorId });
         if (totalAlertCount >= 3) {
           const { FEATURE_FLAGS } = await import("@/lib/feature-flags");
           const { isFeatureEnabled } = await import("@/lib/posthog-server");
@@ -350,16 +338,11 @@ export async function processAuditJob(job: Job<AuditJobData>) {
             );
             await generatePatternInsight(monitorId, monitorWithSite.site.userId);
           } else {
-            console.log(
-              `[Worker] Pattern insight skipped: PATTERN_INSIGHT flag is disabled (enable in PostHog or set defaultValue: true in processor.ts for local dev)`
-            );
+            log.debug("Pattern insight skipped: PATTERN_INSIGHT flag disabled", { monitorId });
           }
         }
       } catch (err) {
-        console.error(
-          `[Worker] Pattern insight generation error for monitor ${monitorId}:`,
-          err
-        );
+        log.error("Pattern insight generation error", err, { monitorId });
       }
     })();
 
@@ -380,9 +363,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           },
         });
 
-        console.log(
-          `[Worker] Health report check: previousSuccessCount=${previousSuccessCount} for run ${runId}`
-        );
+        log.debug("Health report check", { previousSuccessCount, runId, monitorId });
         if (previousSuccessCount === 0) {
           await prisma.run.update({
             where: { id: runId },
@@ -394,10 +375,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           await generateHealthReport(runId, monitorWithSite.site.userId);
         }
       } catch (err) {
-        console.error(
-          `[Worker] Health report generation error for run ${runId}:`,
-          err
-        );
+        log.error("Health report generation error", err, { runId, monitorId });
       }
     })();
 
@@ -419,7 +397,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           });
         }
       } catch (err) {
-        console.error("[activity] run_completed:", err);
+        log.error("Activity tracking failed", err, { event: "run_completed", runId });
       }
     })();
 
@@ -431,12 +409,12 @@ export async function processAuditJob(job: Job<AuditJobData>) {
       },
     });
 
-    console.log(`[Worker] Successfully completed audit job ${job.id}`);
+    log.info("Completed audit job", { jobId: job.id, runId, monitorId });
   } catch (error) {
     Sentry.captureException(error, {
       tags: { runId, monitorId, siteUrl, strategy },
     });
-    console.error(`[Worker] Error processing audit job ${job.id}:`, error);
+    log.error("Error processing audit job", error, { jobId: job.id, runId, monitorId, siteUrl, strategy });
 
     // Update run status to failed
     await prisma.run.update({
@@ -466,7 +444,7 @@ export async function processAuditJob(job: Job<AuditJobData>) {
           });
         }
       } catch (err) {
-        console.error("[activity] run_failed:", err);
+        log.error("Activity tracking failed", err, { event: "run_failed", runId });
       }
     })();
 

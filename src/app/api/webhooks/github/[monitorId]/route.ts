@@ -4,6 +4,9 @@ import { enqueueAuditJob } from "@/lib/queue";
 import { verifyGitHubSignature, isSuccessfulDeployment } from "@/lib/github-webhook";
 import { RunStatus } from "@prisma/client";
 import { recordActivity } from "@/lib/activity";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Webhook:GitHub");
 
 // POST /api/webhooks/github/[monitorId]
 // Receives GitHub deployment_status webhook events and triggers a performance audit.
@@ -109,12 +112,12 @@ export async function POST(
         githubBranch: monitor.githubBranch,
       });
     } catch (activityError) {
-      console.error("[activity] deployment_run_triggered:", activityError);
+      log.error("Activity tracking failed", activityError, { event: "deployment_run_triggered", monitorId, runId: run.id });
     }
 
     return NextResponse.json({ runId: run.id, jobId }, { status: 202 });
   } catch (error) {
-    console.error("Error processing GitHub webhook:", error);
+    log.error("Error processing GitHub webhook", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

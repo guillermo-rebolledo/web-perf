@@ -7,6 +7,10 @@ import { processAuditJob } from "./processor";
 import { processDigestJob } from "./digest-processor";
 import { startScheduler } from "./scheduler";
 import { prisma } from "@/lib/prisma";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("Worker");
+const digestLog = createLogger("DigestWorker");
 
 Sentry.init({
   dsn: env.SENTRY_DSN,
@@ -37,7 +41,7 @@ async function recoverOrphanedRuns(): Promise<void> {
     },
   });
   if (result.count > 0) {
-    console.log(`[Worker] Recovered ${result.count} orphaned run(s) from previous crash`);
+    log.warn("Recovered orphaned runs from previous crash", { count: result.count });
   }
 }
 
@@ -61,19 +65,19 @@ const worker = new Worker<AuditJobData>(
 
 // Worker event handlers
 worker.on("completed", (job) => {
-  console.log(`[Worker] Job ${job.id} completed successfully`);
+  log.info("Job completed", { jobId: job.id });
 });
 
 worker.on("failed", (job, err) => {
   Sentry.captureException(err, {
     tags: { worker: "performance-audits", jobId: job?.id },
   });
-  console.error(`[Worker] Job ${job?.id} failed:`, err);
+  log.error("Job failed", err, { jobId: job?.id });
 });
 
 worker.on("error", (err) => {
   Sentry.captureException(err, { tags: { worker: "performance-audits" } });
-  console.error("[Worker] Worker error:", err);
+  log.error("Worker error", err);
 });
 
 // Digest worker
@@ -86,19 +90,19 @@ const digestWorker = new Worker<DigestJobData>(
 );
 
 digestWorker.on("completed", (job) => {
-  console.log(`[DigestWorker] Job ${job.id} completed`);
+  digestLog.info("Job completed", { jobId: job.id });
 });
 
 digestWorker.on("failed", (job, err) => {
   Sentry.captureException(err, {
     tags: { worker: "weekly-digest", jobId: job?.id },
   });
-  console.error(`[DigestWorker] Job ${job?.id} failed:`, err);
+  digestLog.error("Job failed", err, { jobId: job?.id });
 });
 
 // Graceful shutdown
 const shutdown = async () => {
-  console.log("[Worker] Shutting down gracefully...");
+  log.info("Shutting down gracefully");
   await Promise.all([worker.close(), digestWorker.close()]);
   await Sentry.close(2000);
   process.exit(0);
@@ -111,7 +115,7 @@ process.on("SIGTERM", shutdown);
 void (async () => {
   await recoverOrphanedRuns();
   startScheduler();
-  console.log("[Worker] Worker and scheduler started successfully");
-  console.log(`[Worker] Connected to Redis at ${env.REDIS_HOST}:${env.REDIS_PORT}`);
-  console.log("[Worker] Waiting for jobs...");
+  log.info("Worker and scheduler started", {
+    redis: `${env.REDIS_HOST}:${env.REDIS_PORT}`,
+  });
 })();

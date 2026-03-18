@@ -3,6 +3,9 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolveUser } from "@/lib/resolve-user";
 import { startOfDay, endOfDay, parse } from "date-fns";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:alerts");
 
 export type AlertsApiResponse = {
   alerts: {
@@ -139,7 +142,7 @@ export async function GET(request: NextRequest) {
       hasMore,
     });
   } catch (error) {
-    console.error("Error fetching alerts:", error);
+    log.error("Error fetching alerts", error);
     return NextResponse.json(
       { error: "Failed to fetch alerts" },
       { status: 500 }

@@ -5,6 +5,9 @@ import { auth } from "@/lib/auth";
 import { resolveUser } from "@/lib/resolve-user";
 import { generateApiKey, hashApiKey } from "@/lib/api-key-auth";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:keys");
 
 const MAX_KEYS = 10;
 
@@ -37,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ keys });
   } catch (error) {
-    console.error("Error fetching API keys:", error);
+    log.error("Error fetching API keys", error);
     return NextResponse.json(
       { error: "Failed to fetch API keys" },
       { status: 500 }
@@ -121,7 +124,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    console.error("Error creating API key:", error);
+    log.error("Error creating API key", error);
     return NextResponse.json(
       { error: "Failed to create API key" },
       { status: 500 }

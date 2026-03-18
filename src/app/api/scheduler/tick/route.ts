@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { env } from "@/env";
 import { processDueMonitors } from "@/worker/scheduler";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("API:scheduler");
 
 // POST /api/scheduler/tick - Trigger scheduler (protected by secret header)
 export async function POST(request: NextRequest) {
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: "Scheduler tick completed" });
   } catch (error) {
-    console.error("Error in scheduler tick:", error);
+    log.error("Error in scheduler tick", error);
     return NextResponse.json(
       { error: "Failed to process scheduler tick" },
       { status: 500 }
