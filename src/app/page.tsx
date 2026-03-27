@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Activity, Clock, Flag, Sparkles } from "lucide-react";
+import { Activity, Globe, Clock, Flag, Sparkles, Check } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AppPreviewCarousel } from "@/components/app-preview-carousel";
 import { auth } from "@/lib/auth";
@@ -37,8 +38,8 @@ export default async function Home() {
         <div className="mx-auto max-w-[1200px] px-4 sm:px-8 lg:px-16">
           <div className="flex h-16 items-center justify-between">
             <div className="flex gap-2 items-center">
-              <span className="p-2 rounded bg-primary/10">
-                <Activity className="size-4 text-primary" />
+              <span className="size-8 flex items-center justify-center rounded-lg bg-primary/15 text-primary shrink-0">
+                <Activity className="size-4" />
               </span>
               <span className="font-semibold font-geist-mono tracking-tighter">
                 perflabs
@@ -51,59 +52,58 @@ export default async function Home() {
                 <Link href="/auth/signin">Sign In</Link>
               </Button>
               <Button asChild size="sm">
-                <Link href="/dashboard">Get started</Link>
+                <Link href="/dashboard">Get Started</Link>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="py-16 bg-[radial-gradient(ellipse_80%_40%_at_50%_0%,color-mix(in_oklch,var(--primary)_12%,transparent)_0%,transparent_100%)]">
-        <section className="mx-auto max-w-4xl flex flex-col gap-4 py-16 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
-          <div className="flex justify-center flex-col md:flex-row items-center gap-2">
-            <span className="text-xs border border-emerald-500 rounded-full px-2 py-1 text-emerald-500 bg-emerald-500/10 font-semibold">
-              <span
-                className="inline-block h-2 w-2 rounded-full bg-emerald-500 shrink-0 mr-2 animate-pulse"
-                aria-hidden="true"
-              />
-              Powered by Google PageSpeed Insights
-            </span>
-            <span className="text-xs border border-emerald-500 rounded-full px-2 py-1 text-emerald-500 bg-emerald-500/10 font-semibold">
-              <span
-                className="inline-block h-2 w-2 rounded-full bg-emerald-500 shrink-0 mr-2 animate-pulse"
-                aria-hidden="true"
-              />
-              Now with AI-powered regression analysis
-            </span>
+      <main className="py-16 bg-[radial-gradient(ellipse_80%_40%_at_50%_0%,color-mix(in_oklch,var(--primary)_18%,transparent)_0%,transparent_100%)]">
+        <section className="mx-auto max-w-4xl flex flex-col gap-4 py-16 px-4 sm:px-8 lg:px-16">
+          <div className="flex justify-center animate-in fade-in-0 slide-in-from-bottom-3 duration-500">
+            <Badge>Powered by Google PageSpeed Insights</Badge>
           </div>
-          <h1 className="text-5xl md:text-6xl font-extrabold text-center tracking-tighter md:tracking-[-0.2rem]">
+          <h1 className="text-5xl md:text-6xl font-extrabold text-center tracking-tight md:tracking-[-0.04em] animate-in fade-in-0 slide-in-from-bottom-8 duration-700 [animation-delay:120ms] [animation-fill-mode:both]">
             Catch regressions before your users do.
           </h1>
-          <p className="text-center text-muted-foreground text-sm md:text-lg leading-5">
+          <p className="text-center text-muted-foreground text-sm md:text-lg leading-6 md:leading-7 animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:240ms] [animation-fill-mode:both]">
             PerfLabs monitors your Core Web Vitals around the clock, catches
             regressions on every run, and surfaces what changed so you know
             where to look before your users feel it.
           </p>
 
-          <div className="py-6 flex items-center justify-center">
-            <Button asChild size="lg" className="w-auto shrink-0">
+          <div className="py-6 flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-4 duration-700 [animation-delay:360ms] [animation-fill-mode:both]">
+            <Button
+              asChild
+              size="lg"
+              className="w-auto shrink-0 transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+            >
               <Link href="/dashboard">Start Monitoring Free</Link>
             </Button>
           </div>
         </section>
 
-        <section className="mx-auto max-w-4xl flex flex-col gap-4 py-8 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
-          <h2 className="text-5xl md:text-6xl font-extrabold text-center tracking-tighter md:tracking-[-0.2rem]">
-            Continuous monitoring that works like your pipeline.
-          </h2>
-          <p className="text-center text-muted-foreground text-sm md:text-lg leading-5">
-            Register a site. We handle the rest.
-          </p>
+        <section className="mx-auto max-w-4xl flex flex-col gap-6 py-12 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
+          <div>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter md:tracking-[-0.15rem]">
+              Continuous monitoring that works like your pipeline.
+            </h2>
+            <p className="text-muted-foreground text-sm md:text-base leading-6 mt-2 max-w-lg">
+              Register a site. We handle the rest.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+            <div className="border border-border rounded-xl bg-card p-4 flex flex-col gap-2 shadow-sm relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+              <span
+                className="absolute top-1 right-3 text-8xl font-black leading-none text-primary/[0.06] pointer-events-none select-none font-geist-mono"
+                aria-hidden="true"
+              >
+                01
+              </span>
               <div className="flex items-center gap-2">
-                <span className="p-2 bg-blue-500/20 w-fit rounded">
-                  <Clock className="size-4 text-blue-500" />
+                <span className="p-2 bg-primary/15 w-fit rounded-md">
+                  <Globe className="size-4 text-primary" />
                 </span>
                 <div className="font-bold text-base">Register your sites</div>
               </div>
@@ -113,10 +113,16 @@ export default async function Home() {
                 a GitHub webhook.
               </div>
             </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+            <div className="border border-border rounded-xl bg-card p-4 flex flex-col gap-2 shadow-sm relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+              <span
+                className="absolute top-1 right-3 text-8xl font-black leading-none text-primary/[0.06] pointer-events-none select-none font-geist-mono"
+                aria-hidden="true"
+              >
+                02
+              </span>
               <div className="flex items-center gap-2">
-                <span className="p-2 bg-emerald-500/20 w-fit rounded">
-                  <Clock className="size-4 text-emerald-500" />
+                <span className="p-2 bg-primary/15 w-fit rounded-md">
+                  <Clock className="size-4 text-primary" />
                 </span>
                 <div className="font-bold text-base">
                   We run audits automatically
@@ -125,21 +131,27 @@ export default async function Home() {
               <div>
                 On schedule, we fetch{" "}
                 <a
-                  className="underline hover:text-primary focus:text-primary"
+                  className="underline transition-colors hover:text-primary focus:text-primary"
                   href="https://developers.google.com/speed/docs/insights/v5/about"
                   target="_blank"
                   rel="noreferrer noopener"
                 >
                   Google PageSpeed Insights
                 </a>{" "}
-                scores and capture every metric — LCP, CLS, TTFB, FID — across
+                scores and capture every metric — LCP, CLS, TTFB, INP — across
                 both mobile and desktop strategies.
               </div>
             </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+            <div className="border border-border rounded-xl bg-card p-4 flex flex-col gap-2 shadow-sm relative overflow-hidden h-fit transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+              <span
+                className="absolute top-1 right-3 text-8xl font-black leading-none text-[var(--score-warning)]/[0.08] pointer-events-none select-none font-geist-mono"
+                aria-hidden="true"
+              >
+                03
+              </span>
               <div className="flex items-center gap-2">
-                <span className="p-2 bg-amber-500/20 w-fit rounded">
-                  <Flag className="size-4 text-amber-500" />
+                <span className="p-2 bg-[var(--score-warning)]/15 w-fit rounded-md">
+                  <Flag className="size-4 text-[var(--score-warning)]" />
                 </span>
                 <div className="font-bold text-base">
                   Regressions get flagged immediately
@@ -152,10 +164,16 @@ export default async function Home() {
                 when.
               </div>
             </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+            <div className="border border-border rounded-xl bg-card p-4 flex flex-col gap-2 shadow-sm relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+              <span
+                className="absolute top-1 right-3 text-8xl font-black leading-none text-primary/[0.06] pointer-events-none select-none font-geist-mono"
+                aria-hidden="true"
+              >
+                04
+              </span>
               <div className="flex items-center gap-2">
-                <span className="p-2 bg-purple-600/20 w-fit rounded">
-                  <Sparkles className="size-4 text-purple-600" />
+                <span className="p-2 bg-primary/15 w-fit rounded-md">
+                  <Sparkles className="size-4 text-primary" />
                 </span>
                 <div className="font-bold text-base">
                   AI works at every layer
@@ -184,64 +202,27 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-4xl flex flex-col gap-4 py-16 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
-          <h2 className="text-5xl md:text-6xl font-extrabold text-center tracking-tighter md:tracking-[-0.2rem]">
-            Built around regression detection, not just scores.
-          </h2>
-          <p className="text-center text-muted-foreground text-sm md:text-lg leading-5">
-            Most performance tools give you a score. We tell you when it dropped
-            and what caused it.
-          </p>
-          <p className="text-center text-muted-foreground text-sm md:text-lg leading-5">
-            Our engine tracks a rolling median baseline for every metric across
-            every monitor. Each audit gets compared to that baseline. When a
-            metric degrades beyond your configured threshold, you get an alert —
-            complete with a before/after diff across network timing, rendering,
-            and main thread activity.
-          </p>
-        </section>
-
-        <section className="mx-auto max-w-4xl py-8 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+        <section className="mx-auto max-w-4xl flex flex-col gap-6 py-12 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
+          <div>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tighter md:tracking-[-0.15rem]">
+              Built around regression detection, not just scores.
+            </h2>
+            <p className="text-muted-foreground text-sm md:text-base leading-6 mt-2 max-w-lg">
+              Most performance tools give you a score. We tell you when it
+              dropped and what caused it.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+            <div className="border border-border rounded-xl bg-card p-4 flex flex-col gap-2 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
               <div className="font-bold text-base">Regression Detection</div>
               <div>
                 Compare every audit to a rolling baseline. See exactly when your
                 LCP went from &quot;Good&quot; to &quot;Needs Improvement&quot;
-                — and which run triggered it.
+                — and which run triggered it — with a before/after diff across
+                network timing, rendering, and main thread activity.
               </div>
             </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">AI Run Summaries</div>
-              <div>
-                Get an explanation of what changed between runs — not just which
-                metric dropped, but why it dropped and where to look first.
-              </div>
-            </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">Web Dashboard</div>
-              <div>
-                Track performance trends over time with timeline charts and
-                side-by-side run comparisons. Monitor all your sites from one
-                place.
-              </div>
-            </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">CLI Tool</div>
-              <div>
-                Run audits from your terminal. Scriptable, automatable, and
-                CI-friendly. Trigger a run, assert a budget, or stream results
-                directly into your build log.
-              </div>
-            </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">Mobile & Desktop</div>
-              <div>
-                Monitor both strategies independently. Mobile performance often
-                tells a different story than desktop — and Google measures both.
-              </div>
-            </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
+            <div className="border border-border rounded-xl bg-card p-4 flex flex-col gap-2 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
               <div className="font-bold text-base">Deploy-triggered Audits</div>
               <div>
                 Connect a GitHub webhook and every successful deployment
@@ -253,56 +234,57 @@ export default async function Home() {
                 events — no polling, no cron lag, no manual runs.
               </div>
             </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">Slack Notifications</div>
+            <div className="border border-border rounded-xl bg-card p-4 flex flex-col gap-2 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+              <div className="font-bold text-base">CLI Tool</div>
               <div>
-                Connect a Slack webhook once and every completed audit posts to
-                your channel — performance score, all five Core Web Vitals, and
-                any regressions flagged by severity. Green means clean. Red
-                means act. No dashboard check required.
+                Run audits from your terminal. Scriptable, automatable, and
+                CI-friendly. Trigger a run, assert a budget, or stream results
+                directly into your build log.
               </div>
             </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">Weekly Email Digest</div>
-              <div>
-                Every Monday, a performance summary lands in your inbox —
-                Lighthouse scores, Core Web Vitals, week-over-week trends, and
-                open alerts by severity for every site you monitor. Forward it
-                to stakeholders, bring it to your retro, or just skip the
-                dashboard entirely.
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              Also includes
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Check className="size-3.5 text-primary shrink-0" />
+                <span>AI run summaries</span>
               </div>
-            </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">
-                Regression Pattern Analysis
+              <div className="flex items-center gap-2">
+                <Check className="size-3.5 text-primary shrink-0" />
+                <span>First-run health report</span>
               </div>
-              <div>
-                When the same metric keeps regressing, something structural is
-                wrong. After three regressions in a 90-day window, the AI
-                identifies the dominant root cause across all incidents, shows
-                how often it recurs, and gives you one concrete fix — not a list
-                of symptoms.
+              <div className="flex items-center gap-2">
+                <Check className="size-3.5 text-primary shrink-0" />
+                <span>Pattern analysis</span>
               </div>
-            </div>
-            <div className="border border-border rounded-lg bg-card p-4 flex flex-col gap-2">
-              <div className="font-bold text-base">First-Run Health Report</div>
-              <div>
-                The moment your monitor runs for the first time, the AI produces
-                a full performance assessment — quick wins ranked by effort vs.
-                impact, risk areas approaching critical thresholds, a
-                recommended monitoring strategy, and a performance maturity
-                score. Context from day one, before you have a baseline to
-                compare against.
+              <div className="flex items-center gap-2">
+                <Check className="size-3.5 text-primary shrink-0" />
+                <span>Web dashboard</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="size-3.5 text-primary shrink-0" />
+                <span>Mobile &amp; desktop</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="size-3.5 text-primary shrink-0" />
+                <span>Slack notifications</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="size-3.5 text-primary shrink-0" />
+                <span>Weekly email digest</span>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl flex flex-col gap-4 py-8 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
-          <h2 className="text-5xl md:text-6xl font-extrabold text-center tracking-tighter md:tracking-[-0.2rem]">
+        <section className="mx-auto max-w-5xl flex flex-col gap-4 py-12 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-center tracking-tighter md:tracking-[-0.15rem]">
             A full picture, not just a score.
           </h2>
-          <p className="text-center text-muted-foreground text-sm md:text-lg leading-5">
+          <p className="text-center text-muted-foreground text-sm md:text-base leading-6 max-w-xl mx-auto">
             Every run lands in your dashboard, your alert feed, and your history
             log — so you always know what changed, when it changed, and which
             site needs attention first.
@@ -378,20 +360,30 @@ Full results: https://perflabs.dev/runs/cm9xyz456`}
         </section>
         */}
 
-        <section className="mx-auto max-w-4xl flex flex-col gap-4 py-8 px-4 sm:px-8 lg:px-16 animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
-          <h2 className="text-5xl md:text-6xl font-extrabold text-center tracking-tighter md:tracking-[-0.2rem]">
-            Set up monitoring in{" "}
-            <span className="text-primary underline"> under 5 minutes</span>.
-          </h2>
-          <p className="text-center text-muted-foreground text-sm md:text-lg leading-5">
-            Connect your first site, configure your monitors, and get your first
-            regression alert — no credit card required.
-          </p>
-
-          <div className="py-6 flex flex-col md:flex-row items-center justify-center gap-3">
-            <Button asChild className="w-auto shrink-0" size="lg">
-              <Link href="/dashboard">Get Started</Link>
-            </Button>
+        <section className="w-full border-t border-primary/20 bg-primary animate-in fade-in-0 slide-in-from-bottom-2 duration-700">
+          <div className="mx-auto max-w-4xl px-4 sm:px-8 lg:px-16 py-12 flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div className="flex flex-col gap-3">
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter text-primary-foreground">
+                Set up monitoring in{" "}
+                <span className="text-[var(--score-warning)] underline underline-offset-4 decoration-[var(--score-warning)]/60 decoration-2">
+                  under 5 minutes
+                </span>
+                .
+              </h2>
+              <p className="text-primary-foreground/70 text-sm md:text-base leading-6 max-w-md">
+                Connect your first site, configure your monitors, and get your
+                first regression alert — no credit card required.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <Button
+                asChild
+                size="lg"
+                className="bg-background text-primary hover:bg-background/90 shadow transition-transform duration-150 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Link href="/dashboard">Start Monitoring Free</Link>
+              </Button>
+            </div>
           </div>
         </section>
       </main>
@@ -403,8 +395,8 @@ Full results: https://perflabs.dev/runs/cm9xyz456`}
             {/* Brand column */}
             <div className="flex flex-col gap-4 md:col-span-2">
               <div className="flex gap-2 items-center">
-                <span className="p-2 rounded bg-primary/10">
-                  <Activity className="size-4 text-primary" />
+                <span className="size-8 flex items-center justify-center rounded-lg bg-primary/15 text-primary shrink-0">
+                  <Activity className="size-4" />
                 </span>
                 <span className="font-semibold font-geist-mono tracking-tighter">
                   perflabs
@@ -520,7 +512,7 @@ Full results: https://perflabs.dev/runs/cm9xyz456`}
           {/* Bottom bar */}
           <div className="flex flex-col gap-3 border-t border-border py-6 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted-foreground">
-              PerfLabs {new Date().getFullYear()}
+              © {new Date().getFullYear()} PerfLabs
             </p>
             <div className="flex gap-5 text-xs text-muted-foreground">
               <Link
